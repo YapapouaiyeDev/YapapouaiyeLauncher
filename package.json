@@ -1,0 +1,47 @@
+{
+  "name": "yapapouaiye-launcher",
+  "version": "1.0.0",
+  "description": "Launcher Minecraft moddé - Yapapouaiye",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "author": "Yapapouaiye",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^41.1.1",
+    "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.3",
+    "minecraft-java-core": "^4.2.7"
+  },
+  "build": {
+    "appId": "com.yapapouaiye.launcher",
+    "productName": "Yapapouaiye Launcher",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "extraResources": [
+      {
+        "from": "mods",
+        "to": "mods",
+        "filter": [
+          "**/*.jar"
+        ]
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "yapapouaiyestudios",
+        "repo": "YapapouaiyeLauncher"
+      }
+    ]
+  }
+}
