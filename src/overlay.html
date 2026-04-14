@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;">
+  <title>Yapapouaiye Overlay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <div class="overlay-container hidden" id="overlay-container">
+    <div class="overlay-card">
+      <div class="overlay-header">
+        <h3 class="overlay-title">⚙️ Options de jeu</h3>
+        <p class="overlay-hint">Shift droit pour ouvrir/fermer</p>
+      </div>
+      <div class="overlay-options">
+        <label class="option-toggle">
+          <input type="checkbox" id="opt-night-vision" />
+          <div class="option-card">
+            <span class="option-icon">🌙</span>
+            <div class="option-info">
+              <span class="option-name">Night Vision</span>
+              <span class="option-desc">Ne pas appliquer l'effet</span>
+            </div>
+          </div>
+        </label>
+        <label class="option-toggle">
+          <input type="checkbox" id="opt-no-fog" />
+          <div class="option-card">
+            <span class="option-icon">🌫️</span>
+            <div class="option-info">
+              <span class="option-name">NoFog</span>
+              <span class="option-desc">Désactiver le brouillard</span>
+            </div>
+          </div>
+        </label>
+        <label class="option-toggle">
+          <input type="checkbox" id="opt-shaders" />
+          <div class="option-card">
+            <span class="option-icon">✨</span>
+            <div class="option-info">
+              <span class="option-name">Shaders</span>
+              <span class="option-desc">Activer les shaders</span>
+            </div>
+          </div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <script src="overlay.js"></script>
+</body>
+</html>
