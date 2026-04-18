@@ -1009,3 +1009,119 @@ document.querySelector('[data-page="settings"]').addEventListener('click', () =>
     });
   });
 })();
+
+// ============================================================
+// Easter Egg: Konami Code (ArrowUp ArrowUp ArrowDown ArrowDown
+// ArrowLeft ArrowRight ArrowLeft ArrowRight KeyB KeyA)
+// ============================================================
+(function () {
+  const KONAMI = [
+    'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+    'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',
+    'KeyB', 'KeyA'
+  ];
+  let buffer = [];
+  let konamiActive = false;
+
+  // Inject disco styles once
+  const discoStyle = document.createElement('style');
+  discoStyle.textContent = `
+    @keyframes konami-rainbow {
+      0%   { filter: hue-rotate(0deg) saturate(1.5); }
+      100% { filter: hue-rotate(360deg) saturate(1.5); }
+    }
+    @keyframes konami-title-pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50%      { transform: translate(-50%, -50%) scale(1.1); }
+    }
+    body.konami-mode {
+      animation: konami-rainbow 3s linear infinite;
+    }
+    .konami-title {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 64px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      background: linear-gradient(90deg, #ff0080, #ff8c00, #ffd700, #00ff00, #00ffff, #8b5cf6, #ff0080);
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 40px rgba(139, 92, 246, 0.8);
+      z-index: 99999;
+      pointer-events: none;
+      animation: konami-title-pulse 0.6s ease-in-out infinite;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+    }
+    .konami-subtitle {
+      display: block;
+      font-size: 20px;
+      margin-top: 12px;
+      letter-spacing: 2px;
+      opacity: 0.9;
+    }
+    @keyframes konami-fall {
+      0%   { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0.3; }
+    }
+    .konami-particle {
+      position: fixed;
+      top: 0;
+      font-size: 32px;
+      z-index: 99998;
+      pointer-events: none;
+      animation: konami-fall linear forwards;
+    }
+  `;
+  document.head.appendChild(discoStyle);
+
+  document.addEventListener('keydown', (e) => {
+    if (konamiActive) return;
+
+    buffer.push(e.code);
+    if (buffer.length > KONAMI.length) buffer.shift();
+
+    if (buffer.length === KONAMI.length && buffer.every((k, i) => k === KONAMI[i])) {
+      buffer = [];
+      triggerKonami();
+    }
+  });
+
+  function triggerKonami() {
+    konamiActive = true;
+    document.body.classList.add('konami-mode');
+
+    const title = document.createElement('div');
+    title.className = 'konami-title';
+    title.innerHTML = 'YAPAPOUAIYE<br/><span class="konami-subtitle">★ CHEAT MODE ACTIVATED ★</span>';
+    document.body.appendChild(title);
+
+    const particles = ['⭐', '✨', '💫', '🌈', '🎉', '🎊', '⚡', '💥', '🔥', '🏆'];
+    const particleEls = [];
+    const particleInterval = setInterval(() => {
+      const p = document.createElement('span');
+      p.className = 'konami-particle';
+      p.textContent = particles[Math.floor(Math.random() * particles.length)];
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.fontSize = (24 + Math.random() * 32) + 'px';
+      p.style.animationDuration = (2 + Math.random() * 2) + 's';
+      document.body.appendChild(p);
+      particleEls.push(p);
+      setTimeout(() => p.remove(), 4000);
+    }, 80);
+
+    showToast('🎮 Konami Code ! Cheat mode activated for 8s', 'success', 8000);
+
+    setTimeout(() => {
+      clearInterval(particleInterval);
+      document.body.classList.remove('konami-mode');
+      title.remove();
+      particleEls.forEach(p => p.remove());
+      konamiActive = false;
+    }, 8000);
+  }
+})();

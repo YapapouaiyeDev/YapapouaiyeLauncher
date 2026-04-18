@@ -1,6 +1,6 @@
 {
   "name": "yapapouaiye-launcher",
-  "version": "1.5.1",
+  "version": "1.5.3",
   "description": "Launcher Minecraft moddé - Yapapouaiye",
   "main": "src/main.js",
   "scripts": {
@@ -42,7 +42,8 @@
       {
         "provider": "github",
         "owner": "yapapouaiyestudios",
-        "repo": "YapapouaiyeLauncher"
+        "repo": "YapapouaiyeLauncher",
+        "private": true
       }
     ]
   }

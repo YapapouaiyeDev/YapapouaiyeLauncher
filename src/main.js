@@ -142,217 +142,26 @@ app.whenReady().then(() => {
   // ============================================================
   // Auto-update : check GitHub releases on every startup
   // ============================================================
+  // The repository is private: electron-updater uses its built-in
+  // PrivateGitHubProvider as soon as a token is available (GH_TOKEN env
+  // via dotenv) AND `private: true` is set in app-update.yml
+  // (configured from package.json "build.publish"). That provider
+  // downloads the channel file AND the installer via the REST API
+  // (api.github.com/.../releases/assets/{id} + Accept: octet-stream),
+  // which is the only flow that works for private repositories.
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
   // Force update checks in development mode (unpacked app)
   autoUpdater.forceDevUpdateConfig = true;
-  
-  // Explicitly set the dev update config file path
   autoUpdater.updateConfigPath = path.join(__dirname, "..", "dev-app-update.yml");
-
-  // Fix: Override GitHubProvider to use REST API instead of atom feed
-  const { GitHubProvider } = require("electron-updater/out/providers/GitHubProvider");
-
-  // Store original method
-  const originalGetLatestVersion = GitHubProvider.prototype.getLatestVersion;
-
-  GitHubProvider.prototype.getLatestVersion = async function() {
-    const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
-    const headers = { "User-Agent": "electron-updater" };
-    if (token) headers.Authorization = `token ${token}`;
-
-    // Fetch ALL releases (not just /latest) to find the actual highest semver
-    const url = `https://api.github.com/repos/${this.options.owner}/${this.options.repo}/releases?per_page=100`;
-
-    console.log("[AutoUpdater] Fetching all releases from:", url);
-
-    // Use Node.js https directly
-    const https = require("https");
-    const allReleases = await new Promise((resolve, reject) => {
-      https.get(url, { headers }, (res) => {
-        let body = "";
-        res.on("data", (chunk) => body += chunk);
-        res.on("end", () => {
-          if (res.statusCode !== 200) {
-            reject(new Error(`GitHub API returned ${res.statusCode}: ${body}`));
-            return;
-          }
-          try {
-            resolve(JSON.parse(body));
-          } catch (e) {
-            reject(e);
-          }
-        });
-      }).on("error", reject);
-    });
-
-    if (!allReleases || allReleases.length === 0) {
-      throw new Error("No release data received from GitHub");
-    }
-
-    console.log(`[AutoUpdater] Found ${allReleases.length} releases on GitHub`);
-
-    // Filter only non-draft releases with assets
-    const validReleases = allReleases.filter(r => !r.draft && r.assets && r.assets.length > 0);
-
-    if (validReleases.length === 0) {
-      throw new Error("No valid releases found (all are drafts or have no assets)");
-    }
-
-    // Find the release with the highest semver
-    const semver = require("semver");
-    let latestRelease = validReleases[0];
-
-    for (const release of validReleases) {
-      const rawVersion = release.tag_name.replace(/^v/, "");
-      const parts = rawVersion.split(".");
-      while (parts.length < 3) parts.push("0");
-      const normalizedVersion = parts.join(".");
-
-      if (semver.valid(normalizedVersion) && semver.gt(normalizedVersion, getReleaseVersion(latestRelease))) {
-        latestRelease = release;
-      }
-    }
-
-    // Helper function to get version string
-    function getReleaseVersion(release) {
-      const raw = release.tag_name.replace(/^v/, "");
-      const parts = raw.split(".");
-      while (parts.length < 3) parts.push("0");
-      return parts.join(".");
-    }
-
-    const rawVersion = latestRelease.tag_name.replace(/^v/, "");
-    const parts = rawVersion.split(".");
-    while (parts.length < 3) parts.push("0");
-    const semverVersion = parts.join(".");
-
-    console.log(`[AutoUpdater] Latest version: ${semverVersion} (tag: ${latestRelease.tag_name})`);
-
-    // Check if release has downloadable assets
-    const assets = latestRelease.assets || [];
-    if (assets.length === 0) {
-      console.warn("[AutoUpdater] Release has no assets (files). Notes:", latestRelease.body);
-      throw new Error("No files provided");
-    }
-
-    // Find Windows installer asset
-    const winAssets = assets.filter((a) => a.name && (a.name.endsWith(".exe") || a.name.endsWith(".nsis")));
-
-    if (winAssets.length === 0) {
-      console.warn("[AutoUpdater] No Windows installer found. Available assets:", assets.map(a => a.name));
-      throw new Error("No Windows installer found in release");
-    }
-
-    console.log("[AutoUpdater] Assets:", winAssets.map(a => a.name));
-
-    // Fetch latest.yml from release assets for proper checksums
-    let checksums = {};
-    const ymlAsset = assets.find((a) => a.name === "latest.yml");
-    if (ymlAsset) {
-      try {
-        console.log("[AutoUpdater] Fetching checksums from latest.yml asset");
-        const ymlData = await httpGet(ymlAsset.browser_download_url, false, false);
-        const yaml = require("js-yaml");
-        const parsed = yaml.load(ymlData.toString());
-        if (parsed && parsed.files) {
-          parsed.files.forEach((f) => {
-            checksums[f.url] = f.sha512 || "";
-          });
-        }
-        console.log("[AutoUpdater] Loaded checksums:", Object.keys(checksums));
-      } catch (err) {
-        console.warn("[AutoUpdater] Could not fetch checksums from latest.yml:", err.message);
-      }
-    }
-
-    // If we still don't have checksums, try fetching from the version-specific YAML
-    const versionYmlName = `${semverVersion}.yml`;
-    const versionYmlAsset = assets.find((a) => a.name === versionYmlName);
-    if (Object.keys(checksums).length === 0 && versionYmlAsset) {
-      try {
-        console.log("[AutoUpdater] Fetching checksums from version YAML:", versionYmlName);
-        const ymlData = await httpGet(versionYmlAsset.browser_download_url, false, false);
-        const yaml = require("js-yaml");
-        const parsed = yaml.load(ymlData.toString());
-        if (parsed && parsed.files) {
-          parsed.files.forEach((f) => {
-            checksums[f.url] = f.sha512 || "";
-          });
-        }
-        console.log("[AutoUpdater] Loaded checksums from version YAML:", Object.keys(checksums));
-      } catch (err) {
-        console.warn("[AutoUpdater] Could not fetch checksums from version YAML:", err.message);
-      }
-    }
-
-    // Return in the format GitHubProvider expects
-    return {
-      version: semverVersion,
-      tag: latestRelease.tag_name, // CRITICAL: GitHubProvider needs this to construct download URLs
-      releaseName: latestRelease.name || semverVersion,
-      releaseNotes: latestRelease.body,
-      releaseDate: latestRelease.published_at,
-      files: winAssets.map((a) => ({
-        url: a.name, // Just the filename - GitHubProvider will construct the full URL
-        sha512: checksums[a.name] || "", // Empty string is OK, will skip checksum validation
-        size: a.size,
-        name: a.name
-      }))
-    };
-  };
-
-  // CRITICAL FIX: Override resolveFiles to construct proper download URLs
-  // GitHub download URLs use github.com, NOT api.github.com
-  GitHubProvider.prototype.resolveFiles = function(updateInfo) {
-    const owner = this.options.owner;
-    const repo = this.options.repo;
-    
-    // FIX: Extract tag_name directly since updateInfo.tag is undefined
-    const tag_name = updateInfo.tag || updateInfo.releaseTag || 'v' + updateInfo.version;
-    const tag = tag_name.replace(/^v/, ''); // Use raw tag for URL
-
-    console.log("[AutoUpdater] resolveFiles - tag_name:", tag_name);
-    console.log("[AutoUpdater] resolveFiles - tag:", tag);
-    console.log("[AutoUpdater] resolveFiles - files:", updateInfo.files?.length || 0, "files");
-
-    if (!tag_name) {
-      console.error("[AutoUpdater] ERROR: tag_name is undefined!");
-      throw new Error("Cannot resolve files: tag_name is undefined");
-    }
-
-    if (!updateInfo.files || updateInfo.files.length === 0) {
-      console.error("[AutoUpdater] ERROR: no files provided!");
-      throw new Error("No files provided");
-    }
-
-    // Build ResolvedUpdateFileInfo array directly
-    return updateInfo.files.map((fileInfo) => {
-      const fileName = (fileInfo.url || fileInfo.name || "").replace(/ /g, "-");
-      // Correct GitHub download URL format: https://github.com/owner/repo/releases/download/tag_name/filename
-      const downloadUrl = `https://github.com/${owner}/${repo}/releases/download/${tag_name}/${fileName}`;
-
-      console.log("[AutoUpdater] Resolved file:", {
-        name: fileName,
-        url: downloadUrl,
-        sha512: fileInfo.sha512 ? fileInfo.sha512.substring(0, 20) + "..." : "(empty)",
-        size: fileInfo.size
-      });
-
-      return {
-        url: new URL(downloadUrl),
-        info: fileInfo
-      };
-    });
-  };
 
   // Debug logging
   console.log("[AutoUpdater] Config path:", autoUpdater.updateConfigPath);
   if (process.env.GH_TOKEN) {
     console.log("[AutoUpdater] GH_TOKEN loaded (length:", process.env.GH_TOKEN.length + ")");
   } else {
-    console.warn("[AutoUpdater] No GH_TOKEN found - public repo access only");
+    console.warn("[AutoUpdater] No GH_TOKEN found - private repo will fail to authenticate");
   }
 
   autoUpdater.on("checking-for-update", () => {

@@ -26,8 +26,8 @@
   </div>
 
   <div class="app-container">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
+    <!-- Top Navigation Bar -->
+    <header class="topbar">
       <div class="brand">
         <div class="brand-logo">
           <img class="logo-circle" src="../assets/logo.png" alt="Yapapouaiye" />
@@ -37,14 +37,14 @@
 
       <nav class="nav-menu">
         <div class="nav-item active" data-page="home">
-          <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
           </svg>
           <span>Accueil</span>
         </div>
         <div class="nav-item" data-page="mods">
-          <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
             <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
             <line x1="12" y1="22.08" x2="12" y2="12"></line>
@@ -52,14 +52,14 @@
           <span>Mods</span>
         </div>
         <div class="nav-item" data-page="settings">
-          <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 0 2 2 0 0 1-1-1.51v-.09a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2 0 2 2 0 0 0 1.51 1 1.65 1.65 0 0 0 1 1.51v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
           <span>Paramètres</span>
         </div>
         <div class="nav-item" data-page="accounts">
-          <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
@@ -67,7 +67,7 @@
         </div>
       </nav>
 
-      <div class="sidebar-footer">
+      <div class="topbar-right">
         <div class="user-profile" id="user-info">
           <img class="user-avatar" id="user-skin-head" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect fill='%231e293b' width='40' height='40' rx='8'/%3E%3Ctext x='20' y='26' text-anchor='middle' fill='%2364748b' font-size='20' font-family='Inter'%3E%3F%3C/text%3E%3C/svg%3E" alt="User" />
           <div class="user-details">
@@ -76,7 +76,7 @@
           </div>
         </div>
       </div>
-    </aside>
+    </header>
 
     <!-- Main Content Area -->
     <main class="main-content">
@@ -123,9 +123,11 @@
 
         <!-- Play View (shown when logged in) -->
         <div class="view hidden" id="play-section">
-          <div class="play-header">
-            <div class="welcome-text">
-              <h2>Bonjour, <span class="gradient-text" id="player-name">Joueur</span> 👋</h2>
+          <div class="play-hero">
+            <div class="play-hero-bg"></div>
+            <div class="play-hero-content">
+              <span class="play-hero-badge">MINECRAFT 1.21.1 • NEOFORGE</span>
+              <h2 class="play-hero-title">Bonjour, <span class="gradient-text" id="player-name">Joueur</span> <span class="wave">👋</span></h2>
               <p class="server-info">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
@@ -408,6 +410,7 @@
               </div>
               <div class="about-info">
                 <h4 class="about-name">Yapapouaiye Launcher</h4>
+                <span class="about-version" id="app-version">v1.5.3</span>
                 <span class="about-mc">Minecraft 1.21.1 • NeoForge</span>
               </div>
             </div>

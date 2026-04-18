@@ -259,42 +259,54 @@ body::after {
 /* ===== APP CONTAINER ===== */
 .app-container {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   position: relative;
   z-index: 1;
 }
 
-/* ===== SIDEBAR ===== */
-.sidebar {
-  width: 260px;
+/* ===== TOPBAR ===== */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 72px;
+  padding: 0 140px 0 28px; /* right padding keeps distance from window controls */
   background: rgba(10, 14, 26, 0.85);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  padding: 24px 0 0 0;
+  border-bottom: 1px solid var(--border);
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  -webkit-app-region: drag;
+}
+
+.topbar .brand,
+.topbar .nav-menu,
+.topbar .topbar-right,
+.topbar .nav-item,
+.topbar .user-profile {
+  -webkit-app-region: no-drag;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 20px;
-  margin-bottom: 32px;
+  flex-shrink: 0;
+  margin-right: 8px;
 }
 
 .brand-logo {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--bg-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 0 1px var(--glass-border), 0 4px 16px var(--accent-glow);
 }
 
 .brand-logo img {
@@ -304,49 +316,51 @@ body::after {
 }
 
 .brand-name {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   background: var(--accent-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Navigation */
+/* Horizontal Navigation */
 .nav-menu {
-  flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 4px;
-  padding: 0 12px;
+  flex: 1;
+  justify-content: center;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   color: var(--text-secondary);
   font-weight: 500;
+  font-size: 14px;
   position: relative;
-  overflow: hidden;
 }
 
-.nav-item::before {
+.nav-item::after {
   content: '';
   position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%) scaleY(0);
-  width: 3px;
-  height: 60%;
-  background: var(--accent);
-  border-radius: 0 2px 2px 0;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 70%;
+  height: 3px;
+  background: var(--accent-gradient);
+  border-radius: 3px 3px 0 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px var(--accent-glow-strong);
 }
 
 .nav-item:hover {
@@ -354,46 +368,48 @@ body::after {
   color: var(--text-primary);
 }
 
-.nav-item:hover::before {
-  transform: translateY(-50%) scaleY(0.5);
-}
-
 .nav-item.active {
   background: var(--accent-glow);
   color: var(--accent-light);
 }
 
-.nav-item.active::before {
-  transform: translateY(-50%) scaleY(1);
+.nav-item.active::after {
+  transform: translateX(-50%) scaleX(1);
 }
 
 .nav-item:active {
-  transform: scale(0.98);
+  transform: scale(0.96);
 }
 
 .nav-icon {
   flex-shrink: 0;
 }
 
-/* Sidebar Footer */
-.sidebar-footer {
-  padding: 16px 12px;
-  border-top: 1px solid var(--border);
-  margin-top: auto;
+/* Topbar Right */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: var(--radius-sm);
+  gap: 10px;
+  padding: 6px 14px 6px 6px;
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: all 0.25s ease;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
 }
 
 .user-profile:hover {
   background: var(--bg-hover);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px var(--accent-glow);
 }
 
 .user-profile:hover .user-avatar {
@@ -401,43 +417,47 @@ body::after {
 }
 
 .user-profile:active {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-xs);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   object-fit: cover;
   transition: transform 0.25s ease;
+  border: 2px solid var(--accent-glow-strong);
 }
 
 .user-details {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   min-width: 0;
+  max-width: 160px;
 }
 
 .user-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 .user-status {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
+  line-height: 1.2;
 }
 
 /* ===== MAIN CONTENT ===== */
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 56px 40px 20px;
+  padding: 32px 48px 24px;
   position: relative;
 }
 
@@ -1436,6 +1456,18 @@ body::after {
   color: var(--text-secondary);
 }
 
+.about-version {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-light);
+  background: var(--accent-glow);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+  letter-spacing: 0.5px;
+}
+
 /* Update Content */
 .update-content {
   display: flex;
@@ -2135,4 +2167,233 @@ body::after {
 .toggle-desc {
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+/* =============================================================
+   MODERN REDESIGN — Topbar layout, bigger cards, visual hero
+   ============================================================= */
+
+/* --- Play Hero (logged-in home) --- */
+.play-hero {
+  position: relative;
+  padding: 48px 40px;
+  margin-bottom: 32px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.05));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.play-hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(129, 140, 248, 0.35), transparent 50%),
+    radial-gradient(circle at 15% 80%, rgba(79, 70, 229, 0.25), transparent 50%);
+  pointer-events: none;
+  animation: ambientFloat 20s ease-in-out infinite;
+}
+
+.play-hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('../assets/background.png') center/cover no-repeat;
+  opacity: 0.08;
+  mix-blend-mode: luminosity;
+}
+
+.play-hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.play-hero-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent-light);
+  background: var(--accent-glow);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  margin-bottom: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.play-hero-title {
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.play-hero-title .wave {
+  display: inline-block;
+  animation: wave 2.5s ease-in-out infinite;
+  transform-origin: 70% 70%;
+}
+
+@keyframes wave {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10%, 30% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(14deg); }
+  50% { transform: rotate(-4deg); }
+}
+
+/* --- Enlarged config card --- */
+.play-config-card {
+  padding: 32px;
+  border-radius: 20px;
+}
+
+.config-grid {
+  gap: 32px;
+}
+
+.config-label {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+}
+
+.config-value {
+  font-size: 18px;
+}
+
+/* --- Enlarged auth card --- */
+.auth-container {
+  max-width: 520px;
+  margin-top: 16px;
+}
+
+.auth-card {
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-title {
+  font-size: 28px;
+}
+
+.auth-description {
+  font-size: 15px;
+  margin-bottom: 28px;
+}
+
+/* --- Hero banner (not logged in) — more dramatic --- */
+.hero-banner {
+  padding: 40px 40px 48px;
+  margin-bottom: 24px;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(79, 70, 229, 0.04));
+}
+
+.hero-bg {
+  background:
+    radial-gradient(circle at 80% 30%, rgba(129, 140, 248, 0.4), transparent 50%),
+    radial-gradient(circle at 20% 70%, rgba(79, 70, 229, 0.3), transparent 50%);
+  opacity: 0.6;
+  filter: none;
+  border-radius: 0;
+}
+
+.hero-title {
+  font-size: 56px;
+}
+
+.hero-subtitle {
+  font-size: 18px;
+}
+
+/* --- Bigger stat / settings cards --- */
+.stat-card {
+  padding: 28px;
+  border-radius: 20px;
+  gap: 20px;
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+}
+
+.stat-value {
+  font-size: 32px;
+}
+
+.settings-card {
+  padding: 32px;
+  border-radius: 20px;
+}
+
+.mods-list-container {
+  padding: 32px;
+  border-radius: 20px;
+}
+
+/* --- Bigger play button --- */
+.btn-play {
+  padding: 22px 36px;
+  font-size: 20px;
+  border-radius: 18px;
+  letter-spacing: 1px;
+}
+
+.btn-logout {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+}
+
+/* --- Page headers refinements --- */
+.page-title {
+  font-size: 36px;
+  letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+  font-size: 16px;
+}
+
+/* --- Window controls adjust: sit inside topbar area --- */
+.window-controls {
+  top: 20px;
+  right: 20px;
+  padding: 0;
+  z-index: 1000;
+  -webkit-app-region: no-drag;
+}
+
+.win-btn {
+  width: 28px;
+  height: 28px;
+}
+
+/* --- Responsive: collapse nav labels on smaller widths --- */
+@media (max-width: 1100px) {
+  .topbar {
+    padding: 0 120px 0 20px;
+    gap: 16px;
+  }
+  .nav-item span {
+    display: none;
+  }
+  .nav-item {
+    padding: 10px 12px;
+  }
+  .user-details {
+    display: none;
+  }
+  .user-profile {
+    padding: 4px;
+  }
 }
