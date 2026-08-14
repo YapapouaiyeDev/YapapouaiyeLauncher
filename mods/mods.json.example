@@ -1,9 +1,0 @@
-{
-  "version": "1.0",
-  "mods": [
-    {
-      "name": "example-mod-1.0.jar",
-      "hash": "abc123"
-    }
-  ]
-}
