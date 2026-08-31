@@ -1,0 +1,16 @@
+{
+  "entries": [
+    {
+      "date": "12/08/2026",
+      "badge": "NOUVEAUTÉ",
+      "title": "Nouveau mod ajouté",
+      "content": "Description de l'annonce : nouveau mod, maintenance du serveur, événement... Publiez ici librement, sans changer la version du launcher ni les patch notes."
+    },
+    {
+      "date": "05/08/2026",
+      "badge": "MAINTENANCE",
+      "title": "Maintenance prévue",
+      "content": "Le serveur sera indisponible de 20h à 21h pour une mise à jour."
+    }
+  ]
+}

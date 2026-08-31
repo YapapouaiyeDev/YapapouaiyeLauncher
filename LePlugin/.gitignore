@@ -1,0 +1,22 @@
+# Build output
+build/
+out/
+
+# Gradle
+.gradle/
+
+# Run directories
+run/
+runs/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

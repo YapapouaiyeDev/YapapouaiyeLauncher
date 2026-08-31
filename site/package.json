@@ -1,0 +1,15 @@
+{
+  "name": "yapapouaiye-launcher-site",
+  "version": "1.0.0",
+  "description": "Site vitrine et système de gestion de nouveautés par base de données pour Yapapouaiye Launcher",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev . --binding ADMIN_USERNAME=admin --binding ADMIN_PASSWORD=admin --binding ADMIN_TOKEN_SECRET=yapapouaiye-launcher-secret-key-2026 --d1 DB=yapapouaiye-launcher-db --r2 LAUNCHER_BUCKET=yapapouaiye-launcher-dev --port 8789 --ip 127.0.0.1",
+    "deploy": "wrangler pages deploy . --project-name yapapouaiye-launcher",
+    "test": "node test-db.js && node test-functions.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4.123.0"
+  }
+}

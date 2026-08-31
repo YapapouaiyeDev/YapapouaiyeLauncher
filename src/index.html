@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; frame-src 'self' https: http:; child-src 'self' https: http:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: http:;">
+  <title>Yapapouaiye Launcher</title>
+  <link rel="icon" type="image/png" href="../assets/logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Background Image with Ambient Overlay -->
+  <div class="background-image"></div>
+  <div class="background-overlay"></div>
+
+  <div class="app-container">
+    <!-- Top Navigation Bar / Frameless Window Header -->
+    <header class="topbar">
+      <div class="brand">
+        <img class="logo-circle" src="../assets/logo.png" alt="Yapapouaiye Logo" />
+        <div class="brand-text">
+          <span class="brand-name">YAPAPOUAIYE</span>
+          <span class="brand-sub">MINECRAFT LAUNCHER</span>
+        </div>
+      </div>
+
+      <!-- Main Minecraft Launcher Tabs -->
+      <nav class="nav-menu">
+        <button class="nav-item active" data-page="home" title="Accueil & Lancement">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          <span>Jouer</span>
+        </button>
+
+        <button class="nav-item" data-page="mods" title="Mods du serveur">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+          <span>Mods</span>
+        </button>
+
+        <button class="nav-item" data-page="news" title="Actualités publiées par l'administration">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="14 4 14 9 19 9"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <span>Actualités</span>
+        </button>
+
+        <button class="nav-item" data-page="accounts" title="Gestion des comptes">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span>Comptes</span>
+        </button>
+
+        <button class="nav-item" data-page="settings" title="Paramètres du jeu">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 0 2 2 0 0 1-1-1.51v-.09a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2 0 2 2 0 0 0 1.51 1 1.65 1.65 0 0 0 1 1.51v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Paramètres</span>
+        </button>
+      </nav>
+
+      <!-- Topbar Right: Server Quick Indicator, Quick Theme & Window Controls -->
+      <div class="topbar-right">
+        <button class="topbar-theme-btn" id="btn-quick-theme" title="Changer de thème rapidement">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+          </svg>
+        </button>
+
+        <div class="server-badge" id="topbar-server-badge" title="Cliquer pour copier l'IP">
+          <span class="status-dot online"></span>
+          <span class="server-text">SERVEUR EN LIGNE</span>
+        </div>
+
+        <div class="window-controls">
+          <button class="win-btn minimize" id="btn-minimize" aria-label="Minimize">
+            <svg width="12" height="12" viewBox="0 0 12 12"><line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <button class="win-btn maximize" id="btn-maximize" aria-label="Maximize">
+            <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.5" rx="1"/></svg>
+          </button>
+          <button class="win-btn close" id="btn-close" aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 12 12"><line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Views Area -->
+    <main class="main-content">
+      <!-- HOME PAGE -->
+      <section class="page active" id="page-home">
+        <!-- Auth View (Shown when logged out) -->
+        <div class="view" id="auth-section">
+          <div class="mc-hero-banner">
+            <div class="mc-hero-badge"><span class="emerald-sparkle">✦</span> SERVEUR YAPAPOUAIYE • 1.21.1 NEOFORGE</div>
+            <h1 class="mc-hero-title">ENTREZ DANS L'AVENTURE</h1>
+            <p class="mc-hero-subtitle">Connectez-vous avec votre compte Microsoft ou choisissez un pseudo hors ligne pour démarrer le launcher.</p>
+          </div>
+
+          <div class="auth-container">
+            <div class="auth-card mc-box">
+              <div class="mc-card-header">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="stroke: var(--mc-green-primary)" stroke-width="2">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                  <polyline points="10 17 15 12 10 7"></polyline>
+                  <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                <h2>Connexion Minecraft</h2>
+              </div>
+              <p class="auth-description">Authentification requise pour charger vos mods et rejoindre le serveur</p>
+              
+              <button class="btn-primary btn-microsoft" id="btn-auth-microsoft">
+                <svg class="btn-icon" width="20" height="20" viewBox="0 0 16 16">
+                  <rect x="0" y="0" width="7.5" height="7.5" fill="#f25022"/>
+                  <rect x="8.5" y="0" width="7.5" height="7.5" fill="#7fba00"/>
+                  <rect x="0" y="8.5" width="7.5" height="7.5" fill="#00a4ef"/>
+                  <rect x="8.5" y="8.5" width="7.5" height="7.5" fill="#ffb900"/>
+                </svg>
+                <span>Se connecter avec Microsoft</span>
+              </button>
+
+              <div class="divider">
+                <span>OU ENCORE</span>
+              </div>
+
+              <form class="offline-form" id="offline-form">
+                <div class="input-wrapper">
+                  <span class="input-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  </span>
+                  <input type="text" class="input-field" id="input-username" placeholder="Pseudo Minecraft (ex: Steve)" maxlength="16" autocomplete="off" />
+                </div>
+                <button type="button" class="btn-secondary" id="btn-auth-offline">
+                  Jouer en mode Hors Ligne
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Play View (Shown when logged in) -->
+        <div class="view hidden" id="play-section">
+          <div class="play-hero-container">
+            <div class="play-hero-card mc-box">
+              <div class="play-hero-content">
+                <!-- Server Switcher Row -->
+                <div class="server-selector-card">
+                  <div class="server-selector-header">
+                    <span class="server-select-title">CHOIX DU SERVEUR</span>
+                    <div class="server-tabs" id="server-tabs-group">
+                      <button class="server-tab active" data-server-id="adoserv2" title="Nouveau serveur AdoServ II (Gizmo API)">
+                        <span class="server-tab-icon">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        </span>
+                        <span class="server-tab-name">AdoServ II</span>
+                        <span class="server-tab-badge">GIZMO</span>
+                      </button>
+                      <button class="server-tab" data-server-id="adoserv1" title="Serveur original YapapouaiyeSMP (FalixNodes)">
+                        <span class="server-tab-icon">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        </span>
+                        <span class="server-tab-name">YapapouaiyeSMP</span>
+                        <span class="server-tab-badge">FALIX</span>
+                      </button>
+                      <button class="server-tab" data-server-id="adoserv67" title="Nouveau serveur AdoServ67 (FalixNodes)">
+                        <span class="server-tab-icon">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        </span>
+                        <span class="server-tab-name">AdoServ67</span>
+                        <span class="server-tab-badge">FALIX</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mc-tag-row">
+                  <span class="mc-tag tag-neoforge" id="server-badge-tag">GIZMONODES • 1.21.1</span>
+                  <span class="mc-tag tag-status" id="home-server-badge"><span class="status-dot online"></span> EN LIGNE</span>
+                </div>
+                <h2 class="play-welcome-title">Bienvenue sur <span id="current-server-title">AdoServ II</span>, <span class="mc-player-name" id="player-name">Joueur</span> !</h2>
+                <p class="server-ip-banner" id="btn-copy-ip" title="Cliquer pour copier l'IP">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="stroke: var(--mc-green-primary)" stroke-width="2">
+                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                    <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                    <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                  </svg>
+                  <span>IP: <strong id="server-ip-text">158.178.200.70:25565</strong></span>
+                  <span class="copy-badge">Copier</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- News & Highlights Cards (Dynamically populated from Database) -->
+            <div class="news-cards-grid" id="home-news-cards" style="display:none;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MODS PAGE -->
+      <section class="page" id="page-mods">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1 class="page-title">Mods du Serveur</h1>
+            <p class="page-subtitle">Gestionnaire et synchronisation automatique du modpack</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-mc-action" id="btn-open-custom-mods" title="Ouvrir le dossier des mods personnalisés">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Dossier Mods</span>
+            </button>
+            <button class="btn-mc-action" id="btn-sync-mods" title="Synchroniser le modpack depuis le serveur">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              <span>Synchroniser</span>
+            </button>
+            <button class="btn-mc-action" id="btn-refresh-mods" title="Actualiser la liste">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6"></path>
+                <path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>Actualiser</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mods-container mc-box">
+          <div class="mods-toolbar">
+            <div class="search-box">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="mods-search" placeholder="Rechercher un mod..." autocomplete="off" />
+            </div>
+            <div class="mods-stats">
+              <span class="mods-stats-pill" id="mods-count">0 mod</span>
+            </div>
+          </div>
+          <div class="mods-scroll-panel">
+            <div class="mods-grid" id="mods-list">
+              <div class="empty-state">
+                <p>Chargement des mods...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NEWS PAGE: POSTS AND PATCH NOTES ARE SEPARATE SOURCES -->
+      <section class="page" id="page-news">
+        <div class="page-header" id="launcher-news-page-header">
+          <div class="page-title-group">
+            <h1 class="page-title">📜 Actualités & Patch Notes</h1>
+            <p class="page-subtitle">Dernières mises à jour du launcher et du serveur Minecraft</p>
+          </div>
+        </div>
+
+        <div class="news-page-container mc-box news-posts-container" id="launcher-news-section" style="display:none;">
+          <div class="news-page-section-header">
+            <div>
+              <span class="news-section-label">PUBLICATIONS</span>
+              <h2 class="news-section-title">Les dernières actualités</h2>
+            </div>
+            <span class="news-posts-count" id="launcher-news-count">0 post</span>
+          </div>
+          <div class="news-cards-grid launcher-news-list" id="launcher-news-list">
+            <div class="empty-state">
+              <p>Chargement des actualités...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="news-page-container mc-box patch-notes-container">
+          <div class="patch-notes-header">
+            <div class="patch-version-tag">
+              <span class="version-label">Mise à jour</span>
+              <span class="version-number" id="latest-release-version">v...</span>
+            </div>
+            <button class="btn-mc-action" id="btn-check-update">Vérifier les MAJ</button>
+          </div>
+
+          <div class="update-status-banner" id="update-status">
+            <span class="status-icon" id="update-status-icon">✓</span>
+            <span id="update-status-text">Vérifiez les mises à jour pour comparer votre version.</span>
+          </div>
+
+          <div class="progress-container hidden" id="update-progress-section">
+            <div class="progress-bar">
+              <div class="progress-fill" id="update-progress-fill"></div>
+            </div>
+            <p class="progress-text" id="update-progress-text">Vérification...</p>
+          </div>
+
+          <div class="patch-notes-content" id="patch-notes-content">Chargement des patch notes...</div>
+        </div>
+      </section>
+
+      <!-- ACCOUNTS PAGE -->
+      <section class="page" id="page-accounts">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1 class="page-title">Gestion des Comptes</h1>
+            <p class="page-subtitle">Ajoutez ou basculez entre vos différents profils Minecraft</p>
+          </div>
+        </div>
+
+        <div class="add-accounts-grid">
+          <div class="add-account-card mc-box" id="card-add-microsoft">
+            <div class="add-account-icon microsoft">
+              <svg width="28" height="28" viewBox="0 0 16 16">
+                <rect x="0" y="0" width="7.5" height="7.5" fill="#f25022"/>
+                <rect x="8.5" y="0" width="7.5" height="7.5" fill="#7fba00"/>
+                <rect x="0" y="8.5" width="7.5" height="7.5" fill="#00a4ef"/>
+                <rect x="8.5" y="8.5" width="7.5" height="7.5" fill="#ffb900"/>
+              </svg>
+            </div>
+            <div class="add-account-info">
+              <h3>Compte Microsoft</h3>
+              <p>Authentification officielle Mojang / Microsoft avec skin personnalisé</p>
+            </div>
+            <button class="btn-mc-primary" id="btn-add-microsoft">Connecter</button>
+          </div>
+
+          <div class="add-account-card mc-box" id="card-add-offline">
+            <div class="add-account-icon offline">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v6l4 2"></path>
+              </svg>
+            </div>
+            <div class="add-account-info">
+              <h3>Compte Hors Ligne</h3>
+              <p>Pseudo local sans connexion aux serveurs Microsoft</p>
+            </div>
+            <button class="btn-mc-action" id="btn-add-offline">Ajouter</button>
+          </div>
+        </div>
+
+        <!-- Offline Add Form -->
+        <div class="offline-form-container mc-box hidden" id="offline-input-section">
+          <div class="offline-form-header">
+            <h3>Ajouter un compte Hors Ligne</h3>
+            <button class="btn-close-sm" id="btn-close-offline-input">✕</button>
+          </div>
+          <form class="offline-form" id="offline-account-form">
+            <input type="text" class="input-field" id="input-new-offline" placeholder="Entrez un pseudo..." maxlength="16" autocomplete="off" />
+            <button type="button" class="btn-mc-primary" id="btn-confirm-offline">Créer le Profil</button>
+          </form>
+        </div>
+
+        <!-- Saved Accounts List -->
+        <div class="saved-accounts-container mc-box">
+          <div class="accounts-header">
+            <h3>Comptes Enregistrés</h3>
+            <span class="accounts-count" id="accounts-count">0 compte</span>
+          </div>
+          <div class="accounts-list" id="accounts-list">
+            <div class="empty-state">
+              <p>Aucun compte enregistré pour le moment.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS PAGE -->
+      <section class="page" id="page-settings">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1 class="page-title">Paramètres du Jeu</h1>
+            <p class="page-subtitle">Ajustez les performances, la RAM et les paramètres Java</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <!-- Performance Card -->
+          <div class="settings-card mc-box">
+            <div class="card-header">
+              <svg class="card-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" style="stroke: var(--mc-green-primary)" stroke-width="2">
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                <rect x="9" y="9" width="6" height="6"></rect>
+                <line x1="9" y1="1" x2="9" y2="4"></line>
+                <line x1="15" y1="1" x2="15" y2="4"></line>
+                <line x1="9" y1="20" x2="9" y2="23"></line>
+                <line x1="15" y1="20" x2="15" y2="23"></line>
+                <line x1="20" y1="9" x2="23" y2="9"></line>
+                <line x1="20" y1="14" x2="23" y2="14"></line>
+                <line x1="1" y1="9" x2="4" y2="9"></line>
+                <line x1="1" y1="14" x2="4" y2="14"></line>
+              </svg>
+              <h3>Mémoire & Performance</h3>
+            </div>
+            
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Mémoire RAM Allouée</label>
+                <span class="setting-desc">Quantité de RAM dédiée au jeu Minecraft</span>
+              </div>
+              <div class="setting-control">
+                <div class="slider-group">
+                  <input type="range" class="mc-slider" id="settings-ram" min="2" max="16" value="4" />
+                  <span class="slider-value-badge" id="settings-ram-value">4 Go</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Résolution d'Affichage</label>
+                <span class="setting-desc">Taille de la fenêtre du jeu Minecraft</span>
+              </div>
+              <div class="setting-control">
+                <select class="mc-select" id="settings-resolution">
+                  <option value="854x480">854 × 480 (480p)</option>
+                  <option value="1280x720" selected>1280 × 720 (HD)</option>
+                  <option value="1600x900">1600 × 900</option>
+                  <option value="1920x1080">1920 × 1080 (Full HD)</option>
+                  <option value="custom">Personnalisée</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setting-row hidden" id="custom-resolution-row">
+              <label class="setting-label">Dimensions Personnalisées</label>
+              <div class="setting-control">
+                <div class="custom-res-group">
+                  <input type="number" class="res-input" id="custom-width" placeholder="Largeur" min="640" max="3840" />
+                  <span class="res-separator">×</span>
+                  <input type="number" class="res-input" id="custom-height" placeholder="Hauteur" min="480" max="2160" />
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Démarrer en Plein Écran</label>
+                <span class="setting-desc">Lance directement le jeu en mode plein écran</span>
+              </div>
+              <div class="setting-control">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settings-fullscreen" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Java Card -->
+          <div class="settings-card mc-box">
+            <div class="card-header">
+              <svg class="card-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+              </svg>
+              <h3>Environnement Java</h3>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Exécutable Java Custom</label>
+                <span class="setting-desc">Laissez vide pour utiliser Java 21 intégré</span>
+              </div>
+              <div class="setting-control">
+                <div class="path-group">
+                  <input type="text" class="mc-input-text" id="settings-java-path" placeholder="Automatique (Recommandé)" />
+                  <button class="btn-mc-action" id="btn-browse-java">Parcourir</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Arguments JVM</label>
+                <span class="setting-desc">Options de démarrage avancées de la machine virtuelle</span>
+              </div>
+              <div class="setting-control">
+                <input type="text" class="mc-input-text" id="settings-jvm-args" placeholder="-XX:+UseG1GC -XX:+UnlockExperimentalVMOptions" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Theme & Customization Card -->
+          <div class="settings-card mc-box">
+            <div class="card-header">
+              <svg class="card-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--mc-green-primary)" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path>
+                <line x1="9" y1="21" x2="15" y2="21"></line>
+              </svg>
+              <div class="card-header-title-group">
+                <h3>Thème & Personnalisation</h3>
+                <span class="card-header-sub">Sélectionnez un style visuel ou créez des thèmes personnalisés générés par IA</span>
+              </div>
+              <div class="theme-active-pill" id="current-theme-pill">Émeraude</div>
+            </div>
+
+            <!-- Custom Theme Quick Actions Bar -->
+            <div class="theme-actions-bar">
+              <button class="btn-theme-action primary" id="btn-open-custom-theme-modal">
+                <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14"/></svg>
+                <span>Créer / Importer un Thème (IA)</span>
+              </button>
+              <button class="btn-theme-action" id="btn-copy-ai-prompt-direct" title="Copier les instructions pour demander à une IA de créer un thème">
+                <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copier le Prompt IA</span>
+              </button>
+              <button class="btn-theme-action" id="btn-import-theme-file-direct" title="Importer un fichier .json de thème">
+                <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                <span>Importer .json</span>
+              </button>
+            </div>
+
+            <div class="theme-selection-container">
+              <!-- Visual Theme Cards Gallery Grid -->
+              <div class="theme-cards-grid" id="theme-cards-grid">
+                <!-- Dynamically generated from THEME_REGISTRY in renderer.js -->
+              </div>
+
+              <div class="setting-row theme-quick-dropdown-row">
+                <div class="setting-info">
+                  <label class="setting-label">Sélection rapide par liste</label>
+                  <span class="setting-desc">Pour un choix direct sans passer par la galerie</span>
+                </div>
+                <div class="setting-control">
+                  <select class="mc-select" id="settings-theme">
+                    <option value="emerald" selected>Émeraude (Défaut)</option>
+                    <option value="diamond">Diamant</option>
+                    <option value="nether">Nether</option>
+                    <option value="ender">Ender</option>
+                    <option value="obsidian">Obsidienne</option>
+                    <option value="copper">Cuivre (1.21)</option>
+                    <option value="sculk">Sculk (Deep Dark)</option>
+                    <option value="amethyst">Améthyste</option>
+                    <option value="cyber">Néo-Redstone (Cyber Tech)</option>
+                    <option value="netherite">Netherite Royale (Forgée)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- General Card -->
+          <div class="settings-card mc-box">
+            <div class="card-header">
+              <svg class="card-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffb000" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              <h3>Options Générales</h3>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Langue de l'interface</label>
+              </div>
+              <div class="setting-control">
+                <select class="mc-select" id="settings-language">
+                  <option value="fr" selected>Français</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Minimiser au lancement du jeu</label>
+                <span class="setting-desc">Réduit le launcher dans la barre des tâches quand Minecraft démarre</span>
+              </div>
+              <div class="setting-control">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settings-minimize-on-launch" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Fermer le launcher après le lancement</label>
+                <span class="setting-desc">Ferme automatiquement cette fenêtre une fois le jeu lancé</span>
+              </div>
+              <div class="setting-control">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settings-close-on-launch" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Folders Card -->
+          <div class="settings-card mc-box">
+            <div class="card-header">
+              <svg class="card-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <h3>Emplacements des Fichiers</h3>
+            </div>
+            <div class="setting-row">
+              <label class="setting-label">Dossier Launcher</label>
+              <span class="path-badge" id="launcher-dir-path">...</span>
+            </div>
+            <div class="setting-row">
+              <label class="setting-label">Dossier Mods</label>
+              <span class="path-badge" id="mods-dir-path">...</span>
+            </div>
+          </div>
+
+          <!-- About Card -->
+          <div class="settings-card mc-box">
+            <div class="card-header">
+              <svg class="card-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <h3>À propos</h3>
+            </div>
+            <div class="about-content">
+              <img class="about-logo" src="../assets/logo.png" alt="Yapapouaiye Logo" />
+              <div class="about-info">
+                <h4 class="about-name">Yapapouaiye Launcher</h4>
+                <span class="about-version" id="app-version">v1.5.8-3</span>
+                <span class="about-mc">Minecraft 1.21.1 • NeoForge</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Sticky Bottom Control Bar (THE ICONIC MINECRAFT LAUNCHER "PLAY BAR") -->
+    <footer class="launcher-footer">
+      <div class="footer-profile-widget" id="user-info" title="Changer de compte">
+        <div class="avatar-wrapper">
+          <img class="user-avatar" id="user-skin-head" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Crect fill='%231e293b' width='36' height='36' rx='8'/%3E%3Cpath fill='%2364748b' d='M18 8a6 6 0 1 0 0 12 6 6 0 0 0 0-12zm-8 18c0-3.3 3.6-6 8-6s8 2.7 8 6v2H10v-2z'/%3E%3C/svg%3E" alt="Joueur" />
+          <span class="online-indicator"></span>
+        </div>
+        <div class="user-details">
+          <span class="user-name" id="user-name">Non connecté</span>
+          <span class="user-status" id="user-status">Hors ligne</span>
+        </div>
+        <button class="btn-logout-mini" id="btn-logout" title="Déconnexion">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Center: ICONIC BIG GREEN EMERALD MINECRAFT PLAY BUTTON -->
+      <div class="footer-center-action">
+        <div class="version-selector-chip">
+          <span class="chip-dot"></span>
+          <span class="version-title">NeoForge 1.21.1</span>
+        </div>
+
+        <div class="play-button-box">
+          <button class="btn-mc-play-huge" id="btn-play">
+            <span class="play-icon-mc">▶</span>
+            <span class="play-text">JOUER</span>
+          </button>
+
+          <!-- Dynamic Launch / Download Progress Overlay -->
+          <div class="footer-progress-bar hidden" id="progress-section">
+            <div class="footer-progress-fill" id="progress-fill"></div>
+            <span class="footer-progress-text" id="progress-text">Préparation...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: RAM Quick Widget & Info -->
+      <div class="footer-right-widget">
+        <div class="quick-ram-widget" title="Allocation Mémoire RAM">
+          <svg class="ram-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"></rect><line x1="6" y1="2" x2="6" y2="6"></line><line x1="10" y1="2" x2="10" y2="6"></line><line x1="14" y1="2" x2="14" y2="6"></line><line x1="18" y1="2" x2="18" y2="6"></line><line x1="6" y1="18" x2="6" y2="22"></line><line x1="10" y1="18" x2="10" y2="22"></line><line x1="14" y1="18" x2="14" y2="22"></line><line x1="18" y1="18" x2="18" y2="22"></line></svg>
+          <div class="ram-quick-control">
+            <input type="range" class="ram-slider-mini" id="input-ram" min="2" max="16" value="4" />
+            <span class="ram-value-tag" id="ram-value">4 Go</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal: News Article Reader (Lecteur d'actualité) -->
+  <div class="custom-modal-overlay hidden" id="modal-news-detail" style="z-index: 1800;">
+    <div class="custom-modal-dialog mc-box" style="max-width: 680px; width: 92%; height: auto; max-height: 82vh; display: flex; flex-direction: column; overflow: hidden; animation: modalPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);">
+      <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--panel-border); display: flex; align-items: center; justify-content: space-between;">
+        <div class="modal-title-group" style="display: flex; gap: 8px; align-items: center;">
+          <div class="news-badge" id="modal-news-badge">MISE À JOUR</div>
+          <span class="news-version-pill" id="modal-news-version" style="display:none;"></span>
+        </div>
+        <button class="btn-close-sm" id="btn-close-news-modal" title="Fermer">✕</button>
+      </div>
+      <div class="news-modal-body" style="padding: 22px 24px; overflow-y: auto; flex: 1;">
+        <h2 id="modal-news-title" style="font-size: 19px; font-weight: 800; color: #ffffff; margin: 0 0 8px 0; line-height: 1.35;"></h2>
+        <div class="news-modal-meta" id="modal-news-meta" style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; display: flex; gap: 14px; flex-wrap: wrap;"></div>
+        <div id="modal-news-image-container" style="display:none; margin-bottom: 16px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--panel-border);">
+          <img id="modal-news-image" src="" alt="Illustration" style="width: 100%; max-height: 260px; object-fit: cover; display: block;" />
+        </div>
+        <div class="news-modal-content news-card-desc" id="modal-news-content" style="font-size: 13.5px; line-height: 1.65; color: var(--text-main);"></div>
+      </div>
+      <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25);">
+        <div id="modal-news-link-container" style="display:none;">
+          <a href="#" class="news-github-link" id="modal-news-link" style="display: inline-flex; align-items: center; gap: 6px; color: var(--mc-green-primary); font-size: 13px; font-weight: 600; text-decoration: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            <span id="modal-news-link-text">Voir la release GitHub</span>
+          </a>
+        </div>
+        <button class="btn-secondary" id="btn-news-modal-dismiss" style="margin-left: auto; height: 34px; padding: 0 16px; font-weight: 700;">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-App Confirmation Modal (Instant 0ms, Non-blocking) -->
+  <div class="custom-modal-overlay hidden" id="modal-confirm-dialog" style="z-index: 2000;">
+    <div class="confirm-modal-box mc-box" style="max-width: 420px; width: 90%; padding: 22px; text-align: center; display: flex; flex-direction: column; gap: 14px; animation: modalPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);">
+      <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: 0 auto; border-radius: 50%; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #ef4444;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+      </div>
+      <h3 id="confirm-dialog-title" style="font-size: 16px; font-weight: 800; color: #ffffff; margin: 0;">Supprimer ce thème ?</h3>
+      <p id="confirm-dialog-message" style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.4;">Cette action est irréversible.</p>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 6px;">
+        <button type="button" class="btn-secondary" id="btn-confirm-cancel" style="flex: 1; height: 36px; font-weight: 700;">Annuler</button>
+        <button type="button" class="custom-manage-btn delete" id="btn-confirm-proceed" style="flex: 1; height: 36px; font-weight: 800; background: #dc2626; color: #ffffff; border-color: #ef4444; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.45);">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Custom Theme Creator & AI Importer -->
+  <div class="custom-modal-overlay hidden" id="modal-custom-theme">
+    <div class="custom-modal-dialog mc-box">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg class="modal-icon-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--mc-green-primary)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          <div>
+            <h3>Créateur de Thème Personnalisé (IA)</h3>
+            <span class="modal-subtitle">Générez un thème avec n'importe quelle IA et importez-le en 1 clic</span>
+          </div>
+        </div>
+        <button class="btn-close-sm" id="btn-close-custom-theme-modal" title="Fermer">✕</button>
+      </div>
+
+      <!-- Modal Tabs Nav -->
+      <div class="modal-tabs-nav">
+        <button class="modal-tab-btn active" data-tab="tab-ai-import">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
+          <span>Générateur IA</span>
+        </button>
+        <button class="modal-tab-btn" data-tab="tab-visual-editor">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a7 7 0 0 0 7 7c0 2-2 3-2 3"></path></svg>
+          <span>Éditeur Visuel</span>
+        </button>
+        <button class="modal-tab-btn" data-tab="tab-manage-custom">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+          <span>Mes Thèmes (<span id="custom-themes-count">0</span>)</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- TAB 1: AI Prompt & Import -->
+        <div class="modal-tab-pane active" id="tab-ai-import">
+          <div class="ai-guide-box">
+            <div class="ai-guide-step">
+              <span class="step-num">1</span>
+              <div class="step-text">
+                <strong>Copiez le prompt d'instruction IA</strong>
+                <p>Modèle optimisé pour ChatGPT, Claude, Gemini, DeepSeek, etc.</p>
+              </div>
+              <button class="btn-mc-action btn-copy-prompt-highlight" id="btn-modal-copy-ai-prompt">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copier le Prompt IA</span>
+              </button>
+            </div>
+
+            <div class="ai-guide-step">
+              <span class="step-num">2</span>
+              <div class="step-text">
+                <strong>Demandez à l'IA votre thème Minecraft</strong>
+                <p>Exemple : <em>"Crée-moi un thème Minecraft Cyberpunk Glace Fluo avec boutons néon"</em>.</p>
+              </div>
+            </div>
+
+            <div class="ai-guide-step">
+              <span class="step-num">3</span>
+              <div class="step-text">
+                <strong>Collez la réponse JSON de l'IA ci-dessous :</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="theme-input-group">
+            <textarea class="theme-json-textarea" id="custom-theme-json-input" placeholder='Collez ici le code JSON fourni par l&#39;IA (ex: { "name": "Mon Thème", "styleMode": "cyber", ... })'></textarea>
+            <div class="json-validation-status hidden" id="ai-json-validation-status" style="margin-top: 8px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 12px; display: flex; align-items: center; gap: 8px;"></div>
+          </div>
+
+          <div class="modal-actions-bar">
+            <button class="btn-secondary" id="btn-paste-clipboard-json">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1"></rect></svg>
+              <span>Coller depuis le presse-papier</span>
+            </button>
+            <button class="btn-secondary" id="btn-modal-import-file">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              <span>Charger un fichier .json</span>
+            </button>
+            <button class="btn-primary btn-mc-primary" id="btn-apply-custom-json">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Importer & Activer ce Thème</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 2: Visual / Manual Editor -->
+        <div class="modal-tab-pane" id="tab-visual-editor">
+          <!-- Quick Preset Inspirations & Existing Theme Selector Bar -->
+          <div class="editor-preset-bar">
+            <div class="preset-bar-select-group">
+              <label for="editor-select-existing-theme" class="preset-bar-label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                <span>Modifier un thème :</span>
+              </label>
+              <select class="mc-select select-compact-theme" id="editor-select-existing-theme">
+                <option value="">-- Choisir un thème existant à modifier --</option>
+              </select>
+            </div>
+            <div class="preset-bar-chips-group">
+              <span class="preset-bar-label">Inspirations :</span>
+              <div class="preset-chips-container" id="preset-chips-group">
+                <button type="button" class="preset-chip" data-preset-id="dragon">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d946ef" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5" fill="#d946ef"/></svg>
+                  <span>Dragon End</span>
+                </button>
+                <button type="button" class="preset-chip" data-preset-id="glacier">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9" fill="#38bdf8"/></svg>
+                  <span>Glacier Arctique</span>
+                </button>
+                <button type="button" class="preset-chip" data-preset-id="forge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" fill="#f97316"/></svg>
+                  <span>Forge Lave</span>
+                </button>
+                <button type="button" class="preset-chip" data-preset-id="pixel">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#22c55e"/></svg>
+                  <span>8-Bit Arcade</span>
+                </button>
+                <button type="button" class="preset-chip" data-preset-id="amethyst">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#c084fc"/></svg>
+                  <span>Améthyste</span>
+                </button>
+                <button type="button" class="preset-chip" data-preset-id="cyberpunk">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#ff0055"/></svg>
+                  <span>Cyberpunk</span>
+                </button>
+                <button type="button" class="preset-chip" data-preset-id="emerald">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38cc56" stroke-width="2"><path d="M6 3h12l4 7-10 11L2 10l4-7z" fill="#38cc56"/></svg>
+                  <span>Émeraude Pure</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-grid">
+            <!-- Left Column: Modular Setting Cards -->
+            <div class="editor-col">
+              <!-- Card 1: Design & Typography -->
+              <div class="editor-card">
+                <div class="editor-section-title">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a7 7 0 0 0 7 7c0 2-2 3-2 3"></path></svg>
+                  <span>1. Design & Typographie</span>
+                </div>
+                <div class="form-row-group">
+                  <div class="form-row">
+                    <label class="form-label">Nom du Thème</label>
+                    <input type="text" class="mc-input-text" id="editor-theme-name" placeholder="Ex: Souffle Glacial" />
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Tag / Style</label>
+                    <input type="text" class="mc-input-text" id="editor-theme-tag" placeholder="Ex: Glacial" />
+                  </div>
+                </div>
+                <div class="form-row-group">
+                  <div class="form-row">
+                    <label class="form-label">Icône Favicon</label>
+                    <select class="mc-select" id="editor-theme-icon">
+                      <option value="gem" selected>Gemme / Émeraude</option>
+                      <option value="diamond">Diamant</option>
+                      <option value="fire">Flamme / Nether</option>
+                      <option value="eye">Oeil / Ender</option>
+                      <option value="shield">Bouclier / Obsidienne</option>
+                      <option value="brick">Brique / Cuivre</option>
+                      <option value="pulse">Pulse / Sculk</option>
+                      <option value="crystal">Cristal / Améthyste</option>
+                      <option value="zap">Laser / Cyber</option>
+                      <option value="swords">Épées / Netherite</option>
+                      <option value="star">Étoile / Cosmique</option>
+                    </select>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Police de Texte</label>
+                    <select class="mc-select" id="editor-font-family">
+                      <option value="Inter" selected>Inter (Standard)</option>
+                      <option value="Orbitron">Orbitron (Sci-Fi / Néon)</option>
+                      <option value="Rajdhani">Rajdhani (Mecha / Tech)</option>
+                      <option value="Cinzel">Cinzel (Médiéval / Antique)</option>
+                      <option value="Press Start 2P">Press Start 2P (Pixel 8-Bit)</option>
+                      <option value="Montserrat">Montserrat (Épuré Moderne)</option>
+                      <option value="Poppins">Poppins (Arrondi Doux)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Style des Boutons & Biseaux</label>
+                  <select class="mc-select" id="editor-theme-style-mode">
+                    <option value="classic">Classic Minecraft (Carré biseauté)</option>
+                    <option value="cyber" selected>Cyber Tech (Biseauté polygon sci-fi néon)</option>
+                    <option value="forged">Netherite Forgée (Armure 3D lourde & forge)</option>
+                    <option value="rounded">Moderne Arrondi (Doux & fluide)</option>
+                    <option value="glass">Glassmorphism (Translucide givré)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Card 2: Wallpaper & Background -->
+              <div class="editor-card">
+                <div class="editor-section-title">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <span>2. Fond d'Écran & Ambiance</span>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Image de Fond (Wallpaper)</label>
+                  <div class="path-group">
+                    <input type="text" class="mc-input-text" id="editor-bg-image" placeholder="URL web ou fichier local..." />
+                    <button type="button" class="btn-mc-action" id="btn-browse-bg-image" title="Parcourir une image locale">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                      <span>Parcourir</span>
+                    </button>
+                    <button type="button" class="btn-icon-clear hidden" id="btn-clear-bg-image" title="Effacer l'image de fond">✕</button>
+                  </div>
+                </div>
+                <div class="form-row-group">
+                  <div class="form-row">
+                    <label class="form-label">Flou du Fond</label>
+                    <select class="mc-select" id="editor-bg-blur">
+                      <option value="0px">Net (0px)</option>
+                      <option value="4px">Léger (4px)</option>
+                      <option value="8px" selected>Normal (8px)</option>
+                      <option value="16px">Intense (16px)</option>
+                    </select>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Luminosité</label>
+                    <select class="mc-select" id="editor-bg-brightness">
+                      <option value="0.25">Sombre (25%)</option>
+                      <option value="0.45" selected>Normal (45%)</option>
+                      <option value="0.7">Clair (70%)</option>
+                      <option value="1.0">Original (100%)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 3: Sounds & Button Customization -->
+              <div class="editor-card">
+                <div class="editor-section-title">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                  <span>3. Sons & Bouton Jouer</span>
+                </div>
+                <div class="form-row-group">
+                  <div class="form-row">
+                    <label class="form-label">Texte Bouton Jouer</label>
+                    <input type="text" class="mc-input-text" id="editor-play-text" value="JOUER" maxlength="15" />
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Icône du Bouton</label>
+                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                      <select class="mc-select" id="editor-play-icon" style="flex: 1;">
+                        <option value="play" selected>▶ Triangle Play</option>
+                        <option value="rocket">🚀 Fusée Spatiale</option>
+                        <option value="swords">⚔️ Épées Croisées</option>
+                        <option value="pickaxe">⛏️ Pioche de Minage</option>
+                        <option value="shield">🛡️ Bouclier Protecteur</option>
+                        <option value="zap">⚡ Éclair d'Énergie</option>
+                        <option value="fire">🔥 Flamme Ardente</option>
+                        <option value="star">⭐ Étoile Brillante</option>
+                        <option value="eye">👁️ Œil de l'Ender</option>
+                        <option value="diamond">💎 Gemme Précieuse</option>
+                        <option value="cube">🧊 Bloc Voxel</option>
+                        <option value="heart">❤️ Cœur de Vie</option>
+                        <option value="crown">👑 Couronne Royale</option>
+                        <option value="gamepad">🎮 Manette de Jeu</option>
+                        <option value="skull">💀 Crâne Guerrier</option>
+                        <option value="compass">🧭 Boussole d'Aventure</option>
+                        <option value="portal">🌀 Portail Dimensionnel</option>
+                        <option value="axe">🪓 Hache de Guerre</option>
+                        <option value="potion">🧪 Potion Magique</option>
+                        <option value="custom">✨ Émoji / Texte personnalisé...</option>
+                      </select>
+                      <input type="text" class="mc-input-text hidden" id="editor-play-custom-icon" placeholder="Émoji (ex: 🐉, 🏆)" maxlength="10" style="width: 110px;" />
+                    </div>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Son des Clics d'Interface</label>
+                  <div class="audio-control-row">
+                    <select class="mc-select" id="editor-sound-profile">
+                      <option value="minecraft_stone">Minecraft (Clic Pierre classique)</option>
+                      <option value="minecraft_wood">Minecraft (Clic Bois doux)</option>
+                      <option value="cyber_beep">Cyber Beep (Sci-Fi mecha)</option>
+                      <option value="laser_click" selected>Laser Click (Néon futuriste)</option>
+                      <option value="magic_chime">Magic Chime (Améthyste / Cristal)</option>
+                      <option value="anvil_heavy">Enclume Lourde (Forge métallique)</option>
+                      <option value="bubble_pop">Bubble Pop (Sculk / Eau)</option>
+                      <option value="retro_8bit">8-Bit Retro (Arcade blip)</option>
+                      <option value="custom">Son personnalisé (Audio importé)</option>
+                    </select>
+                    <button type="button" class="btn-mc-action btn-audio-test" id="btn-test-click-sound" title="Tester le son de clic">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                      <span>Tester</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Son au Lancement ("JOUER")</label>
+                  <div class="audio-control-row">
+                    <select class="mc-select" id="editor-launch-profile">
+                      <option value="minecraft_levelup">Minecraft (Level Up / Exp)</option>
+                      <option value="portal_warp">Portail Nether / Warp</option>
+                      <option value="cyber_charge" selected>Chargeur Laser Cyber</option>
+                      <option value="forge_impact">Impact de Forge Titane</option>
+                      <option value="dragon_roar">Rugissement du Dragon</option>
+                      <option value="custom">Son personnalisé (Audio importé)</option>
+                    </select>
+                    <button type="button" class="btn-mc-action btn-audio-test" id="btn-test-launch-sound" title="Tester le son de lancement">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                      <span>Tester</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="audio-custom-wrapper">
+                    <button type="button" class="btn-secondary btn-full-w" id="btn-browse-custom-audio">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                      <span id="label-custom-audio">Importer un fichier Audio (.mp3 / .wav / .ogg)</span>
+                    </button>
+                    <button type="button" class="btn-icon-clear hidden" id="btn-clear-custom-audio" title="Supprimer l'audio importé">✕</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Studio Live Preview & Quick Palettes -->
+            <div class="editor-col editor-col-preview">
+              <!-- Interactive Launcher Mockup Stage -->
+              <div class="theme-live-preview-box">
+                <div class="preview-header-bar">
+                  <div class="preview-title-wrap">
+                    <span class="preview-label">Aperçu en Direct du Launcher</span>
+                    <span class="preview-hint">Cliquez pour tester les sons !</span>
+                  </div>
+                  <span class="preview-status-pill" id="preview-font-pill">Font: Inter</span>
+                </div>
+                <div class="launcher-preview-stage" id="editor-preview-stage">
+                  <div class="preview-wallpaper-overlay" id="preview-stage-wallpaper"></div>
+                  <div class="preview-mockup-content">
+                    <div class="preview-mockup-top">
+                      <div class="preview-badge-chip">✦ APERÇU LAUNCHER</div>
+                      <div class="preview-status-indicator">
+                        <span class="preview-dot online"></span>
+                        <span>EN LIGNE</span>
+                      </div>
+                    </div>
+                    <div class="preview-buttons-row">
+                      <button type="button" class="preview-btn-play" id="editor-preview-play" title="Cliquer pour tester l'animation et le son de lancement !">
+                        <span class="preview-play-icon" id="preview-play-icon">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </span>
+                        <span id="preview-play-text">JOUER</span>
+                      </button>
+                      <button type="button" class="preview-btn-action" id="editor-preview-action" title="Cliquer pour tester le clic d'interface !">
+                        Bouton Action
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Colors & Quick Palettes Card -->
+              <div class="editor-card">
+                <div class="editor-section-title">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+                  <span>Harmonies & Couleurs</span>
+                </div>
+                
+                <!-- Quick Palette Chips -->
+                <div class="color-quick-palettes" id="color-palettes-group">
+                  <button type="button" class="color-palette-btn" data-palette="emerald" title="Palette Émeraude">
+                    <span class="color-dot" style="background:#38cc56;"></span>
+                    <span>Émeraude</span>
+                  </button>
+                  <button type="button" class="color-palette-btn" data-palette="diamond" title="Palette Diamant">
+                    <span class="color-dot" style="background:#2db7ff;"></span>
+                    <span>Diamant</span>
+                  </button>
+                  <button type="button" class="color-palette-btn" data-palette="cyber" title="Palette Cyber Néon">
+                    <span class="color-dot" style="background:#ff0055;"></span>
+                    <span>Cyber</span>
+                  </button>
+                  <button type="button" class="color-palette-btn" data-palette="nether" title="Palette Flamme Nether">
+                    <span class="color-dot" style="background:#ff5c4d;"></span>
+                    <span>Nether</span>
+                  </button>
+                  <button type="button" class="color-palette-btn" data-palette="ender" title="Palette Ender Void">
+                    <span class="color-dot" style="background:#b45cff;"></span>
+                    <span>Ender</span>
+                  </button>
+                  <button type="button" class="color-palette-btn" data-palette="gold" title="Palette Or Royal">
+                    <span class="color-dot" style="background:#f59e0b;"></span>
+                    <span>Or Royal</span>
+                  </button>
+                  <button type="button" class="color-palette-btn" data-palette="sculk" title="Palette Sculk Abyss">
+                    <span class="color-dot" style="background:#00dfc4;"></span>
+                    <span>Sculk</span>
+                  </button>
+                </div>
+
+                <div class="color-pickers-grid">
+                  <div class="color-picker-item" data-color-target="primary">
+                    <label>Couleur Principale</label>
+                    <div class="color-input-wrapper">
+                      <button type="button" class="color-swatch-btn" id="swatch-color-primary" style="background-color:#38bdf8;" title="Cliquer pour ouvrir le nuancier sombre"></button>
+                      <input type="text" class="color-hex-text-input" id="editor-color-primary" value="#38bdf8" maxlength="7" spellcheck="false" />
+                    </div>
+                  </div>
+                  <div class="color-picker-item" data-color-target="secondary">
+                    <label>Lueur & Secondaire</label>
+                    <div class="color-input-wrapper">
+                      <button type="button" class="color-swatch-btn" id="swatch-color-secondary" style="background-color:#0284c7;" title="Cliquer pour ouvrir le nuancier sombre"></button>
+                      <input type="text" class="color-hex-text-input" id="editor-color-secondary" value="#0284c7" maxlength="7" spellcheck="false" />
+                    </div>
+                  </div>
+                  <div class="color-picker-item" data-color-target="bg">
+                    <label>Fond d'Arrière-Plan</label>
+                    <div class="color-input-wrapper">
+                      <button type="button" class="color-swatch-btn" id="swatch-color-bg" style="background-color:#0b1118;" title="Cliquer pour ouvrir le nuancier sombre"></button>
+                      <input type="text" class="color-hex-text-input" id="editor-color-bg" value="#0b1118" maxlength="7" spellcheck="false" />
+                    </div>
+                  </div>
+                  <div class="color-picker-item" data-color-target="play">
+                    <label>Dégradé Bouton</label>
+                    <div class="color-input-wrapper">
+                      <button type="button" class="color-swatch-btn" id="swatch-color-play" style="background-color:#38bdf8;" title="Cliquer pour ouvrir le nuancier sombre"></button>
+                      <input type="text" class="color-hex-text-input" id="editor-color-play" value="#38bdf8" maxlength="7" spellcheck="false" />
+                    </div>
+                  </div>
+                </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- TAB 3: Manage & Export -->
+        <div class="modal-tab-pane" id="tab-manage-custom">
+          <div class="custom-themes-list" id="custom-themes-manage-list">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Floating Dark Color Picker Popover (Modal Root Scope) -->
+      <div class="dark-color-picker-popover hidden" id="dark-color-picker-popover">
+        <div class="picker-pop-header">
+          <div class="picker-target-badge">
+            <span class="picker-dot-indicator" id="dark-picker-target-dot" style="background-color:#38bdf8;"></span>
+            <span id="dark-picker-target-name">Couleur Principale</span>
+          </div>
+          <div class="picker-header-actions">
+            <button type="button" class="btn-picker-eyedropper" id="btn-picker-eyedropper" title="Prélever une couleur (Pipette)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18"/><circle cx="11" cy="11" r="2"/></svg>
+            </button>
+            <button type="button" class="btn-picker-pop-close" id="btn-close-dark-picker" title="Fermer le sélecteur">✕</button>
+          </div>
+        </div>
+        
+        <div class="picker-canvas-box" id="dark-picker-canvas-box">
+          <canvas id="dark-picker-canvas" width="230" height="105"></canvas>
+          <div class="picker-canvas-cursor" id="dark-picker-cursor"></div>
+        </div>
+
+        <div class="picker-hue-slider-wrap">
+          <input type="range" min="0" max="360" value="195" class="picker-hue-range" id="dark-picker-hue" />
+        </div>
+
+        <div class="picker-inputs-bar">
+          <div class="picker-preview-circle" id="dark-picker-preview-circle" style="background-color:#38bdf8;"></div>
+          <div class="picker-hex-input-group">
+            <span class="picker-hex-prefix">#</span>
+            <input type="text" class="picker-hex-field" id="dark-picker-hex-field" maxlength="6" value="38bdf8" spellcheck="false" />
+          </div>
+          <button type="button" class="btn-picker-apply" id="btn-apply-dark-color">OK</button>
+        </div>
+
+        <div class="picker-swatches-grid" id="dark-picker-swatches">
+          <button type="button" class="picker-mini-swatch" data-color="#38cc56" style="background:#38cc56;" title="Émeraude"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#22c55e" style="background:#22c55e;" title="Vert Vif"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#38bdf8" style="background:#38bdf8;" title="Diamant"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#0284c7" style="background:#0284c7;" title="Bleu Lapis"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#00f0ff" style="background:#00f0ff;" title="Cyan Néon"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#00dfc4" style="background:#00dfc4;" title="Sculk"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#d946ef" style="background:#d946ef;" title="Magenta End"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#a855f7" style="background:#a855f7;" title="Améthyste"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#ef4444" style="background:#ef4444;" title="Rouge Nether"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#ff0055" style="background:#ff0055;" title="Rose Cyber"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#f97316" style="background:#f97316;" title="Orange Feu"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#f59e0b" style="background:#f59e0b;" title="Or Pur"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#ffffff" style="background:#ffffff;" title="Blanc Pur"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#94a3b8" style="background:#94a3b8;" title="Gris Fer"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#0b1118" style="background:#0b1118;" title="Fond Sombre"></button>
+          <button type="button" class="picker-mini-swatch" data-color="#07080c" style="background:#07080c;" title="Noir Cyber"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

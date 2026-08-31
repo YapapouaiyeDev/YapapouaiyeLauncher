@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Administration — Yapapouaiye Launcher</title>
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .admin-modal-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 860px) {
+      .admin-modal-grid { grid-template-columns: 1fr; }
+    }
+    .md-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .btn-md-format {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--panel-border);
+      color: var(--text-muted);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-md-format:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+    }
+    .db-status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+    .db-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: var(--mc-green);
+    }
+    .db-status-dot {
+      width: 9px;
+      height: 9px;
+      background-color: var(--mc-green);
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+      animation: pulse-dot 2s infinite ease-in-out;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+    .admin-quick-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Admin Navigation Header -->
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="admin-dashboard.html" class="brand-group">
+        <img class="logo-circle" src="assets/logo.png" alt="Yapapouaiye Logo" />
+        <div class="brand-text">
+          <span class="brand-name">YAPAPOUAIYE</span>
+          <span class="brand-sub" style="color:var(--mc-green);">ADMINISTRATION & BASE DE DONNÉES</span>
+        </div>
+      </a>
+
+      <div class="nav-actions">
+        <a href="index.html" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+          <span>Voir le site public</span>
+        </a>
+        <button type="button" class="btn btn-danger btn-sm" id="btn-admin-logout">
+          <span>Déconnexion</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main style="padding: 30px 0 60px;" id="admin-dashboard-container">
+    <div class="container">
+      
+      <!-- Database Connection Status Bar -->
+      <div class="db-status-bar" id="db-status-bar">
+        <div class="db-status-badge">
+          <span class="db-status-dot" id="db-status-dot"></span>
+          <span id="db-status-text">Connexion à la base de données...</span>
+        </div>
+        <div class="admin-quick-actions">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-export-json" title="Exporter une sauvegarde JSON complète de la base de données">
+            📥 Exporter JSON
+          </button>
+          <label class="btn btn-secondary btn-sm" style="margin-bottom:0; cursor:pointer;" title="Importer un fichier JSON de nouveautés">
+            📤 Importer JSON
+            <input type="file" id="input-import-json" accept=".json,application/json" style="display:none;" />
+          </label>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-seed-db" title="Remplir la base de données avec le catalogue par défaut">
+            ⚡ Remplir la base
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="admin-stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total Nouveautés (Base de données)</span>
+          <span class="stat-val" id="stat-total-news">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Mises à Jour</span>
+          <span class="stat-val" id="stat-updates-count" style="color:var(--mc-green);">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Articles en Une</span>
+          <span class="stat-val" id="stat-featured-count" style="color:var(--accent-gold);">0</span>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="admin-header-bar">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" id="btn-open-create-news-modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>+ Publier une Nouveauté</span>
+          </button>
+
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-news" title="Rafraîchir depuis la base de données">
+            🔄 Rafraîchir
+          </button>
+        </div>
+
+        <div class="news-search-box" style="width: 280px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="admin-search-news" placeholder="Rechercher dans les nouveautés..." spellcheck="false" />
+        </div>
+      </div>
+
+      <!-- News Articles Table -->
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Titre de l'Annonce</th>
+              <th>Catégorie</th>
+              <th>Version</th>
+              <th>Date</th>
+              <th>Statut</th>
+              <th style="text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-news-table-body">
+            <!-- Rendered by admin.js -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Create / Edit News Modal with Live Preview -->
+  <div class="modal-overlay hidden" id="admin-news-modal">
+    <div class="modal-dialog" style="max-width: 960px;">
+      <div class="modal-header">
+        <h2 id="admin-modal-title" style="font-size:17px; font-weight:800; color:#ffffff;">Publier une Nouvelle Annonce</h2>
+        <button type="button" class="modal-close-btn" id="btn-close-news-modal" title="Fermer">✕</button>
+      </div>
+
+      <form id="admin-news-form">
+        <div class="modal-body">
+          <div class="admin-modal-grid">
+            
+            <!-- Left: Form Inputs -->
+            <div>
+              <div class="form-group">
+                <label class="form-label" for="news-input-title">Titre de l'annonce *</label>
+                <input type="text" class="form-control" id="news-input-title" placeholder="Ex: Mise à jour NeoForge 1.21.1 & Nouveautés" required />
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="news-input-badge">Catégorie / Badge</label>
+                  <select class="form-control" id="news-input-badge">
+                    <option value="Mise à jour" selected>Mise à jour</option>
+                    <option value="Modpack">Modpack</option>
+                    <option value="Événement">Événement</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Important">Important</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="news-input-version">Version ciblée</label>
+                  <input type="text" class="form-control" id="news-input-version" placeholder="Ex: v1.5.7 ou Serveur" />
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="news-input-date">Date affichée</label>
+                  <input type="text" class="form-control" id="news-input-date" placeholder="Ex: 14 août 2026" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="news-input-author">Auteur</label>
+                  <input type="text" class="form-control" id="news-input-author" placeholder="Ex: L'équipe Yapapouaiye" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="news-input-image">URL de l'image d'illustration (optionnel)</label>
+                <input type="url" class="form-control" id="news-input-image" placeholder="https://images.unsplash.com/photo-..." />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="news-input-summary">Résumé court (carte)</label>
+                <input type="text" class="form-control" id="news-input-summary" placeholder="Court résumé visible sur la carte d'accueil..." />
+              </div>
+
+              <div class="form-group">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                  <label class="form-label" for="news-input-content" style="margin-bottom:0;">Contenu détaillé (Markdown) *</label>
+                  <div class="md-toolbar">
+                    <button type="button" class="btn-md-format" data-format="bold" title="Gras">B</button>
+                    <button type="button" class="btn-md-format" data-format="italic" title="Italique">I</button>
+                    <button type="button" class="btn-md-format" data-format="h2" title="Titre 2">H2</button>
+                    <button type="button" class="btn-md-format" data-format="h3" title="Sous-titre 3">H3</button>
+                    <button type="button" class="btn-md-format" data-format="list" title="Liste à puces">• Liste</button>
+                    <button type="button" class="btn-md-format" data-format="code" title="Code">&lt;&gt;</button>
+                    <button type="button" class="btn-md-format" data-format="quote" title="Citation">”</button>
+                    <button type="button" class="btn-md-format" data-format="link" title="Lien">🔗</button>
+                  </div>
+                </div>
+                <textarea class="form-control" id="news-input-content" style="height:170px;" placeholder="Rédigez les détails de votre mise à jour ou annonce en Markdown..." required></textarea>
+              </div>
+
+              <div class="form-group">
+                <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:13px;">
+                  <input type="checkbox" id="news-input-featured" />
+                  <span style="font-weight:700; color:var(--accent-gold);">⭐ Mettre cet article en avant (Épingler en tête de liste)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Right: Real-time Live Preview -->
+            <div>
+              <label class="form-label" style="display:block; margin-bottom:8px;">Aperçu en Direct</label>
+              <div id="news-live-preview-box"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:16px 20px; border-top:1px solid var(--panel-border); background:rgba(0,0,0,0.2);">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-news-modal">Annuler</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-news-form">
+            <span>Enregistrer dans la Base</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

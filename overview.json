@@ -1,0 +1,258 @@
+{
+  "rootFolder": "c:\\Users\\hhach\\Documents\\YapapouaiyeLauncher",
+  "analyzedAt": "2026-04-12T15:13:43.393Z",
+  "rootStructure": [
+    {
+      "name": ".gitignore",
+      "type": "file",
+      "size": 259,
+      "lines": 29
+    },
+    {
+      "name": "assets",
+      "type": "dir"
+    },
+    {
+      "name": "dev-app-update.yml",
+      "type": "file",
+      "size": 84,
+      "lines": 5
+    },
+    {
+      "name": "dist",
+      "type": "dir"
+    },
+    {
+      "name": "IMG",
+      "type": "dir"
+    },
+    {
+      "name": "mods",
+      "type": "dir"
+    },
+    {
+      "name": "node_modules",
+      "type": "dir"
+    },
+    {
+      "name": "package-lock.json",
+      "type": "file",
+      "size": 181896,
+      "lines": 5130
+    },
+    {
+      "name": "package.json",
+      "type": "file",
+      "size": 1074,
+      "lines": 50
+    },
+    {
+      "name": "QWEN.md",
+      "type": "file",
+      "size": 7019,
+      "lines": 166
+    },
+    {
+      "name": "src",
+      "type": "dir"
+    },
+    {
+      "name": "TODO.md",
+      "type": "file",
+      "size": 807,
+      "lines": 28
+    }
+  ],
+  "rootFileSnippets": {
+    "dev-app-update.yml": [
+      "provider: github",
+      "owner: yapapouaiyestudios",
+      "repo: YapapouaiyeLauncher",
+      "private: false",
+      ""
+    ],
+    "package-lock.json": [
+      "{",
+      "\"name\": \"yapapouaiye-launcher\",",
+      "\"version\": \"1.5.0\",",
+      "\"lockfileVersion\": 3,",
+      "\"requires\": true,",
+      "\"packages\": {",
+      "\"\": {",
+      "\"name\": \"yapapouaiye-launcher\",",
+      "\"version\": \"1.5.0\",",
+      "\"license\": \"MIT\","
+    ],
+    "package.json": [
+      "{",
+      "\"name\": \"yapapouaiye-launcher\",",
+      "\"version\": \"1.5.1\",",
+      "\"description\": \"Launcher Minecraft moddé - Yapapouaiye\",",
+      "\"main\": \"src/main.js\",",
+      "\"scripts\": {",
+      "\"start\": \"electron .\",",
+      "\"build\": \"electron-builder --win\"",
+      "},",
+      "\"author\": \"Yapapouaiye\","
+    ],
+    "QWEN.md": [
+      "# Yapapouaiye Launcher - Project Context",
+      "",
+      "## Project Overview",
+      "",
+      "**Yapapouaiye Launcher** is a custom Electron-based launcher for a modded Minecraft server (version 1.21.1 with NeoForge). It provides a polished UI for players to authenticate, configure game settings, sync mods from a remote GitLab repository, and launch the game.",
+      "",
+      "**Key Features:**",
+      "- **Authentication:** Microsoft (Xbox) account login and offline mode",
+      "- **Multi-account support:** Store and switch between multiple Minecraft accounts",
+      "- **Mod synchronization:** Automatically downloads and syncs mods from a GitLab repository (`yapapouaiyedev/ModYapapouaiyeLauncher`)"
+    ],
+    "TODO.md": [
+      "# Fix Auto-Updates v1.4 - Frontend UI",
+      "",
+      "## ✅ Plan approved",
+      "",
+      "**Problème v1.4:** Backend autoUpdater fonctionne (console), mais pas d'UI visible pour utilisateurs.",
+      "",
+      "## 📋 Étapes à compléter:",
+      "",
+      "### ☐ Étape 1: `src/preload.js` - Exposer IPC updates",
+      "- `window.electronAPI.checkForUpdates()`"
+    ]
+  },
+  "importantFolders": [
+    {
+      "path": "assets",
+      "category": "assets",
+      "fileCount": 2
+    }
+  ],
+  "readmeParagraphs": {},
+  "totals": {
+    "numFiles": 23,
+    "numDirs": 15,
+    "totalSizeBytes": 1764629,
+    "totalLinesOfCode": 2156
+  },
+  "fileCategories": {
+    "other": 13,
+    "config": 4,
+    "documentation": 2,
+    "source": 4
+  },
+  "linesOfCodePerLanguage": {
+    "JavaScript": 2156
+  },
+  "filesPerLanguage": {
+    "JavaScript": 4
+  },
+  "projectTypes": [
+    "JavaScript/Node.js"
+  ],
+  "frameworks": [],
+  "entryPoints": [],
+  "ciCdTools": [],
+  "packageManagers": [
+    "npm/yarn"
+  ],
+  "topLevelDirectories": [
+    {
+      "name": "src",
+      "numFiles": 8,
+      "totalLoc": 2156,
+      "dominantLanguage": "JavaScript"
+    },
+    {
+      "name": "assets",
+      "numFiles": 2,
+      "totalLoc": 0
+    },
+    {
+      "name": "IMG",
+      "numFiles": 1,
+      "totalLoc": 0
+    },
+    {
+      "name": "mods",
+      "numFiles": 2,
+      "totalLoc": 0
+    }
+  ],
+  "detailedDirectories": [
+    {
+      "path": "src",
+      "name": "src",
+      "level": 1,
+      "numFiles": 8,
+      "totalLoc": 2156,
+      "dominantLanguage": "JavaScript",
+      "category": "General",
+      "description": "General module with 8 files (JavaScript)",
+      "subdirectories": []
+    },
+    {
+      "path": "assets",
+      "name": "assets",
+      "level": 1,
+      "numFiles": 2,
+      "totalLoc": 0,
+      "category": "General",
+      "description": "General module with 2 files",
+      "subdirectories": []
+    },
+    {
+      "path": "mods",
+      "name": "mods",
+      "level": 1,
+      "numFiles": 2,
+      "totalLoc": 0,
+      "category": "General",
+      "description": "General module with 2 files",
+      "subdirectories": []
+    },
+    {
+      "path": "IMG",
+      "name": "IMG",
+      "level": 1,
+      "numFiles": 1,
+      "totalLoc": 0,
+      "category": "General",
+      "description": "General module with 1 files",
+      "subdirectories": []
+    }
+  ],
+  "architecturalInsights": {
+    "coreApplications": [],
+    "entryPointDetails": [],
+    "serviceArchitecture": {
+      "microservices": [],
+      "monoliths": [],
+      "libraries": []
+    },
+    "layeredArchitecture": {
+      "presentation": [],
+      "business": [],
+      "data": [],
+      "infrastructure": []
+    }
+  },
+  "largeFiles": [],
+  "dependencies": {
+    "production": [
+      "dotenv",
+      "electron-updater",
+      "minecraft-java-core"
+    ],
+    "development": [
+      "electron",
+      "electron-builder"
+    ],
+    "total": 5
+  },
+  "complexity": {
+    "averageFileSize": 93.73913043478261,
+    "maxFileSize": 0,
+    "nestedDepth": 0,
+    "estimatedComplexity": "low"
+  }
+}

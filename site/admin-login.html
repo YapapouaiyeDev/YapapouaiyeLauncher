@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connexion Administration — Yapapouaiye Launcher</title>
+  <meta name="description" content="Espace de connexion administrateur pour la gestion des nouveautés et annonces du Launcher Yapapouaiye." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 420px;
+      padding: 32px 28px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 14px;
+      border-radius: 14px;
+      object-fit: contain;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.45);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      background: rgba(18, 24, 32, 0.85);
+      display: block;
+    }
+    .login-alert {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <img class="login-logo" src="assets/logo.png" alt="Yapapouaiye Logo" />
+        <h1 style="font-family:var(--font-heading); font-size:22px; font-weight:800; color:#ffffff;">Espace Administrateur</h1>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">Gestion des nouveautés Yapapouaiye Launcher</p>
+      </div>
+
+      <div class="login-alert hidden" id="login-error-alert"></div>
+
+      <form id="admin-login-form">
+        <div class="form-group">
+          <label class="form-label" for="admin-username">Identifiant</label>
+          <input type="text" class="form-control" id="admin-username" placeholder="Nom d'utilisateur" required autocomplete="username" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-password">Mot de passe</label>
+          <input type="password" class="form-control" id="admin-password" placeholder="Mot de passe sécurisé" required autocomplete="current-password" />
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; font-size:13px; color:var(--text-muted);">
+          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="admin-remember" checked />
+            <span>Mémoriser ma session</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="btn-login-submit" style="width:100%; justify-content:center; padding:12px;">
+          <span>Se connecter au Dashboard</span>
+        </button>
+      </form>
+
+      <div style="text-align:center; margin-top:22px; font-size:13px; color:var(--text-muted);">
+        <a href="index.html" style="color:var(--mc-green); font-weight:600;">← Retour au site public</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+name = "yapapouaiye-launcher"
+pages_build_output_dir = "."
+compatibility_date = "2026-08-01"
+
+# Cloudflare D1 SQL Database (Nouveautés & Patch Notes)
+[[d1_databases]]
+binding = "DB"
+database_name = "yapapouaiye-launcher-db"
+database_id = "yapapouaiye-launcher-db"
+migrations_dir = "migrations"
+
+# Cloudflare R2 Storage Bucket (Fallback & Assets)
+[[r2_buckets]]
+binding = "LAUNCHER_BUCKET"
+bucket_name = "yapapouaiye-launcher"

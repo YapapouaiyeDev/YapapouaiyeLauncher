@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Actualités — Yapapouaiye Launcher</title>
+  <meta name="description" content="Historique des actualités, annonces et publications du serveur et du launcher Yapapouaiye." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Site Navigation Bar -->
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="index.html" class="brand-group">
+        <img class="logo-circle" src="assets/logo.png" alt="Yapapouaiye Logo" />
+        <div class="brand-text">
+          <span class="brand-name">YAPAPOUAIYE</span>
+          <span class="brand-sub">MINECRAFT LAUNCHER</span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html" class="nav-link">Accueil</a></li>
+          <li><a href="index.html#download" class="nav-link">Télécharger</a></li>
+          <li><a href="news.html" class="nav-link active">Actualités</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="index.html#download" class="btn btn-primary btn-sm">
+          <span>Télécharger</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main style="padding: 40px 0 80px;">
+    <div class="container">
+      <div style="margin-bottom: 30px;">
+        <span class="section-tag">Flux Officiel</span>
+        <h1 class="section-title" style="font-size: clamp(28px, 4vw, 42px);">Actualités</h1>
+        <p style="color: var(--text-muted); font-size: 15px; margin-top: 6px;">Suivez les posts publiés par l'administration, indépendamment des patch notes du launcher.</p>
+      </div>
+
+      <div class="news-filter-bar">
+        <div class="category-chips">
+          <button type="button" class="chip-btn active" data-category="all">Tous</button>
+          <button type="button" class="chip-btn" data-category="mise à jour">Mises à jour</button>
+          <button type="button" class="chip-btn" data-category="modpack">Modpack</button>
+          <button type="button" class="chip-btn" data-category="événement">Événements</button>
+          <button type="button" class="chip-btn" data-category="maintenance">Maintenance</button>
+        </div>
+
+        <div class="news-search-box" style="width: 280px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="news-search-input" placeholder="Filtrer par mot-clé, version..." spellcheck="false" />
+        </div>
+      </div>
+
+      <!-- News Cards Grid -->
+      <div class="news-cards-grid" id="news-cards-grid"></div>
+    </div>
+  </main>
+
+  <!-- News Reader Modal -->
+  <div class="modal-overlay hidden" id="news-reader-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="badge badge-update" id="modal-article-badge">Mise à jour</span>
+          <span id="modal-article-version" style="font-family:var(--font-mono); font-size:12px; color:var(--text-faint);"></span>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn-close-modal" title="Fermer">✕</button>
+      </div>
+      <div class="modal-body">
+        <img src="" alt="" id="modal-article-image" class="hidden" style="width:100%; height:200px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:16px;" />
+        <h2 id="modal-article-title" style="font-size:22px; font-weight:800; margin-bottom:8px; line-height:1.3; color:#ffffff;"></h2>
+        <div style="display:flex; align-items:center; gap:12px; font-size:12px; color:var(--text-faint); margin-bottom:20px; border-bottom:1px solid var(--panel-border); padding-bottom:12px;">
+          <span id="modal-article-date"></span>
+          <span id="modal-article-author"></span>
+        </div>
+        <div class="article-content" id="modal-article-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <div>
+        <strong style="color:#ffffff;">Yapapouaiye Launcher</strong> — Actualités
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Accueil</a>
+        <a href="/api/news" target="_blank" rel="noopener noreferrer" style="font-family:var(--font-mono); font-size:12px;">API JSON (Flux)</a>
+        <a href="admin-login.html" class="btn-admin btn-sm" style="padding: 4px 10px; border-radius: 4px;">⚙️ Espace Admin</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
