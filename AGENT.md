@@ -8,7 +8,7 @@
 - **Authentication:** Microsoft (Xbox) account login and offline mode
 - **Multi-account support:** Store and switch between multiple Minecraft accounts
 - **Mod synchronization:** Automatically downloads and syncs mods from a Gitea repository (`hannyvan26/ModYapapouaiyeLauncher`)
-- **Auto-updates:** Checks GitHub Releases (`yapapouaiyestudios/YapapouaiyeLauncher`) for new launcher versions at startup
+- **Auto-updates:** Checks GitHub Releases (`YapapouaiyeDev/YapapouaiyeLauncher`) for new launcher versions at startup
 - **Configurable settings:** RAM allocation, resolution, Java path, JVM arguments, fullscreen toggle
 - **Server integration:** Auto-connects to `yapapouaiyelive.falixsrv.me:25565`
 
@@ -89,14 +89,14 @@ GITEA_TOKEN=your_gitea_token_here
 ### `package.json` Build Config
 - **App ID:** `com.yapapouaiye.launcher`
 - **Target:** Windows NSIS installer
-- **Publish:** GitHub (`yapapouaiyestudios/YapapouaiyeLauncher`)
+- **Publish:** GitHub (`YapapouaiyeDev/YapapouaiyeLauncher`)
 - **Extra Resources:** `mods/` directory (only `*.jar` files)
 
 ### External Services
 | Service | URL | Purpose |
 |---------|-----|---------|
 | Gitea Mods | `hannyvan26/ModYapapouaiyeLauncher` | Remote mod repository |
-| GitHub Releases | `yapapouaiyestudios/YapapouaiyeLauncher` | Launcher auto-updates |
+| GitHub Releases | `YapapouaiyeDev/YapapouaiyeLauncher` | Launcher auto-updates |
 | Game Server | `yapapouaiyelive.falixsrv.me:25565` | Default Minecraft server |
 
 ### Game Launch Config

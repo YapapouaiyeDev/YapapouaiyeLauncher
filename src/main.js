@@ -830,6 +830,7 @@ app.whenReady().then(() => {
   // ============================================================
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.disableDifferentialDownload = true;
 
   // Force update checks in development mode only (unpacked app)
   if (!app.isPackaged) {
@@ -838,21 +839,9 @@ app.whenReady().then(() => {
     console.log("[AutoUpdater] Dev config path:", autoUpdater.updateConfigPath);
   }
 
-  // Debug logging
-  if (process.env.GH_TOKEN) {
-    console.log("[AutoUpdater] GH_TOKEN loaded (length:", process.env.GH_TOKEN.length + ")");
-  } else {
-    console.warn("[AutoUpdater] No GH_TOKEN found - private repo will fail to authenticate");
-  }
-
   // ============================================================
   // MAJ launcher : GitHub Releases (provider par defaut, package.json > build.publish).
   // Backblaze B2 sert UNIQUEMENT aux mods AdoServ67, pas aux MAJ du launcher.
-  //
-  // electron-updater traite "1.5.8-1" / "1.5.8-2" / "1.5.8-3" comme des canaux pre-release
-  // differents ("1" vs "2"). Si allowPrerelease reste auto=true, un client
-  // 1.5.8-1 ne lit que le canal "1" et ignore 1.5.8-2.
-  // On force latest.yml + comparaison custom du suffixe -N.
   // ============================================================
   autoUpdater.allowPrerelease = false;
   autoUpdater.allowDowngrade = true;
@@ -870,9 +859,9 @@ app.whenReady().then(() => {
     sendToRenderer("progress", { type: "update-available", message: `Mise a jour ${info.version} disponible !`, version: info.version });
   });
 
-  autoUpdater.on("update-not-available", () => {
+  autoUpdater.on("update-not-available", (info) => {
     console.log("[AutoUpdater] Already up to date.");
-    sendToRenderer("progress", { type: "update-not-available", message: "Deja a jour" });
+    sendToRenderer("progress", { type: "update-not-available", message: "Deja a jour", version: info?.version });
   });
 
   autoUpdater.on("download-progress", (progress) => {
@@ -2152,9 +2141,7 @@ ipcMain.handle("get-latest-release-info", async () => {
   let latestRelease = null;
   const githubEndpoints = [
     `https://api.github.com/repos/${GITHUB_OWNER_LAUNCHER}/${GITHUB_REPO_LAUNCHER}/releases`,
-    "https://api.github.com/repos/yapapouaiyestudios/YapapouaiyeLauncher/releases",
-    `https://api.github.com/repos/${GITHUB_OWNER_LAUNCHER}/${GITHUB_REPO_LAUNCHER}/releases/latest`,
-    "https://api.github.com/repos/yapapouaiyestudios/YapapouaiyeLauncher/releases/latest"
+    `https://api.github.com/repos/${GITHUB_OWNER_LAUNCHER}/${GITHUB_REPO_LAUNCHER}/releases/latest`
   ];
 
   for (const ghUrl of githubEndpoints) {

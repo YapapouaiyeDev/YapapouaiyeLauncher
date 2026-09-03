@@ -3905,8 +3905,9 @@ if (window.launcher.onUpdateAvailable) {
 }
 
 if (window.launcher.onUpdateNotAvailable) {
-  window.launcher.onUpdateNotAvailable(() => {
-    setUpdateStatus('', 'Vous utilisez la dernière version du launcher.');
+  window.launcher.onUpdateNotAvailable((data) => {
+    const vText = data?.version ? ` (v${data.version})` : '';
+    setUpdateStatus('', `Vous utilisez déjà la dernière version du launcher${vText}.`);
     setUpdateProgressVisible(false);
     resetUpdateCheckButton();
   });
@@ -3964,7 +3965,8 @@ if (btnCheckUpdate) {
         setUpdateProgressVisible(true);
         setUpdateProgress(0, 'Téléchargement de la mise à jour...');
       } else {
-        setUpdateStatus('', 'Vous utilisez la dernière version du launcher.');
+        const vText = result.version ? ` (v${result.version})` : '';
+        setUpdateStatus('', `Vous utilisez déjà la dernière version du launcher${vText}.`);
         setUpdateProgressVisible(false);
         resetUpdateCheckButton();
       }
