@@ -1,6 +1,6 @@
 {
   "name": "yapapouaiye-launcher",
-  "version": "1.5.8-3",
+  "version": "1.5.9-1",
   "description": "Launcher Minecraft moddé - Yapapouaiye",
   "main": "src/main.js",
   "scripts": {

@@ -557,7 +557,7 @@ async function checkGizmoServerStatus(server) {
           headers: {
             "Authorization": `Bearer ${gizmoToken}`,
             "Accept": "application/json",
-            "User-Agent": "YapapouaiyeLauncher/1.5.8-3"
+            "User-Agent": "YapapouaiyeLauncher/1.5.9-1"
           }
         }, (r) => {
           let body = "";
@@ -908,7 +908,7 @@ app.on("window-all-closed", () => app.quit());
 function httpGet(url, binary = false, useToken = true) {
   return new Promise((resolve, reject) => {
     const headers = {
-      "User-Agent": "YapapouaiyeLauncher/1.5.8-3",
+      "User-Agent": "YapapouaiyeLauncher/1.5.9-1",
       "Accept": binary ? "application/octet-stream" : "application/json",
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Pragma": "no-cache",
@@ -1153,7 +1153,7 @@ async function fetchRemoteModsList(repoConfig) {
 function downloadFileStream(url, destPath, progressCb, isRedirect = false) {
   return new Promise((resolve, reject) => {
     const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) YapapouaiyeLauncher/1.5.8-3",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) YapapouaiyeLauncher/1.5.9-1",
     };
     const isB2Url = url.includes(".backblazeb2.com");
     const isScalewayUrl = url.includes(".scw.cloud");
@@ -2100,7 +2100,7 @@ ipcMain.handle("open-external", async (_, url) => {
 ipcMain.handle("get-latest-release-info", async () => {
   const fallback = {
     version: app.getVersion(),
-    notes: "Yapapouaiye Launcher v1.5.8-3 : comparateur -N, MAJ 1.5.8-2 vers 1.5.8-3."
+    notes: "Yapapouaiye Launcher v1.5.9-1 : Mise à jour automatique opérationnelle."
   };
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
 
@@ -2110,7 +2110,7 @@ ipcMain.handle("get-latest-release-info", async () => {
         method: "GET",
         headers: {
           "Accept": "application/vnd.github+json",
-          "User-Agent": "YapapouaiyeLauncher/1.5.8-3"
+          "User-Agent": "YapapouaiyeLauncher/1.5.9-1"
         }
       };
       if (token) options.headers["Authorization"] = `Bearer ${token}`;
