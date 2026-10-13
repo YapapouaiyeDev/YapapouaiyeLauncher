@@ -132,7 +132,7 @@ fn resolve_library_path(game_path: &Path, loader_path: &Path, lib: &Value) -> Op
     None
 }
 
-pub fn stage_mods_for_launch(server_id: &str) {
+pub fn stage_mods_for_launch(server_id: &str, mc_version: &str, loader: &Loader) {
     let dest = mods_dir();
     let _ = fs::create_dir_all(&dest);
 
@@ -151,20 +151,25 @@ pub fn stage_mods_for_launch(server_id: &str) {
     // Copy custom user mods
     crate::paths::copy_dir_jars(&custom_mods_dir(), &dest);
 
-    // Ensure NexLux companion mod (Lunar Client features) is injected
-    let candidates = [
-        std::path::PathBuf::from("mods/nexlux-1.1.0.jar"),
-        std::path::PathBuf::from("src/assets/nexlux-1.1.0.jar"),
-        launcher_dir().join("mods").join("adoserv2").join("nexlux-1.1.0.jar"),
-        launcher_dir().join("mods").join("nexlux-1.1.0.jar"),
-    ];
-    for c in &candidates {
-        if c.exists() {
-            let target = dest.join("nexlux-1.1.0.jar");
-            let _ = fs::copy(c, &target);
+    // Select the companion compiled for the actual Minecraft version.
+    let filename = match (loader, mc_version) {
+        (Loader::NeoForge, "26.2") => "nexlux-26.2.jar",
+        (Loader::NeoForge, "1.21.1") => "nexlux-1.1.0.jar",
+        _ => return,
+    };
+    let candidates = [PathBuf::from("mods").join(filename), PathBuf::from("src/assets").join(filename)];
+    for candidate in candidates {
+        if candidate.exists() {
+            for name in ["nexlux-26.2.jar", "nexlux-1.1.0.jar"] {
+                let _ = fs::remove_file(dest.join(name));
+            }
+            if let Err(err) = fs::copy(&candidate, dest.join(filename)) {
+                log_line("ERROR", &format!("NexLux: {err}"));
+            }
             break;
         }
     }
+
 }
 
 pub async fn launch_game_flow(
@@ -177,7 +182,8 @@ pub async fn launch_game_flow(
     emit_progress(&app, "Préparation de Minecraft…", 5);
 
     // 1. Stage mods
-    stage_mods_for_launch(server.id);
+    let mc_version = custom_version.unwrap_or_else(|| "1.21.1".to_string());
+    stage_mods_for_launch(server.id, &mc_version, &server.loader);
 
     // 2. Ensure server is in servers.dat
     ensure_server_in_list();
@@ -190,7 +196,6 @@ pub async fn launch_game_flow(
     log_line("INFO", &format!("Utilisation de Java: {}", java_bin.display()));
 
     let g_dir = game_dir();
-    let mc_version = custom_version.unwrap_or_else(|| "1.21.1".to_string());
 
     // 4. Base version JSON
     let version_json_path = g_dir.join("versions").join(&mc_version).join(format!("{mc_version}.json"));
@@ -418,10 +423,23 @@ pub async fn launch_game_flow(
     full_cmd_args.push(h.to_string());
 
     // Target server auto-join
-    full_cmd_args.push("--server".to_string());
-    full_cmd_args.push(server.host.to_string());
-    full_cmd_args.push("--port".to_string());
-    full_cmd_args.push(server.game_port.to_string());
+    let mut parts = mc_version.split('.').filter_map(|part| part.parse::<u32>().ok());
+    let major = parts.next().unwrap_or(1);
+    let minor = parts.next().unwrap_or(0);
+    if major > 1 || minor >= 20 {
+        let host = if server.host.contains(':') && !server.host.starts_with('[') {
+            format!("[{}]", server.host)
+        } else {
+            server.host.to_string()
+        };
+        full_cmd_args.push("--quickPlayMultiplayer".to_string());
+        full_cmd_args.push(format!("{host}:{}", server.game_port));
+    } else {
+        full_cmd_args.push("--server".to_string());
+        full_cmd_args.push(server.host.to_string());
+        full_cmd_args.push("--port".to_string());
+        full_cmd_args.push(server.game_port.to_string());
+    }
 
     // Add loader game arguments if present
     if let Some(lj) = &loader_json {
@@ -511,6 +529,9 @@ pub async fn launch_game_flow(
             let _ = main_win.set_focus();
         }
 
+        let client_mods = crate::config::get_client_mods();
+        crate::config::save_config(&json!({ "clientMods": client_mods }));
+        let _ = app_clone3.emit("client-mods-updated", &client_mods);
         let _ = app_clone3.emit("game-closed", code);
     });
 

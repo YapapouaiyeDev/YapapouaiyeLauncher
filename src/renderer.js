@@ -3788,19 +3788,13 @@ async function loadClientPageSettings() {
 
 async function updateYcModule(key, enabled, badgeId) {
   try {
-    const current = window.launcher.getClientMods ? await window.launcher.getClientMods() : {};
-    const updated = {
-      ...current,
-      [key]: {
-        ...(current[key] || {}),
-        enabled: !!enabled
-      }
-    };
-    if (window.launcher.saveClientMods) await window.launcher.saveClientMods(updated);
-    if (window.launcher.applyClientMods) await window.launcher.applyClientMods(updated);
+    // Save only the changed module: a snapshot read before a HUD drag can
+    // otherwise restore obsolete coordinates when its IPC request arrives.
+    const result = await window.launcher.saveClientMods({ [key]: { enabled: !!enabled } });
+    if (!result?.success) throw new Error(result?.error || 'Sauvegarde impossible');
 
     updateModuleBadge(badgeId, enabled);
-    updateHudSimulator(updated);
+    updateHudSimulator(result.clientMods);
 
     playMinecraftClickSound();
     showToast(`✦ Yapapouaiye Client : ${enabled ? 'Activé' : 'Désactivé'} avec succès !`, 'success', 2500);

@@ -11,6 +11,7 @@ class LauncherUpdateProvider extends GitHubProvider {
     const requested = this.options.getRequestedVersion();
     const candidates = releases.filter(release => {
       const version = normalizeVersion(release.tag_name);
+      if (!this.options.isValidVersion(version)) return false;
       if (requested) return version === requested;
       return this.updater.allowPrerelease || !(release.prerelease || this.options.isPrerelease(version));
     });

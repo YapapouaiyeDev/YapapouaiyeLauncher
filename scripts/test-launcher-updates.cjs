@@ -17,7 +17,7 @@ function provider({ requested = null, enabled = false, releases = [release(beta)
     owner: 'YapapouaiyeDev', repo: 'YapapouaiyeLauncher',
     loadReleases: async () => releases, getRequestedVersion: () => requested,
     isPrerelease: versions.isPrereleaseVersion, isNewer: versions.isLauncherVersionNewer,
-    getChannel: versions.getVersionChannel,
+    getChannel: versions.getVersionChannel, isValidVersion: value => !!versions.parseLauncherVersion(value),
   }, { allowPrerelease: enabled }, { platform: 'win32', executor: {} });
   instance.httpRequest = async url => {
     const version = manifestVersion || decodeURIComponent(url.pathname.split('/').at(-2)).replace(/^v/, '');
@@ -74,4 +74,10 @@ test('no download of an unexpected target, download errors propagate, busy updat
   assert.equal(target, null); assert.equal(updater.autoDownload, true);
   updater.downloadPromise = Promise.resolve();
   await assert.rejects(installRequestedUpdate(updater, beta, () => {}), /déjà en cours/);
+});
+
+test('legacy incomplete version tags never displace a valid release', async () => {
+  for (const releases of [[release('1.0'), release(stable)], [release(stable), release('1.0')]]) {
+    assert.equal((await provider({ releases }).getLatestVersion()).version, stable);
+  }
 });

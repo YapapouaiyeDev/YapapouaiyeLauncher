@@ -120,6 +120,8 @@ pub struct ClientMods {
     pub fps: ClientModToggle,
     #[serde(default)]
     pub ping: ClientModToggle,
+    #[serde(rename = "hudPositions", default)]
+    pub hud_positions: BTreeMap<String, i32>,
 }
 
 fn default_full_bright() -> ClientModFullBright {
@@ -142,6 +144,7 @@ impl Default for ClientMods {
             speed: ClientModToggle::default(),
             fps: ClientModToggle::default(),
             ping: ClientModToggle::default(),
+            hud_positions: BTreeMap::new(),
         }
     }
 }
@@ -254,6 +257,29 @@ pub fn save_config(patch: &Value) -> bool {
     false
 }
 
+const HUD_POSITION_KEYS: [&str; 12] = [
+    "coordsX", "coordsY", "cpsX", "cpsY", "armorX", "armorY",
+    "speedX", "speedY", "fpsX", "fpsY", "pingX", "pingY",
+];
+
+fn read_client_options(config_dir: &std::path::Path) -> Value {
+    let mut saves = Vec::new();
+    for name in ["lunar_client.json", "yapapouaiye_client.json"] {
+        let file = config_dir.join(name);
+        if let (Ok(raw), Ok(metadata)) = (fs::read_to_string(&file), fs::metadata(&file)) {
+            if let Ok(Value::Object(data)) = serde_json::from_str::<Value>(&raw) {
+                saves.push((metadata.modified().unwrap_or(std::time::UNIX_EPOCH), data));
+            }
+        }
+    }
+    saves.sort_by_key(|(modified, _)| *modified);
+    let mut merged = serde_json::Map::new();
+    for (_, data) in saves {
+        merged.extend(data);
+    }
+    Value::Object(merged)
+}
+
 pub fn get_client_mods() -> ClientMods {
     let cfg = load_config();
     let mut mods = ClientMods::default();
@@ -267,6 +293,12 @@ pub fn get_client_mods() -> ClientMods {
             )) {
                 mods = merged;
             }
+        }
+    }
+    let disk = read_client_options(&game_dir().join("config"));
+    for key in HUD_POSITION_KEYS {
+        if let Some(value) = disk[key].as_i64().and_then(|n| i32::try_from(n).ok()) {
+            mods.hud_positions.insert(key.to_string(), value);
         }
     }
     mods
@@ -360,7 +392,8 @@ pub fn sync_client_options(mods: &ClientMods) {
     // quel que soit le runtime, pas de divergence au lancement).
     let config_dir = dir.join("config");
     let _ = fs::create_dir_all(&config_dir);
-    let client_json = serde_json::json!({
+    let mut client_json = read_client_options(&config_dir);
+    let settings = serde_json::json!({
         "fullBright": mods.full_bright.enabled,
         "nightVision": mods.night_vision.enabled,
         "noFog": mods.no_fog.enabled,
@@ -373,6 +406,12 @@ pub fn sync_client_options(mods: &ClientMods) {
         "fps": mods.fps.enabled,
         "ping": mods.ping.enabled
     });
+    client_json.as_object_mut().unwrap().extend(settings.as_object().unwrap().clone());
+    for key in HUD_POSITION_KEYS {
+        if let Some(value) = mods.hud_positions.get(key) {
+            client_json[key] = json!(value);
+        }
+    }
     if let Ok(client_str) = serde_json::to_string_pretty(&client_json) {
         let _ = fs::write(config_dir.join("yapapouaiye_client.json"), &client_str);
         let _ = fs::write(config_dir.join("lunar_client.json"), &client_str);

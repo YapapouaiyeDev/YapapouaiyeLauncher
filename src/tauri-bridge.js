@@ -135,6 +135,7 @@
     onUpdateError: singleListener('progress', 'update-error'),
     onGameLog: singleListener('game-log'),
     onGameClosed: singleListener('game-closed'),
+    onClientModsUpdated: singleListener('client-mods-updated'),
     onGameError: singleListener('game-error'),
     onWindowStateChanged: singleListener('window-state')
   };

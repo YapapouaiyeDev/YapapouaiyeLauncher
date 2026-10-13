@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[11,)"
+license="MIT"
+
+[[mods]]
+modId="nexlux"
+version="26.2"
+displayName="NexLux"
+authors="Yapapouaiye Studios"
+description='''NexLux - HUD, menu client et API serveur pour Minecraft 26.2.'''
+
+[[dependencies.nexlux]]
+modId="minecraft"
+type="required"
+versionRange="[26.2]"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.nexlux]]
+modId="neoforge"
+type="required"
+versionRange="[26.2.0.90,26.3)"
+ordering="NONE"
+side="BOTH"

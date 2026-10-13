@@ -10,6 +10,8 @@ let requestedUpdateVersion = null;
 const fs = require("fs");
 const https = require("https");
 const { createInvitationGate } = require("./invitations");
+const { readClientOptions } = require("./client-options");
+const { getServerLaunchArgs } = require("./server-launch-args");
 
 // Load environment variables from .env file
 try {
@@ -1059,14 +1061,7 @@ function getClientModsConfig() {
   // les dernières coordonnées et réglages sauvegardés par le mod compagnon in-game
   try {
     const configDir = path.join(gameDir, "config");
-    const clientJsonPath = path.join(configDir, "yapapouaiye_client.json");
-    const legacyJsonPath = path.join(configDir, "lunar_client.json");
-    let diskData = null;
-    if (fs.existsSync(clientJsonPath)) {
-      diskData = JSON.parse(fs.readFileSync(clientJsonPath, "utf-8"));
-    } else if (fs.existsSync(legacyJsonPath)) {
-      diskData = JSON.parse(fs.readFileSync(legacyJsonPath, "utf-8"));
-    }
+    const diskData = readClientOptions(configDir);
     if (diskData && typeof diskData === "object") {
       if (!base.hudPositions) base.hudPositions = {};
       const posKeys = [
@@ -1074,7 +1069,7 @@ function getClientModsConfig() {
         "speedX", "speedY", "fpsX", "fpsY", "pingX", "pingY"
       ];
       for (const pk of posKeys) {
-        if (typeof diskData[pk] === "number" && !Number.isNaN(diskData[pk])) {
+        if (Number.isFinite(diskData[pk])) {
           base.hudPositions[pk] = diskData[pk];
         }
       }
@@ -1186,14 +1181,6 @@ function applyKeyboardLayoutToOptionsTxt(targetLayout = "azerty", force = false)
     const targetMap = (targetLayout === "qwerty") ? QWERTY_DEFAULT_KEYS : AZERTY_DEFAULT_KEYS;
     let optText = fs.readFileSync(optionsPath, "utf-8");
 
-    if (!force) {
-      const isDefaultVanillaQwerty = /^key_key\.forward:key\.keyboard\.w$/m.test(optText) && /^key_key\.left:key\.keyboard\.a$/m.test(optText);
-      const isScrambledHotbar = /^key_key\.hotbar\.6:key\.keyboard\.g$/m.test(optText) || /^key_key\.hotbar\.9:key\.keyboard\.f$/m.test(optText);
-      if (!isDefaultVanillaQwerty && !isScrambledHotbar) {
-        return { applied: false, reason: "Touches déjà personnalisées" };
-      }
-    }
-
     let lines = optText.split(/\r?\n/);
     const updatedKeys = new Set();
     lines = lines.map(line => {
@@ -1202,7 +1189,9 @@ function applyKeyboardLayoutToOptionsTxt(targetLayout = "azerty", force = false)
         const key = match[1];
         if (targetMap[key] !== undefined) {
           updatedKeys.add(key);
-          return `${key}:${targetMap[key]}`;
+          // Existing bindings belong to the player, including WASD, mouse
+          // buttons and unbound keys. Only an explicit reset replaces them.
+          return force ? `${key}:${targetMap[key]}` : line;
         }
       }
       return line;
@@ -1214,7 +1203,11 @@ function applyKeyboardLayoutToOptionsTxt(targetLayout = "azerty", force = false)
       }
     }
 
-    fs.writeFileSync(optionsPath, lines.join("\n"), "utf-8");
+    const updatedText = lines.join("\n");
+    if (updatedText === optText.replace(/\r\n/g, "\n")) {
+      return { applied: false, reason: "Touches déjà configurées" };
+    }
+    fs.writeFileSync(optionsPath, updatedText, "utf-8");
     console.log(`[ClientMods] Disposition clavier ${targetLayout.toUpperCase()} appliquée à options.txt (force: ${force})`);
     return { applied: true, layout: targetLayout };
   } catch (err) {
@@ -1235,16 +1228,7 @@ function syncClientOptionsToMinecraft(clientMods) {
     const clientJsonPath = path.join(configDir, "yapapouaiye_client.json");
     const legacyJsonPath = path.join(configDir, "lunar_client.json");
 
-    let existingData = {};
-    if (fs.existsSync(clientJsonPath)) {
-      try {
-        existingData = JSON.parse(fs.readFileSync(clientJsonPath, "utf-8")) || {};
-      } catch {}
-    } else if (fs.existsSync(legacyJsonPath)) {
-      try {
-        existingData = JSON.parse(fs.readFileSync(legacyJsonPath, "utf-8")) || {};
-      } catch {}
-    }
+    const existingData = readClientOptions(configDir);
 
     const isFullBright = (mods.fullBright !== undefined) ? !!mods.fullBright.enabled : true;
 
@@ -1265,8 +1249,8 @@ function syncClientOptionsToMinecraft(clientMods) {
           }
           fs.writeFileSync(optionsPath, optText, "utf-8");
         }
-        // Appliquer automatiquement la disposition des touches configurée si options.txt
-        // est encore sur les touches QWERTY par défaut de Minecraft ou si des touches sont corrompues
+        // Initialise uniquement les touches absentes. Les contrôles enregistrés
+        // par le jeu ne doivent jamais être réinitialisés pendant une synchronisation.
         const currentConfig = loadConfig();
         applyKeyboardLayoutToOptionsTxt(currentConfig.keyboardLayout || "azerty", false);
       } catch (err) {
@@ -1805,7 +1789,7 @@ app.whenReady().then(() => {
     loadReleases: fetchLauncherReleases,
     getRequestedVersion: () => requestedUpdateVersion,
     isPrerelease: isPrereleaseVersion, isNewer: isLauncherVersionNewer,
-    getChannel: getVersionChannel,
+    getChannel: getVersionChannel, isValidVersion: value => !!parseLauncherVersion(value),
   });
   autoUpdater.isUpdateAvailable = async (updateInfo) => {
     const feed = updateInfo?.version;
@@ -2344,7 +2328,7 @@ async function syncModsFromRemote(targetServer) {
 }
 
 /** Mirrors the per-server mods (incl. custom mods) into the game's mods folder before launch. */
-function stageModsForLaunch(serverId) {
+function stageModsForLaunch(serverId, minecraftVersion, loader) {
   const serverModsDir = getServerModsDir(serverId);
   if (!fs.existsSync(serverModsDir)) fs.mkdirSync(serverModsDir, { recursive: true });
   if (!fs.existsSync(modsDir)) fs.mkdirSync(modsDir, { recursive: true });
@@ -2397,44 +2381,31 @@ function stageModsForLaunch(serverId) {
 
   // Inject the client companion mod (NexLux) providing Lunar Client features:
   // FullBright, NoFog, and in-game GUI menu
-  injectClientCompanionMod();
+  injectClientCompanionMod(minecraftVersion, loader);
   return { staged, failed, failedNames };
 }
 
 /** Injects NexLux companion mod into game mods folder to enable Lunar Client features */
-function injectClientCompanionMod() {
-  try {
-    const candidatePaths = [
-      path.join(process.resourcesPath || "", "mods", "nexlux-1.1.0.jar"),
-      path.join(__dirname, "..", "mods", "nexlux-1.1.0.jar"),
-      path.join(__dirname, "assets", "nexlux-1.1.0.jar"),
-      path.join(launcherDir, "mods", "adoserv2", "nexlux-1.1.0.jar"),
-      path.join(launcherDir, "mods", "nexlux-1.1.0.jar"),
-    ];
-
-    let foundSrc = null;
-    for (const p of candidatePaths) {
-      if (p && fs.existsSync(p)) {
-        foundSrc = p;
-        break;
-      }
-    }
-
-    if (foundSrc) {
-      const targetPath = path.join(modsDir, "nexlux-1.1.0.jar");
-      try {
-        if (fs.existsSync(targetPath)) fs.unlinkSync(targetPath);
-        fs.copyFileSync(foundSrc, targetPath);
-        console.log("[ClientMods] Successfully injected NexLux companion mod to:", targetPath);
-      } catch (err) {
-        console.warn("[ClientMods] Failed to copy NexLux companion mod:", err.message);
-      }
-    } else {
-      console.warn("[ClientMods] NexLux companion mod not found in candidate paths");
-    }
-  } catch (e) {
-    console.error("[ClientMods] Error injecting companion mod:", e.message);
+function injectClientCompanionMod(minecraftVersion, loader) {
+  const filename = loader === "neoforge" ? ({ "26.2": "nexlux-26.2.jar", "1.21.1": "nexlux-1.1.0.jar" })[minecraftVersion] : null;
+  if (!filename) {
+    console.log("[ClientMods] NexLux non disponible pour " + loader + " / " + minecraftVersion);
+    return;
   }
+  const candidatePaths = [
+    path.join(process.resourcesPath || "", "mods", filename),
+    path.join(__dirname, "..", "mods", filename),
+    path.join(__dirname, "assets", filename),
+  ];
+  const foundSrc = candidatePaths.find(p => fs.existsSync(p));
+  if (!foundSrc) throw new Error("NexLux compatible introuvable : " + filename);
+  // Unlink staged hardlinks before copying, so server caches remain untouched.
+  for (const name of fs.readdirSync(modsDir)) {
+    if (/^nexlux(?:-.*)?\.jar$/i.test(name)) fs.unlinkSync(path.join(modsDir, name));
+  }
+  const targetPath = path.join(modsDir, filename);
+  fs.copyFileSync(foundSrc, targetPath);
+  console.log("[ClientMods] Successfully injected NexLux companion mod to:", targetPath);
 }
 
 // ============================================================
@@ -3286,7 +3257,8 @@ ipcMain.handle("launch-game", async (_, options) => {
     const resolution = config.resolution || "1280x720";
     const [screenW, screenH] = resolution.split("x").map(Number);
 
-    const gameArgs = ["--server", targetServer.host, "--port", String(targetServer.gamePort)];
+    const gameVersion = version || getServerGameVersion(targetServer);
+    const gameArgs = getServerLaunchArgs(gameVersion, targetServer);
     if (isFullscreen) {
       gameArgs.push("--fullscreen");
     }
@@ -3294,7 +3266,7 @@ ipcMain.handle("launch-game", async (_, options) => {
     const launchConfig = {
       authenticator: authAccount,
       path: gameDir,
-      version: version || getServerGameVersion(targetServer),
+      version: gameVersion,
       memory: { max: `${ram || 4}G`, min: "1G" },
       // Si fullscreen est actif, ne pas forcer width/height pour ne pas casser le mode plein écran
       screen: isFullscreen
@@ -3316,7 +3288,7 @@ ipcMain.handle("launch-game", async (_, options) => {
 
     // Stage the active server's mods (NeoForge + Fabric together) into the game mods folder
     send("progress", { type: "mod-sync", value: `Préparation des mods de ${targetServer.name}...` });
-    const staged = stageModsForLaunch(targetServer.id);
+    const staged = stageModsForLaunch(targetServer.id, launchConfig.version, activeLoader);
     const stagedCount = staged?.staged ?? 0;
     const stagedFailed = staged?.failed ?? 0;
     console.log(`[Launch] ${targetServer.name} (${activeLoader}) mods staged (${stagedCount} fichier(s), ${stagedFailed} échec(s)). Setting up game launch pipeline...`);
@@ -3371,6 +3343,7 @@ ipcMain.handle("launch-game", async (_, options) => {
       // Synchronise les éventuels changements faits en jeu (positions HUD, fullscreen, etc.)
       try {
         const refreshedMods = getClientModsConfig();
+        saveConfig({ clientMods: refreshedMods });
         send("client-mods-updated", refreshedMods);
         if (fs.existsSync(optionsPath)) {
           const optText = fs.readFileSync(optionsPath, "utf-8");
