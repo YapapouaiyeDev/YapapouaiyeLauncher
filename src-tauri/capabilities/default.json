@@ -1,0 +1,19 @@
+{
+  "identifier": "default",
+  "description": "Capabilities for the Yapapouaiye Launcher windows",
+  "windows": ["main", "splash", "overlay", "ms-auth"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-minimize",
+    "core:window:allow-maximize",
+    "core:window:allow-unmaximize",
+    "core:window:allow-close",
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "core:window:allow-set-focus",
+    "core:window:allow-is-maximized",
+    "core:window:allow-start-dragging",
+    "core:webview:default",
+    "core:event:default"
+  ]
+}

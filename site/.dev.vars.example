@@ -1,0 +1,4 @@
+# Copier ce fichier vers .dev.vars et définir des valeurs privées.
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=
+ADMIN_TOKEN_SECRET=

@@ -78,6 +78,91 @@
       gap: 8px;
       flex-wrap: wrap;
     }
+    .admin-tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--panel-border);
+      flex-wrap: wrap;
+    }
+    .admin-tab {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: -1px;
+    }
+    .admin-tab:hover {
+      color: #ffffff;
+    }
+    .admin-tab.active {
+      color: var(--mc-green);
+      border-bottom-color: var(--mc-green);
+    }
+    .admin-tab .tab-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      margin-left: 6px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      font-size: 11px;
+    }
+    .admin-tab.active .tab-count {
+      background: rgba(16, 185, 129, 0.25);
+    }
+    .maintenance-card {
+      background: rgba(245, 158, 11, 0.06);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      margin-bottom: 24px;
+    }
+    .maintenance-card.active {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+    .maintenance-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .maintenance-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .switch-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      user-select: none;
+    }
+    .switch-wrap input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #ef4444;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -132,7 +217,44 @@
         </div>
       </div>
 
+      <div class="admin-tabs" id="admin-tabs">
+        <button type="button" class="admin-tab active" data-tab="tab-news">Nouveautés</button>
+        <button type="button" class="admin-tab" data-tab="tab-servers">Serveurs &amp; Lancement <span class="tab-count" id="tab-servers-count">0</span></button>
+        <button type="button" class="admin-tab" data-tab="tab-invitations">Invitations</button>
+      </div>
       <!-- Stats Row -->
+      <section id="tab-invitations" class="hidden" aria-labelledby="invitation-title" style="margin-bottom:30px;">
+        <h2 id="invitation-title">Codes d’invitation</h2>
+        <p>Attribuez un code à chaque invité. Il autorise un seul launcher lors de sa première connexion. La révocation bloque les nouvelles validations ; elle ne retire pas un accès déjà autorisé.</p>
+        <form id="admin-invitation-form">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="invitation-label">Nom de l’invité</label>
+              <input class="form-control" id="invitation-label" maxlength="100" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="invitation-code">Code choisi (facultatif)</label>
+              <input class="form-control" id="invitation-code" minlength="8" maxlength="128" autocomplete="off" spellcheck="false" placeholder="Laissez vide pour générer un code" />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="btn-create-invitation">Créer l’invitation</button>
+          <button type="button" class="btn btn-secondary" id="btn-refresh-invitations">Rafraîchir</button>
+        </form>
+        <div id="invitation-created" class="hidden" style="margin:16px 0;">
+          <label class="form-label" for="invitation-created-code">Code à transmettre (visible uniquement à la création)</label>
+          <input class="form-control" id="invitation-created-code" readonly />
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-invitation">Copier le code</button>
+        </div>
+        <p id="invitation-admin-status" role="status" aria-live="polite"></p>
+        <div class="admin-table-wrap" style="margin-top:16px;">
+          <table class="admin-table">
+            <thead><tr><th>Invité</th><th>Création</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody id="admin-invitations-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-news">
       <div class="admin-stats-grid">
         <div class="stat-card">
           <span class="stat-label">Total Nouveautés (Base de données)</span>
@@ -192,6 +314,95 @@
         </table>
       </div>
 
+      </section>
+      <!-- TAB: Serveurs & Lancement -->
+      <section id="tab-servers" class="hidden">
+        <!-- Maintenance du launcher -->
+        <div class="maintenance-card" id="maintenance-card">
+          <div class="maintenance-head">
+            <span class="maintenance-title">🛠️ Maintenance du launcher</span>
+            <label class="switch-wrap" for="maintenance-enabled">
+              <input type="checkbox" id="maintenance-enabled" />
+              <span id="maintenance-toggle-label">Maintenance désactivée</span>
+            </label>
+          </div>
+          <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 10px; line-height:1.5;">
+            Quand la maintenance est active, le bouton <strong>JOUER</strong> et l'onglet <strong>Mods</strong> sont bloqués
+            dans le launcher avec votre message. Les <strong>paramètres restent accessibles</strong>.
+          </p>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label" for="maintenance-message">Message affiché aux joueurs</label>
+            <input type="text" class="form-control" id="maintenance-message" maxlength="500"
+              placeholder="Ex: Maintenance en cours, retour dans 30 minutes !" />
+          </div>
+          <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+            <span id="maintenance-status" style="font-size:12px; color:var(--text-muted); margin-right:auto;"></span>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-save-maintenance">
+              <span>💾 Enregistrer</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="admin-stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Serveurs enregistrés</span>
+            <span class="stat-val" id="stat-servers-total">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Serveurs ouverts</span>
+            <span class="stat-val" id="stat-servers-enabled" style="color:var(--mc-green);">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Avec codes d'accès</span>
+            <span class="stat-val" id="stat-servers-codes" style="color:var(--accent-gold);">0</span>
+          </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="admin-header-bar">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" id="btn-open-create-server-modal">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>+ Ajouter un Serveur</span>
+            </button>
+
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-servers" title="Rafraîchir la liste">
+              🔄 Rafraîchir
+            </button>
+          </div>
+
+          <div class="news-search-box" style="width: 260px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="admin-search-servers" placeholder="Rechercher un serveur..." spellcheck="false" />
+          </div>
+        </div>
+
+        <!-- Servers Table -->
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Serveur</th>
+                <th>Adresse</th>
+                <th>Version / Loader</th>
+                <th>Codes</th>
+                <th>Statut</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-servers-table-body">
+              <!-- Rendered by admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </section><!-- /tab-servers -->
     </div>
   </main>
 
@@ -298,6 +509,124 @@
     </div>
   </div>
 
+  <!-- Create / Edit Server Modal -->
+  <div class="modal-overlay hidden" id="admin-server-modal">
+    <div class="modal-dialog" style="max-width: 720px;">
+      <div class="modal-header">
+        <h2 id="admin-server-modal-title" style="font-size:17px; font-weight:800; color:#ffffff;">Ajouter un Serveur</h2>
+        <button type="button" class="modal-close-btn" id="btn-close-server-modal" title="Fermer">✕</button>
+      </div>
+
+      <form id="admin-server-form">
+        <div class="modal-body">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="srv-input-name">Nom du serveur *</label>
+              <input type="text" class="form-control" id="srv-input-name" placeholder="Ex: AdoServ II" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="srv-input-shortname">Nom court</label>
+              <input type="text" class="form-control" id="srv-input-shortname" placeholder="Ex: AdoServ II" />
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="srv-input-host">Adresse IP / Hôte *</label>
+              <input type="text" class="form-control" id="srv-input-host" placeholder="Ex: 158.178.200.70" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="srv-input-displayip">IP affichée (optionnel)</label>
+              <input type="text" class="form-control" id="srv-input-displayip" placeholder="Ex: 158.178.200.70:25565" />
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="srv-input-pingport">Port (ping / statut)</label>
+              <input type="number" class="form-control" id="srv-input-pingport" placeholder="25565" min="1" max="65535" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="srv-input-gameport">Port (jeu)</label>
+              <input type="number" class="form-control" id="srv-input-gameport" placeholder="25565" min="1" max="65535" />
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="srv-input-version">Version Minecraft</label>
+              <input type="text" class="form-control" id="srv-input-version" placeholder="Ex: 1.21.1" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="srv-input-loader">Loader</label>
+              <select class="form-control" id="srv-input-loader">
+                <option value="neoforge" selected>NeoForge</option>
+                <option value="fabric">Fabric</option>
+                <option value="forge">Forge</option>
+                <option value="vanilla">Vanilla</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="srv-input-description">Description</label>
+            <input type="text" class="form-control" id="srv-input-description" placeholder="Courte description visible dans le launcher..." />
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="srv-input-badge">Badge affiché</label>
+              <input type="text" class="form-control" id="srv-input-badge" placeholder="Ex: ⚡ GIZMONODES • 1.21.1" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="srv-input-sort">Ordre d'affichage</label>
+              <input type="number" class="form-control" id="srv-input-sort" placeholder="0" min="0" max="999" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Dépôt des mods (Gitea)</label>
+            <div class="form-row-2">
+              <input type="text" class="form-control" id="srv-input-modsowner" placeholder="Propriétaire (owner)" />
+              <input type="text" class="form-control" id="srv-input-modsrepo" placeholder="Dépôt (repo)" />
+            </div>
+            <div style="margin-top:8px;">
+              <input type="text" class="form-control" id="srv-input-modsbranch" placeholder="Branche (défaut : main)" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="srv-input-codes">Codes d'accès (un par ligne, dans l'ordre de saisie)</label>
+            <textarea class="form-control" id="srv-input-codes" style="height:80px;" placeholder="Ex:&#10;DRAGON-2026&#10;PORTAIL-77"></textarea>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:13px;">
+                <input type="checkbox" id="srv-input-codesrequired" checked />
+                <span style="font-weight:700;">🔑 Exiger les codes au lancement</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:13px;">
+                <input type="checkbox" id="srv-input-enabled" checked />
+                <span style="font-weight:700; color:var(--mc-green);">✅ Serveur ouvert (visible)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:16px 20px; border-top:1px solid var(--panel-border); background:rgba(0,0,0,0.2);">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-server-modal">Annuler</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-server-form">
+            <span>Enregistrer le Serveur</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="admin.js"></script>
+  <script src="admin-servers.js"></script>
 </body>
 </html>

@@ -5,8 +5,11 @@ const net = require("net");
 const http = require("http");
 const { Launch, Microsoft } = require("minecraft-java-core");
 const { autoUpdater } = require("electron-updater");
+const { LauncherUpdateProvider, installRequestedUpdate, normalizeVersion } = require("./launcher-update-provider");
+let requestedUpdateVersion = null;
 const fs = require("fs");
 const https = require("https");
+const { createInvitationGate } = require("./invitations");
 
 // Load environment variables from .env file
 try {
@@ -154,7 +157,343 @@ const SERVERS = [
 ];
 
 function getServerById(id) {
-  return SERVERS.find((s) => s.id === id) || SERVERS[0];
+  const all = getAllServers();
+  return all.find((s) => s.id === id) || SERVERS.find((s) => s.id === id) || all[0] || SERVERS[0];
+}
+
+// ============================================================
+// REMOTE SERVERS + MAINTENANCE (pilotés depuis l'espace admin du site)
+// - GET {base}/api/servers -> [{ id, name, ..., codesRequired, codesCount, enabled, sortOrder }] (SANS codes)
+// - GET {base}/api/launcher-config -> { maintenance, message }
+// - POST {base}/api/server-verify { serverId, codes } -> { valid }
+// Fusion par id au-dessus de SERVERS : seuls les champs publics sont
+// repris, les secrets locaux (modsSource B2, etc.) sont TOUJOURS conservés.
+// ============================================================
+const REMOTE_PUBLIC_SERVER_FIELDS = [
+  "name", "shortName", "host", "pingPort", "gamePort", "displayIp",
+  "gameVersion", "defaultLoader", "badgeTag", "description",
+  "apiType", "apiUrl", "apiServerId", "activationUrl",
+  "modsRepoOwner", "modsRepoRepo", "modsRepoBranch",
+  "codesRequired", "codesCount", "enabled", "sortOrder",
+];
+
+let remoteServersCache = [];
+let remoteLauncherConfig = { maintenance: false, message: "" };
+let remoteStateLoaded = false;
+let remoteStateFetchedAt = 0;
+const sessionVerifiedServers = new Set();
+
+function remoteStateFile() {
+  try {
+    return path.join(launcherDir, "remote-launcher-state.json");
+  } catch {
+    return null;
+  }
+}
+
+function loadRemoteStateCache() {
+  if (remoteStateLoaded) return;
+  remoteStateLoaded = true;
+  try {
+    const file = remoteStateFile();
+    if (file && fs.existsSync(file)) {
+      const parsed = JSON.parse(fs.readFileSync(file, "utf-8"));
+      if (Array.isArray(parsed.servers)) remoteServersCache = parsed.servers;
+      if (parsed.maintenance !== undefined || parsed.message !== undefined) {
+        remoteLauncherConfig = {
+          maintenance: Boolean(parsed.maintenance),
+          message: String(parsed.message || ""),
+        };
+      }
+      if (parsed.fetchedAt) remoteStateFetchedAt = parsed.fetchedAt;
+    }
+  } catch (err) {
+    console.warn("[RemoteServers] Cache illisible, repli local:", err.message);
+  }
+}
+
+function saveRemoteStateCache() {
+  try {
+    const file = remoteStateFile();
+    if (!file) return;
+    if (!fs.existsSync(launcherDir)) fs.mkdirSync(launcherDir, { recursive: true });
+    const tmp = `${file}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify({
+      servers: remoteServersCache,
+      maintenance: remoteLauncherConfig.maintenance,
+      message: remoteLauncherConfig.message,
+      fetchedAt: remoteStateFetchedAt,
+    }, null, 2), "utf-8");
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    console.warn("[RemoteServers] Échec écriture cache:", err.message);
+  }
+}
+
+function siteApiBases() {
+  return [
+    process.env.LAUNCHER_SITE_API,
+    "http://127.0.0.1:8789",
+    "https://yapapouaiye-launcher.pages.dev",
+  ].filter(Boolean);
+}
+
+function siteEndpointCandidates(envFullUrl, apiPath) {
+  if (envFullUrl) return [envFullUrl];
+  return siteApiBases().map((base) => `${String(base).replace(/\/+$/, "")}${apiPath}`);
+}
+
+function serversApiCandidates() {
+  return siteEndpointCandidates(process.env.SERVERS_API_URL, "/api/servers");
+}
+
+function launcherConfigApiCandidates() {
+  return siteEndpointCandidates(process.env.LAUNCHER_CONFIG_API_URL, "/api/launcher-config");
+}
+
+function serverVerifyApiCandidates() {
+  return siteEndpointCandidates(process.env.SERVER_VERIFY_API_URL, "/api/server-verify");
+}
+
+async function fetchRemoteJson(url) {
+  const raw = (await httpGet(url, false, false)).toString("utf-8");
+  return JSON.parse(raw);
+}
+
+function httpPostJson(url, payload) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify(payload || {});
+    const client = url.startsWith("http://") ? http : https;
+    const req = client.request(url, {
+      method: "POST",
+      headers: {
+        "User-Agent": `YapapouaiyeLauncher/${app.getVersion()}`,
+        "Content-Type": "application/json; charset=utf-8",
+        "Accept": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+        "Cache-Control": "no-cache",
+      },
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return httpPostJson(res.headers.location, payload).then(resolve).catch(reject);
+      }
+      if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
+      const chunks = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => {
+        try {
+          resolve(JSON.parse(Buffer.concat(chunks).toString("utf-8")));
+        } catch (e) {
+          reject(new Error(`Réponse JSON invalide de ${url}`));
+        }
+      });
+      res.on("error", reject);
+    });
+    req.setTimeout(8000, () => req.destroy(new Error(`Timeout POST après 8s pour ${url}`)));
+    req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+function pickRemoteServerFields(remote) {
+  const out = {};
+  for (const key of REMOTE_PUBLIC_SERVER_FIELDS) {
+    if (remote[key] !== undefined) out[key] = remote[key];
+  }
+  return out;
+}
+
+function buildModsRepoFromRemote(remote) {
+  const owner = String(remote.modsRepoOwner || "").trim();
+  const repo = String(remote.modsRepoRepo || "").trim();
+  if (!owner || !repo) return null;
+  return { owner, repo, branch: String(remote.modsRepoBranch || "main").trim() || "main" };
+}
+
+/**
+ * Liste fusionnée : base locale SERVERS + surcharge distante par id.
+ * Les serveurs distants désactivés sont exclus (sauf recherche directe par id).
+ */
+function getAllServers({ includeDisabled = false } = {}) {
+  loadRemoteStateCache();
+  const byId = new Map();
+  SERVERS.forEach((s, idx) => {
+    byId.set(s.id, { ...s, sortOrder: s.sortOrder ?? idx, enabled: s.enabled !== false });
+  });
+  for (const remote of remoteServersCache) {
+    if (!remote || !remote.id) continue;
+    const picked = pickRemoteServerFields(remote);
+    const local = byId.get(remote.id);
+    if (local) {
+      const merged = { ...local, ...picked };
+      const modsRepo = buildModsRepoFromRemote(remote);
+      if (modsRepo) merged.modsRepo = modsRepo;
+      byId.set(remote.id, merged);
+    } else {
+      const created = {
+        id: String(remote.id),
+        name: picked.name || String(remote.id),
+        shortName: picked.shortName || picked.name || String(remote.id),
+        host: picked.host || "",
+        pingPort: picked.pingPort || 25565,
+        gamePort: picked.gamePort || 25565,
+        displayIp: picked.displayIp || (picked.host ? `${picked.host}:${picked.gamePort || 25565}` : ""),
+        defaultLoader: picked.defaultLoader || "neoforge",
+        badgeTag: picked.badgeTag || "",
+        description: picked.description || "",
+        codesRequired: Boolean(picked.codesRequired),
+        codesCount: Number(picked.codesCount) || 0,
+        enabled: picked.enabled !== false,
+        sortOrder: Number(picked.sortOrder) || 0,
+      };
+      const modsRepo = buildModsRepoFromRemote(remote);
+      if (modsRepo) created.modsRepo = modsRepo;
+      if (picked.gameVersion) created.gameVersion = picked.gameVersion;
+      byId.set(created.id, created);
+    }
+  }
+  let list = Array.from(byId.values());
+  if (!includeDisabled) list = list.filter((s) => s.enabled !== false);
+  list.sort((a, b) => ((a.sortOrder ?? 0) - (b.sortOrder ?? 0)) || String(a.id).localeCompare(String(b.id)));
+  return list;
+}
+
+function getRemoteServerById(id) {
+  if (!id) return null;
+  return getAllServers({ includeDisabled: true }).find((s) => s.id === id) || null;
+}
+
+function getMaintenanceState() {
+  loadRemoteStateCache();
+  return { ...remoteLauncherConfig };
+}
+
+/**
+ * Rafraîchit serveurs + maintenance depuis le site (1er endpoint OK gagne).
+ * En cas d'échec total, le cache local (ou les valeurs codées en dur) est conservé.
+ */
+async function refreshRemoteLauncherState() {
+  loadRemoteStateCache();
+  let serversOk = false;
+  for (const url of serversApiCandidates()) {
+    try {
+      const parsed = await fetchRemoteJson(`${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`);
+      const list = Array.isArray(parsed?.servers) ? parsed.servers : [];
+      remoteServersCache = list.filter((s) => s && s.id).map((s) => ({ ...pickRemoteServerFields(s), id: String(s.id) }));
+      serversOk = true;
+      console.log(`[RemoteServers] ${remoteServersCache.length} serveur(s) distant(s) via ${url}`);
+      break;
+    } catch (err) {
+      console.warn(`[RemoteServers] Injoignable ${url}:`, err.message);
+    }
+  }
+  let configOk = false;
+  for (const url of launcherConfigApiCandidates()) {
+    try {
+      const parsed = await fetchRemoteJson(`${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`);
+      if (parsed && typeof parsed === "object") {
+        remoteLauncherConfig = {
+          maintenance: Boolean(parsed.maintenance),
+          message: String(parsed.message || ""),
+        };
+        configOk = true;
+        break;
+      }
+    } catch (err) {
+      console.warn(`[RemoteServers] Config injoignable ${url}:`, err.message);
+    }
+  }
+  if (serversOk || configOk) {
+    remoteStateFetchedAt = Date.now();
+    saveRemoteStateCache();
+  }
+  return { serversOk, configOk };
+}
+
+/**
+ * État maintenance FRAIS avant chaque lancement (kill-switch admin quasi immédiat).
+ * Repli sur le cache si le réseau échoue.
+ */
+async function getFreshMaintenanceState() {
+  for (const url of launcherConfigApiCandidates()) {
+    try {
+      const parsed = await fetchRemoteJson(`${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`);
+      if (parsed && typeof parsed === "object") {
+        remoteLauncherConfig = {
+          maintenance: Boolean(parsed.maintenance),
+          message: String(parsed.message || ""),
+        };
+        remoteStateFetchedAt = Date.now();
+        saveRemoteStateCache();
+        return { ...remoteLauncherConfig };
+      }
+    } catch {}
+  }
+  return getMaintenanceState();
+}
+
+// ============================================================
+// Live refresh : pousse serveurs + maintenance au renderer dès
+// que l'espace admin change quelque chose (sondage 30s).
+// Le renderer applique sans redémarrage : onglets re-rendus,
+// bandeau maintenance, blocage JOUER/Mods.
+// ============================================================
+const REMOTE_STATE_POLL_MS = 30000;
+let remoteStateSignature = "";
+let remoteRefreshInFlight = null;
+let remoteWatcherStarted = false;
+
+function computeRemoteStateSignature() {
+  try {
+    return JSON.stringify({ s: remoteServersCache, m: remoteLauncherConfig });
+  } catch {
+    return "";
+  }
+}
+
+function buildRemoteStatePayload() {
+  const all = getAllServers();
+  const active = getActiveServer();
+  return {
+    type: "remote-state",
+    servers: all.map((s) => ({ ...s, gameVersion: getServerGameVersion(s) })),
+    activeServerId: active.id,
+    activeServer: { ...active, gameVersion: getServerGameVersion(active) },
+    launcherConfig: getMaintenanceState(),
+  };
+}
+
+async function pollRemoteStateOnce() {
+  if (remoteRefreshInFlight) return remoteRefreshInFlight;
+  remoteRefreshInFlight = (async () => {
+    try {
+      await refreshRemoteLauncherState();
+    } catch {}
+    const payload = buildRemoteStatePayload();
+    const sig = computeRemoteStateSignature();
+    if (sig && sig !== remoteStateSignature) {
+      remoteStateSignature = sig;
+      sendToRenderer("remote-state", payload);
+      console.log("[RemoteState] Changement détecté, poussé au renderer.");
+    }
+    return payload;
+  })();
+  try {
+    return await remoteRefreshInFlight;
+  } finally {
+    remoteRefreshInFlight = null;
+  }
+}
+
+function startRemoteStateWatcher() {
+  if (remoteWatcherStarted) return;
+  remoteWatcherStarted = true;
+  remoteStateSignature = computeRemoteStateSignature();
+  const timer = setInterval(() => {
+    pollRemoteStateOnce().catch(() => {});
+  }, REMOTE_STATE_POLL_MS);
+  if (timer && typeof timer.unref === "function") timer.unref();
 }
 
 // Per-server Minecraft version (fallback: global default 1.21.1)
@@ -165,7 +504,16 @@ function getServerGameVersion(targetServer) {
 
 function getActiveServer() {
   const config = loadConfig();
-  return getServerById(config.activeServerId || "adoserv2");
+  const wanted = config.activeServerId || "adoserv2";
+  const enabled = getAllServers();
+  const match = enabled.find((s) => s.id === wanted);
+  if (match) return match;
+  // Le serveur actif a été désactivé/supprimé par l'admin : repli propre.
+  const fallback = enabled[0] || SERVERS[0];
+  if (fallback && fallback.id !== wanted) {
+    try { saveConfig({ activeServerId: fallback.id }); } catch {}
+  }
+  return fallback;
 }
 
 // Gitea mods repo for a given server (fallbacks: per-server env override -> server config -> global)
@@ -197,6 +545,20 @@ function getModsHashFile(serverId) {
 
 const rootPath = app.getPath("appData");
 const launcherDir = path.join(rootPath, ".yapapouaiye-launcher");
+const invitationGate = createInvitationGate({
+  directory: launcherDir,
+  verifyRemote: (payload) => {
+    const base = process.env.LAUNCHER_SITE_API || "https://yapapouaiye-launcher.pages.dev";
+    // Invitation validation has one authority; never try a second server after rejection.
+    return fetch(`${base.replace(/\/+$/, "")}/api/invitation-verify`, {
+      method: "POST", redirect: "error", signal: AbortSignal.timeout(8000),
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    }).then(response => {
+      if (!response.ok) throw new Error("Validation des invitations indisponible.");
+      return response.json();
+    });
+  },
+});
 const gameDir = path.join(launcherDir, "minecraft");
 const modsDir = path.join(gameDir, "mods");
 const customModsDir = path.join(launcherDir, "mods-custom");
@@ -206,6 +568,20 @@ const modsHashFile = path.join(launcherDir, "mods-hash.json");
 
 function getServerModsDir(serverId) {
   return path.join(launcherDir, "mods", serverId || "default");
+}
+
+// Case-insensitive .jar check (Windows users often have .JAR / .Jar)
+function isJarFile(fileName) {
+  return typeof fileName === "string" && fileName.toLowerCase().endsWith(".jar");
+}
+
+function listJarFiles(dir) {
+  try {
+    if (!fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir).filter(isJarFile);
+  } catch {
+    return [];
+  }
 }
 
 try {
@@ -227,12 +603,12 @@ function migrateLegacyMods() {
     for (const server of SERVERS) {
       const serverModsDir = getServerModsDir(server.id);
       fs.mkdirSync(serverModsDir, { recursive: true });
-      const existingJars = fs.readdirSync(serverModsDir).filter((f) => f.toLowerCase().endsWith(".jar"));
+      const existingJars = listJarFiles(serverModsDir);
       const known = new Set(existingJars);
       for (const loader of VALID_LOADERS) {
         const subDir = path.join(serverModsDir, loader);
         if (!fs.existsSync(subDir)) continue;
-        for (const f of fs.readdirSync(subDir).filter((f) => f.toLowerCase().endsWith(".jar"))) {
+        for (const f of listJarFiles(subDir)) {
           if (known.has(f)) continue;
           try {
             fs.copyFileSync(path.join(subDir, f), path.join(serverModsDir, f));
@@ -332,31 +708,298 @@ async function getServerStatus(targetServer) {
 
 // ============================================================
 // Config (saves RAM etc.)
+// Robuste : un config.json corrompu est sauvegarde en .corrupt-*
+// au lieu d'etre ecrase silencieusement. Les champs manquants
+// sont completes avec les defauts (jamais de reset global).
 // ============================================================
-function loadConfig() {
+const DEFAULT_CONFIG = {
+  ram: 4,
+  activeServerId: "adoserv2",
+  resolution: "1280x720",
+  fullscreen: false,
+  javaPath: null,
+  jvmArgs: null,
+  theme: null,
+  customThemes: [],
+  themeOverrides: {},
+  closeOnLaunch: false,
+  minimizeOnLaunch: false,
+  language: null,
+  keyboardLayout: "azerty",
+  onboardingCompleted: false,
+  lastSeenVersion: null,
+  clientMods: null,
+  betaTester: false,
+};
+
+function readConfigRaw() {
   try {
-    if (fs.existsSync(configFile)) return JSON.parse(fs.readFileSync(configFile, "utf-8"));
-  } catch {}
-  return { ram: 4 };
+    if (!fs.existsSync(configFile)) return { ok: true, value: {}, corrupt: false };
+    const raw = fs.readFileSync(configFile, "utf-8");
+    if (!raw || !raw.trim()) return { ok: true, value: {}, corrupt: false };
+    return { ok: true, value: JSON.parse(raw), corrupt: false };
+  } catch (err) {
+    // Sauvegarde le fichier corrompu pour diagnostic au lieu de le perdre.
+    try {
+      const backup = `${configFile}.corrupt-${Date.now()}.bak`;
+      fs.copyFileSync(configFile, backup);
+      console.error(`[Config] config.json illisible, sauvegarde en ${backup}:`, err.message);
+    } catch {}
+    return { ok: false, value: {}, corrupt: true };
+  }
+}
+
+function normalizeClientModsDeep(stored) {
+  const out = {};
+  for (const [key, def] of Object.entries(DEFAULT_CLIENT_MODS)) {
+    if (key === "hudPositions") {
+      out.hudPositions = {
+        ...def,
+        ...(stored && typeof stored.hudPositions === "object" && stored.hudPositions !== null ? stored.hudPositions : {})
+      };
+    } else {
+      const cur = (stored && typeof stored[key] === "object" && stored[key] !== null)
+        ? stored[key]
+        : (typeof stored?.[key] === "boolean" ? { enabled: stored[key] } : {});
+      out[key] = { ...def, ...cur };
+    }
+  }
+  return out;
+}
+
+function normalizeConfig(raw) {
+  const base = { ...DEFAULT_CONFIG, ...(raw && typeof raw === "object" ? raw : {}) };
+  // Types defensifs (evite les crashs si un champ a ete edite a la main).
+  if (typeof base.ram !== "number" || !Number.isFinite(base.ram)) base.ram = 4;
+  if (typeof base.activeServerId !== "string" || !base.activeServerId) base.activeServerId = "adoserv2";
+  if (base.keyboardLayout !== "qwerty" && base.keyboardLayout !== "azerty") base.keyboardLayout = "azerty";
+  if (!Array.isArray(base.customThemes)) base.customThemes = [];
+  if (!base.themeOverrides || typeof base.themeOverrides !== 'object' || Array.isArray(base.themeOverrides)) base.themeOverrides = {};
+  base.clientMods = base.clientMods ? normalizeClientModsDeep(base.clientMods) : null;
+  return base;
+}
+
+function loadConfig() {
+  const { value } = readConfigRaw();
+  // Retourne la config brute fusionnee aux defauts SANS ecrire sur disque
+  // (l'ecriture se fait uniquement via saveConfig pour ne jamais
+  // ecraser les changements locaux a la simple lecture).
+  const normalized = normalizeConfig(value);
+  // Conserve la forme historique : les champs null/absents restent lus
+  // via fallbacks cote appelants, mais ram/activeServerId sont garantis.
+  const out = { ...value, ram: normalized.ram, activeServerId: normalized.activeServerId };
+  if (normalized.clientMods && !out.clientMods) out.clientMods = normalized.clientMods;
+  return out;
+}
+
+function loadConfigNormalized() {
+  return normalizeConfig(readConfigRaw().value);
 }
 
 function saveConfig(config) {
-  const existing = loadConfig();
-  const merged = { ...existing, ...config };
-  fs.writeFileSync(configFile, JSON.stringify(merged, null, 2));
+  const { value: existing } = readConfigRaw();
+  const merged = { ...(existing && typeof existing === "object" ? existing : {}), ...(config || {}) };
+  // Normalise les bornes critiques sans supprimer les cles inconnues
+  // (themes custom, reglages futurs : on ne les ecrase jamais).
+  if (merged.ram !== undefined && (typeof merged.ram !== "number" || !Number.isFinite(merged.ram))) {
+    delete merged.ram;
+  }
+  try {
+    if (!fs.existsSync(launcherDir)) fs.mkdirSync(launcherDir, { recursive: true });
+    const tmp = `${configFile}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(merged, null, 2), "utf-8");
+    fs.renameSync(tmp, configFile);
+    return true;
+  } catch (err) {
+    console.error("[Config] Echec ecriture config.json:", err.message);
+    return false;
+  }
+}
+
+// ============================================================
+// Verrouillage par mot de passe + "Retenir ce PC" (ID carte mère)
+// ------------------------------------------------------------
+// - Le mot de passe est exigé avant chaque lancement du jeu.
+// - "Retenir ce PC" enregistre une empreinte hashée de la carte
+//   mère. Tant que l'empreinte correspond, le jeu se lance sans
+//   mot de passe. Si la carte mère change (ou PC différent),
+//   l'empreinte ne correspond plus -> mot de passe redemandé,
+//   puis nouvelle empreinte enregistrée si "Retenir" recoché.
+// - Stockage : launcherDir/launch-lock.json (jamais en clair :
+//   PBKDF2-SHA256 120k itérations + sel aléatoire).
+// - L'empreinte brute n'est jamais stockée en clair, seul son
+//   SHA-256 est conservé.
+// ============================================================
+const launchLockFile = path.join(launcherDir, "launch-lock.json");
+let cachedHwidRaw = null;
+let launchUnlockedAt = 0;
+const LAUNCH_UNLOCK_VALID_MS = 5 * 60 * 1000; // déverrouillage ponctuel valable 5 min (un lancement)
+let launchLockFails = { count: 0, lockUntil: 0 };
+const LAUNCH_LOCK_MAX_TRIES = 5;
+const LAUNCH_LOCK_BLOCK_MS = 30 * 1000;
+
+function isPlaceholderHwid(value) {
+  if (!value) return true;
+  const v = String(value).trim().toLowerCase();
+  if (!v || v.length < 4) return true;
+  return ["to be filled by o.e.m.", "to be filled", "none", "not specified",
+    "not available", "unknown", "default string", "00000000", "0000000000000000",
+    "ffffffff", "system serial number"].some((p) => v.includes(p));
+}
+
+function execQuiet(cmd) {
+  try {
+    const { execSync } = require("child_process");
+    return execSync(cmd, { encoding: "utf8", timeout: 8000, windowsHide: true, stdio: ["ignore", "pipe", "ignore"] });
+  } catch {
+    return "";
+  }
+}
+
+function parseWmicSerial(output) {
+  try {
+    const lines = String(output || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length < 2) return "";
+    // Première ligne = en-tête "SerialNumber"
+    lines.shift();
+    return (lines[0] || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+// Empreinte matérielle brute : N° série carte mère -> UUID système -> repli machine.
+function getMotherboardRawId() {
+  if (cachedHwidRaw) return cachedHwidRaw;
+  const candidates = [];
+  try {
+    const wmic = parseWmicSerial(execQuiet("wmic baseboard get serialnumber"));
+    if (wmic && !isPlaceholderHwid(wmic)) candidates.push(`board:${wmic.trim()}`);
+  } catch {}
+  try {
+    const ps1 = String(execQuiet('powershell -NoProfile -Command "(Get-CimInstance Win32_BaseBoard).SerialNumber"') || "").trim().split(/\r?\n/).map((l) => l.trim()).filter(Boolean)[0] || "";
+    if (ps1 && !isPlaceholderHwid(ps1)) candidates.push(`board:${ps1}`);
+  } catch {}
+  try {
+    const uuid = String(execQuiet('powershell -NoProfile -Command "(Get-CimInstance Win32_ComputerSystemProduct).UUID"') || "").trim().split(/\r?\n/).map((l) => l.trim()).filter(Boolean)[0] || "";
+    if (uuid && !isPlaceholderHwid(uuid)) candidates.push(`sysuuid:${uuid}`);
+  } catch {}
+  let raw = candidates[0] || "";
+  if (!raw) {
+    // Repli (VM / carte mère sans N° série) : hostname + CPU + RAM totale.
+    try {
+      const cpus = (os.cpus() || []).map((c) => c.model).join("|");
+      raw = `fallback:${os.hostname()}|${cpus}|${os.totalmem()}|${os.platform()}-${os.arch()}`;
+    } catch {
+      raw = `fallback:${os.hostname()}`;
+    }
+  }
+  cachedHwidRaw = String(raw).trim();
+  return cachedHwidRaw;
+}
+
+function getCurrentHwidHash() {
+  try {
+    const nodeCrypto = require("crypto");
+    const raw = getMotherboardRawId().trim().toUpperCase();
+    return nodeCrypto.createHash("sha256").update(raw, "utf8").digest("hex");
+  } catch {
+    return "";
+  }
+}
+
+function loadLaunchLock() {
+  const empty = { enabled: false, salt: null, hash: null, iterations: 120000, createdAt: null, updatedAt: null, trustedHwidHash: null, trustedAt: null, trustedDeviceName: null };
+  try {
+    if (!fs.existsSync(launchLockFile)) return empty;
+    const parsed = JSON.parse(fs.readFileSync(launchLockFile, "utf-8"));
+    if (!parsed || typeof parsed !== "object") return empty;
+    return {
+      enabled: !!parsed.enabled && !!parsed.hash && !!parsed.salt,
+      salt: typeof parsed.salt === "string" ? parsed.salt : null,
+      hash: typeof parsed.hash === "string" ? parsed.hash : null,
+      iterations: Number.isFinite(parsed.iterations) ? parsed.iterations : 120000,
+      createdAt: parsed.createdAt || null,
+      updatedAt: parsed.updatedAt || null,
+      trustedHwidHash: typeof parsed.trustedHwidHash === "string" ? parsed.trustedHwidHash : null,
+      trustedAt: parsed.trustedAt || null,
+      trustedDeviceName: typeof parsed.trustedDeviceName === "string" ? parsed.trustedDeviceName : null,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+function saveLaunchLock(lock) {
+  try {
+    if (!fs.existsSync(launcherDir)) fs.mkdirSync(launcherDir, { recursive: true });
+    const tmp = `${launchLockFile}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(lock, null, 2), "utf-8");
+    fs.renameSync(tmp, launchLockFile);
+  } catch (err) {
+    console.error("[LaunchLock] Echec ecriture launch-lock.json:", err.message);
+  }
+}
+
+function hashLaunchPassword(password, saltHex, iterations) {
+  const nodeCrypto = require("crypto");
+  return nodeCrypto.pbkdf2Sync(String(password), Buffer.from(String(saltHex), "hex"), iterations, 32, "sha256").toString("hex");
+}
+
+function verifyLaunchPasswordHash(password, lock) {
+  try {
+    if (!lock || !lock.hash || !lock.salt) return false;
+    const nodeCrypto = require("crypto");
+    const attempt = hashLaunchPassword(password, lock.salt, lock.iterations || 120000);
+    const a = Buffer.from(attempt, "hex");
+    const b = Buffer.from(String(lock.hash), "hex");
+    if (a.length !== b.length) return false;
+    return nodeCrypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+function isTrustedPC(lock) {
+  try {
+    if (!lock || !lock.trustedHwidHash) return false;
+    const current = getCurrentHwidHash();
+    if (!current) return false;
+    const a = Buffer.from(String(lock.trustedHwidHash), "hex");
+    const b = Buffer.from(String(current), "hex");
+    if (a.length !== b.length) return false;
+    return require("crypto").timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+// Garde centralisée appelée par launch-game : PC retenu => OK,
+// sinon déverrouillage ponctuel (mot de passe vérifié il y a < 5 min).
+function checkLaunchLockForGame() {
+  const lock = loadLaunchLock();
+  if (!lock.enabled || !lock.hash) return { allowed: true, reason: "disabled", lock };
+  if (isTrustedPC(lock)) return { allowed: true, reason: "trusted", lock };
+  if (launchUnlockedAt && Date.now() - launchUnlockedAt < LAUNCH_UNLOCK_VALID_MS) {
+    return { allowed: true, reason: "unlocked", lock };
+  }
+  return { allowed: false, reason: "locked", lock };
 }
 
 // ============================================================
 // Lunar Client Mods Configuration & Options Synchronization
 // ============================================================
 const DEFAULT_CLIENT_MODS = {
+  fullBright: {
+    enabled: true,
+    gammaLevel: 100,
+  },
   nightVision: {
     enabled: false,
-    gammaLevel: 100, // 100% -> 100.0 gamma in Minecraft options.txt
     keybind: "RSHIFT",
   },
   noFog: {
-    enabled: false,
+    enabled: true,
     netherFog: true,
     waterFog: true,
     skyFog: true,
@@ -366,65 +1009,341 @@ const DEFAULT_CLIENT_MODS = {
     fastMath: true,
   },
   zoom: {
-    enabled: false,
+    enabled: true,
     smoothZoom: true,
     keybind: "C",
+  },
+  keystrokes: {
+    enabled: true,
+  },
+  armorHud: {
+    enabled: true,
+    showNumbers: true,
+  },
+  speed: {
+    enabled: true,
+  },
+  fps: {
+    enabled: true,
+  },
+  ping: {
+    enabled: true,
+  },
+  coordinates: {
+    enabled: true,
+  },
+  cps: {
+    enabled: true,
+  },
+  hudPositions: {
+    coordsX: 492,
+    coordsY: 8,
+    cpsX: 520,
+    cpsY: 260,
+    armorX: 8,
+    armorY: 230,
+    speedX: 8,
+    speedY: 34,
+    fpsX: 8,
+    fpsY: 8,
+    pingX: 8,
+    pingY: 8,
   },
 };
 
 function getClientModsConfig() {
   const config = loadConfig();
-  return { ...DEFAULT_CLIENT_MODS, ...(config.clientMods || {}) };
+  const base = normalizeClientModsDeep(config.clientMods || {});
+
+  // Lit également yapapouaiye_client.json (ou lunar_client.json) pour charger
+  // les dernières coordonnées et réglages sauvegardés par le mod compagnon in-game
+  try {
+    const configDir = path.join(gameDir, "config");
+    const clientJsonPath = path.join(configDir, "yapapouaiye_client.json");
+    const legacyJsonPath = path.join(configDir, "lunar_client.json");
+    let diskData = null;
+    if (fs.existsSync(clientJsonPath)) {
+      diskData = JSON.parse(fs.readFileSync(clientJsonPath, "utf-8"));
+    } else if (fs.existsSync(legacyJsonPath)) {
+      diskData = JSON.parse(fs.readFileSync(legacyJsonPath, "utf-8"));
+    }
+    if (diskData && typeof diskData === "object") {
+      if (!base.hudPositions) base.hudPositions = {};
+      const posKeys = [
+        "coordsX", "coordsY", "cpsX", "cpsY", "armorX", "armorY",
+        "speedX", "speedY", "fpsX", "fpsY", "pingX", "pingY"
+      ];
+      for (const pk of posKeys) {
+        if (typeof diskData[pk] === "number" && !Number.isNaN(diskData[pk])) {
+          base.hudPositions[pk] = diskData[pk];
+        }
+      }
+      if (diskData.coordinates !== undefined) base.coordinates.enabled = !!diskData.coordinates;
+      if (diskData.cpsCounter !== undefined) base.cps.enabled = !!diskData.cpsCounter;
+      if (diskData.armorStatus !== undefined) base.armorHud.enabled = !!diskData.armorStatus;
+      if (diskData.armorHud !== undefined) base.armorHud.enabled = !!diskData.armorHud;
+      if (diskData.armorNumbers !== undefined) base.armorHud.showNumbers = !!diskData.armorNumbers;
+      if (diskData.armorHudNumbers !== undefined) base.armorHud.showNumbers = !!diskData.armorHudNumbers;
+    }
+  } catch (err) {
+    console.warn("[ClientMods] Could not read disk client config:", err.message);
+  }
+
+  return base;
+}
+
+const AZERTY_DEFAULT_KEYS = {
+  "key_key.forward": "key.keyboard.z",
+  "key_key.left": "key.keyboard.q",
+  "key_key.back": "key.keyboard.s",
+  "key_key.right": "key.keyboard.d",
+  "key_key.jump": "key.keyboard.space",
+  "key_key.sneak": "key.keyboard.left.shift",
+  "key_key.sprint": "key.keyboard.left.control",
+  "key_key.drop": "key.keyboard.a",
+  "key_key.inventory": "key.keyboard.e",
+  "key_key.chat": "key.keyboard.t",
+  "key_key.playerlist": "key.keyboard.tab",
+  "key_key.pickItem": "key.mouse.middle",
+  "key_key.command": "key.keyboard.slash",
+  "key_key.socialInteractions": "key.keyboard.p",
+  "key_key.screenshot": "key.keyboard.f2",
+  "key_key.togglePerspective": "key.keyboard.f5",
+  "key_key.smoothCamera": "key.keyboard.unknown",
+  "key_key.fullscreen": "key.keyboard.f11",
+  "key_key.spectatorOutlines": "key.keyboard.unknown",
+  "key_key.swapOffhand": "key.keyboard.f",
+  "key_key.saveToolbarActivator": "key.keyboard.c",
+  "key_key.loadToolbarActivator": "key.keyboard.x",
+  "key_key.advancements": "key.keyboard.l",
+  "key_key.hotbar.1": "key.keyboard.1",
+  "key_key.hotbar.2": "key.keyboard.2",
+  "key_key.hotbar.3": "key.keyboard.3",
+  "key_key.hotbar.4": "key.keyboard.4",
+  "key_key.hotbar.5": "key.keyboard.5",
+  "key_key.hotbar.6": "key.keyboard.6",
+  "key_key.hotbar.7": "key.keyboard.7",
+  "key_key.hotbar.8": "key.keyboard.8",
+  "key_key.hotbar.9": "key.keyboard.9",
+};
+
+const QWERTY_DEFAULT_KEYS = {
+  "key_key.forward": "key.keyboard.w",
+  "key_key.left": "key.keyboard.a",
+  "key_key.back": "key.keyboard.s",
+  "key_key.right": "key.keyboard.d",
+  "key_key.jump": "key.keyboard.space",
+  "key_key.sneak": "key.keyboard.left.shift",
+  "key_key.sprint": "key.keyboard.left.control",
+  "key_key.drop": "key.keyboard.q",
+  "key_key.inventory": "key.keyboard.e",
+  "key_key.chat": "key.keyboard.t",
+  "key_key.playerlist": "key.keyboard.tab",
+  "key_key.pickItem": "key.mouse.middle",
+  "key_key.command": "key.keyboard.slash",
+  "key_key.socialInteractions": "key.keyboard.p",
+  "key_key.screenshot": "key.keyboard.f2",
+  "key_key.togglePerspective": "key.keyboard.f5",
+  "key_key.smoothCamera": "key.keyboard.unknown",
+  "key_key.fullscreen": "key.keyboard.f11",
+  "key_key.spectatorOutlines": "key.keyboard.unknown",
+  "key_key.swapOffhand": "key.keyboard.f",
+  "key_key.saveToolbarActivator": "key.keyboard.c",
+  "key_key.loadToolbarActivator": "key.keyboard.x",
+  "key_key.advancements": "key.keyboard.l",
+  "key_key.hotbar.1": "key.keyboard.1",
+  "key_key.hotbar.2": "key.keyboard.2",
+  "key_key.hotbar.3": "key.keyboard.3",
+  "key_key.hotbar.4": "key.keyboard.4",
+  "key_key.hotbar.5": "key.keyboard.5",
+  "key_key.hotbar.6": "key.keyboard.6",
+  "key_key.hotbar.7": "key.keyboard.7",
+  "key_key.hotbar.8": "key.keyboard.8",
+  "key_key.hotbar.9": "key.keyboard.9",
+};
+
+function ensureNeoForgeFmlConfig() {
+  try {
+    const fmlPath = path.join(gameDir, "config", "fml.toml");
+    if (fs.existsSync(fmlPath)) {
+      let content = fs.readFileSync(fmlPath, "utf-8");
+      if (/^earlyWindowControl\s*=\s*true/m.test(content)) {
+        content = content.replace(/^earlyWindowControl\s*=\s*true/m, "earlyWindowControl = false");
+        fs.writeFileSync(fmlPath, content, "utf-8");
+        console.log("[ClientMods] fml.toml mis à jour : earlyWindowControl = false (corrige les clics de souris et le bouton Contrôles)");
+      }
+    }
+  } catch (err) {
+    console.warn("[ClientMods] Impossible de vérifier fml.toml:", err.message);
+  }
+}
+
+function applyKeyboardLayoutToOptionsTxt(targetLayout = "azerty", force = false) {
+  try {
+    const optionsPath = path.join(gameDir, "options.txt");
+    if (!fs.existsSync(optionsPath)) return { applied: false, reason: "options.txt introuvable" };
+
+    const targetMap = (targetLayout === "qwerty") ? QWERTY_DEFAULT_KEYS : AZERTY_DEFAULT_KEYS;
+    let optText = fs.readFileSync(optionsPath, "utf-8");
+
+    if (!force) {
+      const isDefaultVanillaQwerty = /^key_key\.forward:key\.keyboard\.w$/m.test(optText) && /^key_key\.left:key\.keyboard\.a$/m.test(optText);
+      const isScrambledHotbar = /^key_key\.hotbar\.6:key\.keyboard\.g$/m.test(optText) || /^key_key\.hotbar\.9:key\.keyboard\.f$/m.test(optText);
+      if (!isDefaultVanillaQwerty && !isScrambledHotbar) {
+        return { applied: false, reason: "Touches déjà personnalisées" };
+      }
+    }
+
+    let lines = optText.split(/\r?\n/);
+    const updatedKeys = new Set();
+    lines = lines.map(line => {
+      const match = line.match(/^([^:]+):(.*)$/);
+      if (match) {
+        const key = match[1];
+        if (targetMap[key] !== undefined) {
+          updatedKeys.add(key);
+          return `${key}:${targetMap[key]}`;
+        }
+      }
+      return line;
+    });
+
+    for (const [k, v] of Object.entries(targetMap)) {
+      if (!updatedKeys.has(k)) {
+        lines.push(`${k}:${v}`);
+      }
+    }
+
+    fs.writeFileSync(optionsPath, lines.join("\n"), "utf-8");
+    console.log(`[ClientMods] Disposition clavier ${targetLayout.toUpperCase()} appliquée à options.txt (force: ${force})`);
+    return { applied: true, layout: targetLayout };
+  } catch (err) {
+    console.warn("[ClientMods] Échec application disposition clavier:", err.message);
+    return { applied: false, error: err.message };
+  }
 }
 
 function syncClientOptionsToMinecraft(clientMods) {
   try {
     const mods = clientMods || getClientModsConfig();
-    const optionsPath = path.join(gameDir, "options.txt");
-    if (!fs.existsSync(gameDir)) fs.mkdirSync(gameDir, { recursive: true });
+    const configDir = path.join(gameDir, "config");
+    if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
 
-    let optionsLines = [];
-    if (fs.existsSync(optionsPath)) {
+    // 0. Assure que fml.toml a earlyWindowControl = false (corrige les clics GLFW dans Options / Contrôles)
+    ensureNeoForgeFmlConfig();
+
+    const clientJsonPath = path.join(configDir, "yapapouaiye_client.json");
+    const legacyJsonPath = path.join(configDir, "lunar_client.json");
+
+    let existingData = {};
+    if (fs.existsSync(clientJsonPath)) {
       try {
-        optionsLines = fs.readFileSync(optionsPath, "utf-8").split(/\r?\n/);
+        existingData = JSON.parse(fs.readFileSync(clientJsonPath, "utf-8")) || {};
+      } catch {}
+    } else if (fs.existsSync(legacyJsonPath)) {
+      try {
+        existingData = JSON.parse(fs.readFileSync(legacyJsonPath, "utf-8")) || {};
       } catch {}
     }
 
-    const optionsMap = new Map();
-    for (const line of optionsLines) {
-      const idx = line.indexOf(":");
-      if (idx !== -1) {
-        optionsMap.set(line.substring(0, idx).trim(), line.substring(idx + 1).trim());
+    const isFullBright = (mods.fullBright !== undefined) ? !!mods.fullBright.enabled : true;
+
+    // 1. Sauvegarde et préservation des options dans options.txt SANS écraser
+    // les autres paramètres de Minecraft (distance de rendu, flou d'arrière plan, etc.)
+    const optionsPath = path.join(gameDir, "options.txt");
+    if (fs.existsSync(optionsPath)) {
+      try {
+        let optText = fs.readFileSync(optionsPath, "utf-8");
+        // Si FullBright est activé, ajuster gamma si nécessaire sans altérer le reste
+        if (isFullBright) {
+          const level = Number(mods.fullBright?.gammaLevel) || 100;
+          const gammaVal = (level >= 1 ? level : 100).toFixed(1);
+          if (/^gamma:/m.test(optText)) {
+            optText = optText.replace(/^gamma:.*$/m, `gamma:${gammaVal}`);
+          } else {
+            optText += `\ngamma:${gammaVal}`;
+          }
+          fs.writeFileSync(optionsPath, optText, "utf-8");
+        }
+        // Appliquer automatiquement la disposition des touches configurée si options.txt
+        // est encore sur les touches QWERTY par défaut de Minecraft ou si des touches sont corrompues
+        const currentConfig = loadConfig();
+        applyKeyboardLayoutToOptionsTxt(currentConfig.keyboardLayout || "azerty", false);
+      } catch (err) {
+        console.warn("[ClientMods] Could not patch options.txt:", err.message);
       }
     }
 
-    // 1. Night Vision (FullBright) via Gamma
-    if (mods.nightVision?.enabled) {
-      const level = Number(mods.nightVision.gammaLevel) || 100;
-      const gammaVal = (level >= 1 ? level : 100).toFixed(1);
-      optionsMap.set("gamma", gammaVal);
-    } else {
-      const currentGamma = parseFloat(optionsMap.get("gamma") || "1.0");
-      if (currentGamma > 1.5) {
-        optionsMap.set("gamma", "1.0");
+    // 2. Fusion des positions HUD (du launcher, du fichier existant ou des valeurs par défaut)
+    const pos = (mods.hudPositions && typeof mods.hudPositions === "object") ? mods.hudPositions : {};
+    const coordsX = (pos.coordsX !== undefined) ? pos.coordsX : (existingData.coordsX !== undefined ? existingData.coordsX : 492);
+    const coordsY = (pos.coordsY !== undefined) ? pos.coordsY : (existingData.coordsY !== undefined ? existingData.coordsY : 8);
+    const cpsX = (pos.cpsX !== undefined) ? pos.cpsX : (existingData.cpsX !== undefined ? existingData.cpsX : 520);
+    const cpsY = (pos.cpsY !== undefined) ? pos.cpsY : (existingData.cpsY !== undefined ? existingData.cpsY : 260);
+    const armorX = (pos.armorX !== undefined) ? pos.armorX : (existingData.armorX !== undefined ? existingData.armorX : 8);
+    const armorY = (pos.armorY !== undefined) ? pos.armorY : (existingData.armorY !== undefined ? existingData.armorY : 230);
+    const speedX = (pos.speedX !== undefined) ? pos.speedX : (existingData.speedX !== undefined ? existingData.speedX : 8);
+    const speedY = (pos.speedY !== undefined) ? pos.speedY : (existingData.speedY !== undefined ? existingData.speedY : 34);
+    const fpsX = (pos.fpsX !== undefined) ? pos.fpsX : (existingData.fpsX !== undefined ? existingData.fpsX : 8);
+    const fpsY = (pos.fpsY !== undefined) ? pos.fpsY : (existingData.fpsY !== undefined ? existingData.fpsY : 8);
+    const pingX = (pos.pingX !== undefined) ? pos.pingX : (existingData.pingX !== undefined ? existingData.pingX : 8);
+    const pingY = (pos.pingY !== undefined) ? pos.pingY : (existingData.pingY !== undefined ? existingData.pingY : 8);
+
+    const isArmorHud = (mods.armorHud !== undefined) ? !!mods.armorHud.enabled : (existingData.armorHud !== undefined ? existingData.armorHud : true);
+    const showArmorNumbers = (mods.armorHud?.showNumbers !== undefined) ? !!mods.armorHud.showNumbers : (existingData.armorNumbers !== undefined ? existingData.armorNumbers : true);
+
+    const clientData = {
+      ...existingData,
+      fullBright: isFullBright,
+      nightVision: (mods.nightVision !== undefined) ? !!mods.nightVision.enabled : (existingData.nightVision || false),
+      noFog: (mods.noFog !== undefined) ? !!mods.noFog.enabled : (existingData.noFog !== undefined ? existingData.noFog : true),
+      zoom: (mods.zoom !== undefined) ? !!mods.zoom.enabled : (existingData.zoom !== undefined ? existingData.zoom : true),
+      fpsBoost: (mods.fpsBoost !== undefined) ? !!mods.fpsBoost.enabled : (existingData.fpsBoost || false),
+      keystrokes: (mods.keystrokes !== undefined) ? !!mods.keystrokes.enabled : (existingData.keystrokes !== undefined ? existingData.keystrokes : true),
+      armorHud: isArmorHud,
+      armorStatus: isArmorHud,
+      armorNumbers: showArmorNumbers,
+      armorHudNumbers: showArmorNumbers,
+      speed: (mods.speed !== undefined) ? !!mods.speed.enabled : (existingData.speed !== undefined ? existingData.speed : true),
+      fps: (mods.fps !== undefined) ? !!mods.fps.enabled : (existingData.fps !== undefined ? existingData.fps : true),
+      ping: (mods.ping !== undefined) ? !!mods.ping.enabled : (existingData.ping !== undefined ? existingData.ping : true),
+      coordinates: (mods.coordinates !== undefined) ? !!mods.coordinates.enabled : (existingData.coordinates !== undefined ? existingData.coordinates : true),
+      cpsCounter: (mods.cps !== undefined) ? !!mods.cps.enabled : ((mods.keystrokes !== undefined) ? !!mods.keystrokes.enabled : (existingData.cpsCounter !== undefined ? existingData.cpsCounter : true)),
+      coordsX,
+      coordsY,
+      cpsX,
+      cpsY,
+      armorX,
+      armorY,
+      speedX,
+      speedY,
+      fpsX,
+      fpsY,
+      pingX,
+      pingY
+    };
+
+    fs.writeFileSync(clientJsonPath, JSON.stringify(clientData, null, 2), "utf-8");
+    fs.writeFileSync(legacyJsonPath, JSON.stringify(clientData, null, 2), "utf-8");
+
+    // 3. Update Sodium Extra fog settings if present
+    const sodiumExtraPath = path.join(configDir, "sodium-extra-options.json");
+    if (fs.existsSync(sodiumExtraPath)) {
+      try {
+        const sodiumExtraJson = JSON.parse(fs.readFileSync(sodiumExtraPath, "utf-8"));
+        if (!sodiumExtraJson.render_settings) sodiumExtraJson.render_settings = {};
+        if (!sodiumExtraJson.render_settings.fog_settings) sodiumExtraJson.render_settings.fog_settings = {};
+        if (!sodiumExtraJson.render_settings.fog_settings.atmospheric) sodiumExtraJson.render_settings.fog_settings.atmospheric = {};
+        if (mods.noFog?.enabled) {
+          sodiumExtraJson.render_settings.fog_settings.atmospheric.start_percent = 1000;
+        } else {
+          sodiumExtraJson.render_settings.fog_settings.atmospheric.start_percent = 100;
+        }
+        fs.writeFileSync(sodiumExtraPath, JSON.stringify(sodiumExtraJson, null, 2), "utf-8");
+      } catch (err) {
+        console.warn("[ClientMods] Could not update sodium-extra-options.json:", err.message);
       }
     }
-
-    // 2. NoFog & render optimizations
-    if (mods.noFog?.enabled) {
-      if (!optionsMap.has("renderDistance")) {
-        optionsMap.set("renderDistance", "12");
-      }
-    }
-
-    const outputLines = [];
-    for (const [key, val] of optionsMap.entries()) {
-      if (key) outputLines.push(`${key}:${val}`);
-    }
-    if (!optionsMap.has("gamma")) {
-      outputLines.push(`gamma:${mods.nightVision?.enabled ? "100.0" : "1.0"}`);
-    }
-    fs.writeFileSync(optionsPath, outputLines.join("\n"), "utf-8");
 
     // Also update gameOptions and broadcast to overlay if active
     gameOptions = {
@@ -435,7 +1354,7 @@ function syncClientOptionsToMinecraft(clientMods) {
     if (overlayWindow && !overlayWindow.isDestroyed() && overlayWindow.webContents) {
       overlayWindow.webContents.send("overlay-set-options", gameOptions);
     }
-    console.log("[ClientMods] Synced options to Minecraft (NightVision:", !!mods.nightVision?.enabled, "NoFog:", !!mods.noFog?.enabled, ")");
+    console.log("[ClientMods] Synced options to Minecraft (NightVision:", !!mods.nightVision?.enabled, "NoFog:", !!mods.noFog?.enabled, "Coords:", coordsX, coordsY, ")");
   } catch (err) {
     console.error("[ClientMods] Error syncing options to Minecraft:", err.message);
   }
@@ -443,7 +1362,19 @@ function syncClientOptionsToMinecraft(clientMods) {
 
 function saveClientModsConfig(mods) {
   const current = getClientModsConfig();
-  const merged = { ...current, ...mods };
+  // Merge profond par module pour ne jamais perdre les sous-champs
+  // (gammaLevel, keybind, showNumbers, hudPositions...) lors d'un patch partiel.
+  const merged = normalizeClientModsDeep({ ...current, ...(mods || {}) });
+  for (const key of Object.keys(DEFAULT_CLIENT_MODS)) {
+    if (key === "hudPositions") {
+      merged.hudPositions = {
+        ...(current.hudPositions || {}),
+        ...((mods || {}).hudPositions || {})
+      };
+    } else {
+      merged[key] = { ...(current[key] || {}), ...(((mods || {})[key]) || {}) };
+    }
+  }
   saveConfig({ clientMods: merged });
   syncClientOptionsToMinecraft(merged);
   return merged;
@@ -557,7 +1488,7 @@ async function checkGizmoServerStatus(server) {
           headers: {
             "Authorization": `Bearer ${gizmoToken}`,
             "Accept": "application/json",
-            "User-Agent": "YapapouaiyeLauncher/1.5.9-1"
+            "User-Agent": `YapapouaiyeLauncher/${app.getVersion()}`
           }
         }, (r) => {
           let body = "";
@@ -688,6 +1619,9 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
 
+  // Live refresh admin (serveurs + maintenance poussés au renderer, sans redémarrage).
+  try { startRemoteStateWatcher(); } catch {}
+
   mainWindow.webContents.on("render-process-gone", (event, details) => {
     console.error("[MainWindow] Render process gone:", details);
     logToFile("ERROR", "MainWindow render process gone:", details);
@@ -799,6 +1733,12 @@ function destroyOverlayWindow() {
 }
 
 app.whenReady().then(() => {
+  // Pré-chargement immédiat pendant le splash (logo) : auth, serveurs,
+  // statut serveur, mods locaux. Le renderer récupère tout via get-initial-state.
+  try {
+    bootPreloadPromise = runBootPreload();
+    bootPreloadPromise.catch(() => {});
+  } catch {}
   // Windows taskbar icon: register the AppUserModelID so the window
   // uses the launcher's icon (logo.png) instead of the default Electron one.
   const appId = "com.yapapouaiye.launcher";
@@ -823,7 +1763,19 @@ app.whenReady().then(() => {
   }
 
   createSplash();
-  createWindow();
+  if (splashWindow) {
+    setTimeout(() => {
+      createWindow();
+    }, 4500);
+  } else {
+    createWindow();
+  }
+
+  // Pré-chauffe l'empreinte carte mère en tâche de fond (cache) pour que
+  // le contrôle du verrou au clic JOUER soit instantané (powershell ~1s).
+  setTimeout(() => {
+    try { getMotherboardRawId(); } catch {}
+  }, 5000);
   
   // ============================================================
   // Auto-update : check GitHub releases on every startup
@@ -842,12 +1794,31 @@ app.whenReady().then(() => {
   // ============================================================
   // MAJ launcher : GitHub Releases (provider par defaut, package.json > build.publish).
   // Backblaze B2 sert UNIQUEMENT aux mods AdoServ67, pas aux MAJ du launcher.
+  // Canal Beta Tester : si config.betaTester === true, les releases
+  // "-beta" / "-alpha" (prereleases GitHub) sont acceptees.
   // ============================================================
-  autoUpdater.allowPrerelease = false;
+  autoUpdater.allowPrerelease = isBetaTesterEnabled();
   autoUpdater.allowDowngrade = true;
-  autoUpdater.channel = null;
-  autoUpdater.isUpdateAvailable = async (updateInfo) =>
-    isLauncherVersionNewer(updateInfo?.version, app.getVersion());
+  autoUpdater.setFeedURL({
+    provider: "custom", updateProvider: LauncherUpdateProvider,
+    owner: GITHUB_OWNER_LAUNCHER, repo: GITHUB_REPO_LAUNCHER,
+    loadReleases: fetchLauncherReleases,
+    getRequestedVersion: () => requestedUpdateVersion,
+    isPrerelease: isPrereleaseVersion, isNewer: isLauncherVersionNewer,
+    getChannel: getVersionChannel,
+  });
+  autoUpdater.isUpdateAvailable = async (updateInfo) => {
+    const feed = updateInfo?.version;
+    const cur = app.getVersion();
+    if (requestedUpdateVersion) return normalizeVersion(feed) === requestedUpdateVersion && normalizeVersion(cur) !== requestedUpdateVersion;
+    if (isLauncherVersionNewer(feed, cur)) return true;
+    // Changement de canal a numeros egaux (ex: 1.6.0-1 -> 1.6.0-1-alpha) :
+    // accepte le telechargement quand le canal beta est active et que
+    // l'utilisateur a valide la proposition (sinon l'updater refuserait
+    // de telecharger une version "non plus recente" au sens strict).
+    if (isBetaTesterEnabled() && isPrereleaseVersion(feed) && isSameNumericDifferentChannel(feed, cur)) return true;
+    return false;
+  };
 
   autoUpdater.on("checking-for-update", () => {
     console.log("[AutoUpdater] Checking for updates...");
@@ -908,7 +1879,7 @@ app.on("window-all-closed", () => app.quit());
 function httpGet(url, binary = false, useToken = true) {
   return new Promise((resolve, reject) => {
     const headers = {
-      "User-Agent": "YapapouaiyeLauncher/1.5.9-1",
+      "User-Agent": `YapapouaiyeLauncher/${app.getVersion()}`,
       "Accept": binary ? "application/octet-stream" : "application/json",
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Pragma": "no-cache",
@@ -1086,20 +2057,32 @@ async function fetchRemoteModsListB2(server) {
   // Source de vérité = listing live du bucket (ajout + suppression).
   // mods.json ne sert qu'à enrichir sha/taille, jamais à garder un jar déjà retiré.
   let listed = null;
+  let usedPrefix = prefix;
+  let listedOk = false;
   const prefixesToTry = [...new Set([prefix, ""])];
   for (const p of prefixesToTry) {
     try {
       const xml = await b2ListObjects(src, p);
-      listed = parseJarListing(xml, src);
+      const attempt = parseJarListing(xml, src);
+      listedOk = true;
+      if (attempt.length === 0) {
+        // Un listing vide avec un préfixe configuré = probablement un mauvais
+        // préfixe (ex: "mods/" alors que les jars sont à la racine). On essaie
+        // le préfixe suivant au lieu de valider un wipe du dossier local.
+        console.warn(`[ModSync] B2 listing prefix="${p}" : 0 jar, essai du préfixe suivant...`);
+        continue;
+      }
+      listed = attempt;
+      usedPrefix = p;
       break;
     } catch (err) {
       console.warn(`[ModSync] B2 listing prefix="${p}" failed:`, err.message);
     }
   }
-  if (!listed) return null;
+  if (!listed) return listedOk ? [] : null;
 
   try {
-    const data = await b2HttpGet(src, `${prefix}mods.json`);
+    const data = await b2HttpGet(src, `${usedPrefix}mods.json`);
     const raw = data.toString().trim();
     if (raw.startsWith("{") || raw.startsWith("[")) {
       const parsed = JSON.parse(raw);
@@ -1113,7 +2096,7 @@ async function fetchRemoteModsListB2(server) {
         for (const mod of listed) {
           const meta = metaByName[mod.name.toLowerCase()];
           if (!meta) continue;
-          if (meta.sha || meta.etag) mod.sha = String(meta.sha || meta.etag);
+          if (meta.sha || meta.etag || meta.hash) mod.sha = String(meta.sha || meta.etag || meta.hash);
           if (meta.size) mod.size = meta.size;
         }
       }
@@ -1137,7 +2120,7 @@ async function fetchRemoteModsList(repoConfig) {
     if (!Array.isArray(files)) return null;
 
     return files
-      .filter((f) => f.name.endsWith(".jar") && (f.type === "file" || f.type === "blob"))
+      .filter((f) => typeof f.name === "string" && f.name.toLowerCase().endsWith(".jar") && (f.type === "file" || f.type === "blob"))
       .map((f) => ({
         name: f.name,
         sha: f.sha || f.name,
@@ -1153,7 +2136,7 @@ async function fetchRemoteModsList(repoConfig) {
 function downloadFileStream(url, destPath, progressCb, isRedirect = false) {
   return new Promise((resolve, reject) => {
     const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) YapapouaiyeLauncher/1.5.9-1",
+      "User-Agent": `Mozilla/5.0 (Windows NT 10.0; Win64; x64) YapapouaiyeLauncher/${app.getVersion()}`,
     };
     const isB2Url = url.includes(".backblazeb2.com");
     const isScalewayUrl = url.includes(".scw.cloud");
@@ -1219,7 +2202,13 @@ function downloadFileStream(url, destPath, progressCb, isRedirect = false) {
         try { fs.unlinkSync(destPath); } catch {}
         reject(err);
       });
-    }).on("error", reject);
+    }).on("error", (err) => {
+      // Erreur socket (reset/timeout) AVANT la fin du flux : aucun event
+      // "finish"/"error" du fileStream ne partira → supprimer le tronqué
+      // pour ne jamais stager un .jar invalide au lancement.
+      try { fs.unlinkSync(destPath); } catch {}
+      reject(err);
+    });
   });
 }
 
@@ -1252,6 +2241,24 @@ async function syncModsFromRemote(targetServer) {
     return { updated: false, count: 0, error: isB2 ? "Impossible de contacter Backblaze B2 (mods)." : "Impossible de contacter Gitea." };
   }
 
+  // Garde-fou anti-wipe : un listing distant VIDE (mauvais préfixe, mauvais
+  // dossier repo, bucket vidé par erreur) ne doit JAMAIS effacer les mods
+  // locaux. Avant, [] déclenchait le miroir strict + "succès" et le jeu
+  // partait sans mods. On annule sans toucher au disque.
+  if (remoteMods.length === 0) {
+    return { updated: false, count: listJarFiles(serverModsDir).length, error: "Aucun mod trouvé sur le dépôt distant — synchronisation annulée, fichiers locaux conservés." };
+  }
+
+  // Nettoie les restes ".part" d'un téléchargement tué en plein vol
+  // (ex: launcher fermé pendant la synchro) pour ne jamais les stager.
+  try {
+    for (const f of fs.readdirSync(serverModsDir)) {
+      if (f.toLowerCase().endsWith(".part")) {
+        try { fs.unlinkSync(path.join(serverModsDir, f)); } catch {}
+      }
+    }
+  } catch {}
+
   let localHashes = {};
   if (fs.existsSync(hashFile)) {
     try { localHashes = JSON.parse(fs.readFileSync(hashFile, "utf-8")); } catch {}
@@ -1265,21 +2272,38 @@ async function syncModsFromRemote(targetServer) {
   for (const mod of remoteMods) {
     const destPath = path.join(serverModsDir, mod.name);
     const exists = fs.existsSync(destPath);
-    const existingSize = exists ? fs.statSync(destPath).size : 0;
+    const existingSize = exists ? fs.statSync(destPath).size : -1;
+    // Compare size only when the remote manifest provides a numeric size,
+    // otherwise rely on sha/hash comparison to avoid re-downloading every time.
+    const sizeMismatch = typeof mod.size === "number" && mod.size >= 0
+      ? existingSize !== mod.size
+      : false;
 
-    if (!exists || existingSize !== mod.size || localHashes[mod.name] !== mod.sha) {
+    if (!exists || sizeMismatch || localHashes[mod.name] !== mod.sha) {
+      // Téléchargement vers un fichier temporaire ".part" + renommage atomique :
+      // un .jar tronqué ne remplace jamais un mod valide, même si le
+      // processus est tué ou si le réseau coupe en plein transfert.
+      const partPath = destPath + ".part";
       try {
         console.log(`[ModSync] Downloading ${mod.name} (${mod.size} bytes)...`);
-        await downloadFileStreamWithRetry(mod.download_url, destPath, (pct) => {
+        await downloadFileStreamWithRetry(mod.download_url, partPath, (pct) => {
           sendToRenderer("progress", {
             type: "mod-sync",
             value: `TÃ©lÃ©chargement mod: ${mod.name} (${pct}%)`
           });
         });
+        let partSize = -1;
+        try { partSize = fs.statSync(partPath).size; } catch {}
+        if (partSize <= 0 || (typeof mod.size === "number" && mod.size > 0 && partSize !== mod.size)) {
+          throw new Error(`Fichier invalide reçu (${partSize} octets, attendu ${mod.size})`);
+        }
+        try { if (fs.existsSync(destPath)) fs.unlinkSync(destPath); } catch {}
+        fs.renameSync(partPath, destPath);
         localHashes[mod.name] = mod.sha;
         downloaded++;
       } catch (err) {
         console.error(`Failed to download ${mod.name}:`, err.message);
+        try { fs.unlinkSync(partPath); } catch {}
       }
     }
   }
@@ -1287,7 +2311,7 @@ async function syncModsFromRemote(targetServer) {
   // Copy custom mods from customModsDir into the per-server mods dir
   const customNames = [];
   if (fs.existsSync(customModsDir)) {
-    const customFiles = fs.readdirSync(customModsDir).filter((f) => f.endsWith(".jar"));
+    const customFiles = listJarFiles(customModsDir);
     for (const customFile of customFiles) {
       customNames.push(customFile);
       const src = path.join(customModsDir, customFile);
@@ -1300,7 +2324,7 @@ async function syncModsFromRemote(targetServer) {
 
   // Miroir strict : tout .jar local absent du listing distant (et non custom) est supprimé
   const customLower = new Set(customNames.map((n) => n.toLowerCase()));
-  const localMods = fs.readdirSync(serverModsDir).filter((f) => f.toLowerCase().endsWith(".jar"));
+  const localMods = listJarFiles(serverModsDir);
   for (const local of localMods) {
     if (!remoteNamesLower.has(local.toLowerCase()) && !customLower.has(local.toLowerCase())) {
       try {
@@ -1325,26 +2349,91 @@ function stageModsForLaunch(serverId) {
   if (!fs.existsSync(serverModsDir)) fs.mkdirSync(serverModsDir, { recursive: true });
   if (!fs.existsSync(modsDir)) fs.mkdirSync(modsDir, { recursive: true });
 
-  // Clear the game mods folder of jars
-  for (const f of fs.readdirSync(modsDir).filter((f) => f.endsWith(".jar"))) {
+  // Clear the game mods folder of jars (case-insensitive)
+  for (const f of listJarFiles(modsDir)) {
     try { fs.unlinkSync(path.join(modsDir, f)); } catch {}
   }
 
   // Stage uniquement les mods du serveur actif + mods custom.
   // Ne PAS réinjecter le dossier local du repo (mods/) : ça empêchait les suppressions.
+  let staged = 0;
+  let failed = 0;
+  const failedNames = [];
+  const seen = new Set();
   const sources = [serverModsDir, customModsDir];
   for (const srcDir of sources) {
     if (!fs.existsSync(srcDir)) continue;
-    for (const f of fs.readdirSync(srcDir).filter((f) => f.endsWith(".jar"))) {
+    for (const f of listJarFiles(srcDir)) {
+      const key = f.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
       const srcFile = path.join(srcDir, f);
       const destFile = path.join(modsDir, f);
+      let copied = false;
       try {
         if (fs.existsSync(destFile)) fs.unlinkSync(destFile);
         fs.linkSync(srcFile, destFile);
+        copied = true;
       } catch {
-        try { fs.copyFileSync(srcFile, destFile); } catch {}
+        try { fs.copyFileSync(srcFile, destFile); copied = true; } catch { copied = false; }
+      }
+      if (!copied) {
+        // Fichier source verrouillé ou disque inaccessible (ex: jeu déjà lancé).
+        // On compte l'échec au lieu de lancer silencieusement sans ce mod.
+        failed++;
+        if (failedNames.length < 5) failedNames.push(f);
+        continue;
+      }
+      // Verify the staged file exists and is non-empty
+      try {
+        const st = fs.statSync(destFile);
+        if (st.size > 0) staged++;
+        else { try { fs.unlinkSync(destFile); } catch {} failed++; if (failedNames.length < 5) failedNames.push(f); }
+      } catch { failed++; if (failedNames.length < 5) failedNames.push(f); }
+    }
+  }
+
+  console.log(`[Launch] Staged ${staged} mod(s), ${failed} échec(s) for server ${serverId} into game mods folder.`);
+
+  // Inject the client companion mod (NexLux) providing Lunar Client features:
+  // FullBright, NoFog, and in-game GUI menu
+  injectClientCompanionMod();
+  return { staged, failed, failedNames };
+}
+
+/** Injects NexLux companion mod into game mods folder to enable Lunar Client features */
+function injectClientCompanionMod() {
+  try {
+    const candidatePaths = [
+      path.join(process.resourcesPath || "", "mods", "nexlux-1.1.0.jar"),
+      path.join(__dirname, "..", "mods", "nexlux-1.1.0.jar"),
+      path.join(__dirname, "assets", "nexlux-1.1.0.jar"),
+      path.join(launcherDir, "mods", "adoserv2", "nexlux-1.1.0.jar"),
+      path.join(launcherDir, "mods", "nexlux-1.1.0.jar"),
+    ];
+
+    let foundSrc = null;
+    for (const p of candidatePaths) {
+      if (p && fs.existsSync(p)) {
+        foundSrc = p;
+        break;
       }
     }
+
+    if (foundSrc) {
+      const targetPath = path.join(modsDir, "nexlux-1.1.0.jar");
+      try {
+        if (fs.existsSync(targetPath)) fs.unlinkSync(targetPath);
+        fs.copyFileSync(foundSrc, targetPath);
+        console.log("[ClientMods] Successfully injected NexLux companion mod to:", targetPath);
+      } catch (err) {
+        console.warn("[ClientMods] Failed to copy NexLux companion mod:", err.message);
+      }
+    } else {
+      console.warn("[ClientMods] NexLux companion mod not found in candidate paths");
+    }
+  } catch (e) {
+    console.error("[ClientMods] Error injecting companion mod:", e.message);
   }
 }
 
@@ -1354,7 +2443,7 @@ function stageModsForLaunch(serverId) {
 function ensureServerInList() {
   try {
     const serversDat = path.join(gameDir, "servers.dat");
-    const serverEntries = SERVERS.map((s) => ({ name: s.name, ip: s.displayIp }));
+    const serverEntries = getAllServers().map((s) => ({ name: s.name, ip: s.displayIp }));
     const nbt = buildServersNBTMulti(serverEntries);
     fs.writeFileSync(serversDat, nbt);
   } catch (err) {
@@ -1398,11 +2487,52 @@ ipcMain.handle("get-app-version", () => app.getVersion());
 // Standard semver treats 1.5.7-1 as a prerelease OLDER than 1.5.7, which would
 // block updates for clients on 1.5.7. Here, the numeric suffix after "-" is
 // compared as a 4th build number: 1.5.7-1 > 1.5.7 and 1.5.7-2 > 1.5.7-1.
+// Extensions Beta Tester : les suffixes "-beta" / "-alpha" (ex: 1.6.1-beta,
+// 1.6.0-2-alpha, 1.6.1-alpha.2, v1.7.0-BETA) sont detectes comme canal pre-release.
+// Regle d'ordre : base major.minor.patch d'abord, puis NUMERO DE BUILD
+// (le premier nombre du suffixe : "1.6.0-1" -> build 1, "1.6.0-2-alpha"
+// -> build 2), puis stabilite (stable > beta > alpha a numeros egaux).
+function getVersionChannel(v) {
+  const s = String(v || "").toLowerCase();
+  if (/-alpha/.test(s) || s.includes("alpha")) return "alpha";
+  if (/-beta/.test(s) || s.includes("beta")) return "beta";
+  return "stable";
+}
+
+function isPrereleaseVersion(v) {
+  return getVersionChannel(v) !== "stable";
+}
+
 function parseLauncherVersion(v) {
   if (!v) return null;
-  const m = String(v).trim().replace(/^v/i, "").match(/^(\d+)\.(\d+)\.(\d+)(?:[-.](\d+))?/);
+  const clean = String(v).trim().replace(/^v/i, "");
+  const m = clean.match(/^(\d+)\.(\d+)\.(\d+)(?:[-.+](.+))?/);
   if (!m) return null;
-  return { major: +m[1], minor: +m[2], patch: +m[3], build: m[4] ? +m[4] : 0 };
+  const suffix = (m[4] || "").split("+")[0].toLowerCase();
+  let channel = "stable";
+  let channelWeight = 2; // stable > beta (1) > alpha (0)
+  if (suffix.includes("alpha")) { channel = "alpha"; channelWeight = 0; }
+  else if (suffix.includes("beta")) { channel = "beta"; channelWeight = 1; }
+  const numMatch = suffix.match(/(\d+)/);
+  const build = numMatch ? parseInt(numMatch[1], 10) : 0;
+  // Suffixe purement numerique historique ("1.6.0-1") = build stable.
+  // "2-alpha" / "1-beta" / "alpha.2" -> build + canal pre-release.
+  return { major: +m[1], minor: +m[2], patch: +m[3], build, buildParts: (suffix.match(/\d+/g) || []).map(Number), channel, channelWeight, suffix };
+}
+
+// Compare uniquement la partie numerique (major.minor.patch.build),
+// sans tenir compte du canal. >0 si `a` plus recent, <0 si plus ancien, 0 si egalite.
+function compareLauncherNumeric(a, b) {
+  const x = parseLauncherVersion(a);
+  const y = parseLauncherVersion(b);
+  if (!x || !y) return 0;
+  const left = [x.major, x.minor, x.patch, ...x.buildParts];
+  const right = [y.major, y.minor, y.patch, ...y.buildParts];
+  for (let i = 0; i < Math.max(left.length, right.length); i++) {
+    if ((left[i] || 0) > (right[i] || 0)) return 1;
+    if ((left[i] || 0) < (right[i] || 0)) return -1;
+  }
+  return 0;
 }
 
 // Returns true if `latest` is strictly newer than `current` (custom notation aware)
@@ -1410,33 +2540,146 @@ function isLauncherVersionNewer(latest, current) {
   const l = parseLauncherVersion(latest);
   const c = parseLauncherVersion(current);
   if (!l || !c) return latest !== current; // fallback: any difference = update
-  for (const key of ["major", "minor", "patch", "build"]) {
-    if (l[key] > c[key]) return true;
-    if (l[key] < c[key]) return false;
-  }
+  // Base + build d'abord : "1.6.0-2-alpha" (build 2) > "1.6.0-1" (build 1).
+  const numericOrder = compareLauncherNumeric(latest, current);
+  if (numericOrder !== 0) return numericOrder > 0;
+  // Memes numeros : stable > beta > alpha (ex: 1.6.0 > 1.6.0-beta).
+  if (l.channelWeight !== c.channelWeight) return l.channelWeight > c.channelWeight;
   return false;
+}
+
+// Cas limite : memes numeros mais canal different (ex: "1.6.0-1" stable vs
+// "1.6.0-1-alpha"). Strictement ce n'est pas "plus recent", mais avec le
+// canal beta active c'est un changement de canal volontaire qu'il faut
+// proposer a l'utilisateur (et inversement pour le retour stable).
+function isSameNumericDifferentChannel(a, b) {
+  if (String(a) === String(b)) return false;
+  return getVersionChannel(a) !== getVersionChannel(b) && compareLauncherNumeric(a, b) === 0;
+}
+
+function isBetaTesterEnabled() {
+  try {
+    return loadConfigNormalized().betaTester === true;
+  } catch {
+    return false;
+  }
+}
+
+function applyUpdateChannelToAutoUpdater() {
+  try {
+    autoUpdater.allowPrerelease = isBetaTesterEnabled();
+  } catch {}
+}
+
+// Recupere les releases GitHub (stables + pre-releases) et en deduit
+// la derniere stable et la derniere beta/alpha disponibles.
+let launcherReleasesCache = null;
+let launcherReleasesFetchedAt = 0;
+let launcherReleasesRequest = null;
+async function fetchLauncherReleases() {
+  if (launcherReleasesCache && Date.now() - launcherReleasesFetchedAt < 60000) return launcherReleasesCache;
+  if (launcherReleasesRequest) return launcherReleasesRequest;
+  const url = `https://api.github.com/repos/${GITHUB_OWNER_LAUNCHER}/${GITHUB_REPO_LAUNCHER}/releases?per_page=100`;
+  const fetchReleases = (token) => new Promise((resolve, reject) => {
+    const headers = { Accept: "application/vnd.github+json", "User-Agent": `YapapouaiyeLauncher/${app.getVersion()}` };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const request = https.get(url, { headers }, response => {
+      let body = "";
+      response.on("data", chunk => { body += chunk; });
+      response.on("error", reject);
+      response.on("end", () => {
+        // Public releases remain accessible when a developer token has expired.
+        if (response.statusCode === 401 && token) return fetchReleases("").then(resolve, reject);
+        if (response.statusCode !== 200) return reject(new Error(`GitHub HTTP ${response.statusCode}. Réessayez la vérification plus tard.`));
+        try {
+          const releases = JSON.parse(body);
+          if (!Array.isArray(releases)) throw new Error("Réponse GitHub invalide.");
+          resolve(releases);
+        } catch (error) { reject(error); }
+      });
+    });
+    request.setTimeout(15000, () => request.destroy(new Error("GitHub ne répond pas. Vérifiez votre connexion et réessayez.")));
+    request.on("error", reject);
+  });
+  launcherReleasesRequest = fetchReleases(process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "")
+    .then(releases => { launcherReleasesCache = releases; launcherReleasesFetchedAt = Date.now(); return releases; })
+    .finally(() => { launcherReleasesRequest = null; });
+  return launcherReleasesRequest;
+}
+
+async function fetchLauncherUpdateTargets() {
+  const current = app.getVersion();
+  const currentChannel = getVersionChannel(current);
+  const releases = await fetchLauncherReleases();
+  let latestStable = null;
+  let latestBeta = null;
+  for (const r of releases) {
+    if (!r || r.draft) continue;
+    const tag = String(r.tag_name || r.name || "").replace(/^v/i, "");
+    if (!parseLauncherVersion(tag)) continue;
+    const pre = r.prerelease === true || isPrereleaseVersion(tag);
+    const entry = { version: tag, name: r.name || tag, body: r.body || "", url: r.html_url || "", prerelease: pre, publishedAt: r.published_at || null };
+    if (pre) {
+      if (!latestBeta || isLauncherVersionNewer(tag, latestBeta.version)) latestBeta = entry;
+    } else {
+      if (!latestStable || isLauncherVersionNewer(tag, latestStable.version)) latestStable = entry;
+    }
+  }
+
+  const betaAvailable = !!(
+    latestBeta &&
+    (isLauncherVersionNewer(latestBeta.version, current) ||
+      isSameNumericDifferentChannel(latestBeta.version, current))
+  );
+  // Retour stable : on est sur une beta/alpha et une stable existe
+  // (meme si la stable est numeriquement inferieure a la beta, on propose le retour).
+  const canReturnToStable = currentChannel !== "stable" && !!latestStable && latestStable.version !== current;
+  const stableUpdateAvailable = !!(latestStable && isLauncherVersionNewer(latestStable.version, current));
+
+  return {
+    current,
+    currentChannel,
+    betaEnabled: isBetaTesterEnabled(),
+    latestStable,
+    latestBeta,
+    betaAvailable,
+    stableUpdateAvailable,
+    canReturnToStable,
+  };
 }
 
 ipcMain.handle("check-for-updates", async () => {
   try {
+    // Canal Beta Tester : applique le flag avant chaque verification manuelle.
+    applyUpdateChannelToAutoUpdater();
     // Use checkForUpdates() for manual checks (gives better control over events)
     // checkForUpdatesAndNotify() is only used at startup
     const result = await autoUpdater.checkForUpdates();
     const latestVersion = result?.updateInfo?.version || null;
     const currentVersion = app.getVersion();
-    
-    console.log(`[UpdateCheck] Current: ${currentVersion}, Latest: ${latestVersion}`);
+
+    console.log(`[UpdateCheck] Current: ${currentVersion}, Latest: ${latestVersion} (beta=${isBetaTesterEnabled()})`);
 
     // Custom comparison tolerant to the "X.Y.Z-N" notation (ex: 1.5.7-1 > 1.5.7),
     // so clients on plain 1.5.7 still receive the update.
     const updateAvailable = latestVersion
       ? isLauncherVersionNewer(latestVersion, currentVersion)
       : false;
-    
+
+    let targets = null;
+    try { targets = await fetchLauncherUpdateTargets(); } catch {}
+
     return {
       success: true,
       version: latestVersion,
-      updateAvailable: updateAvailable
+      updateAvailable,
+      currentVersion,
+      currentChannel: getVersionChannel(currentVersion),
+      betaEnabled: isBetaTesterEnabled(),
+      latestStable: targets?.latestStable || null,
+      latestBeta: targets?.latestBeta || null,
+      betaAvailable: targets?.betaAvailable || false,
+      canReturnToStable: targets?.canReturnToStable || false,
     };
   } catch (err) {
     console.error("[AutoUpdater] Manual check failed:", err.message);
@@ -1448,6 +2691,57 @@ ipcMain.handle("check-for-updates", async () => {
     }
 
     return { success: false, error: errorMsg };
+  }
+});
+
+// ============================================================
+// Canal Beta Tester : proposition "-beta" / "-alpha" + retour stable
+// - get-update-channel : etat complet (version courante, canal, cibles)
+// - set-beta-tester : active/desactive l'option (persiste en config)
+// - check-beta-update : verif GitHub SANS telecharger (proposition UI)
+// - install-update-version : telecharge+installe la cible (beta ou stable,
+//   y compris downgrade vers stable grace a allowDowngrade=true)
+// ============================================================
+ipcMain.handle("get-update-channel", async () => {
+  try {
+    const targets = await fetchLauncherUpdateTargets();
+    return { success: true, ...targets };
+  } catch (err) {
+    return { success: false, error: err.message, current: app.getVersion(), currentChannel: getVersionChannel(app.getVersion()), betaEnabled: isBetaTesterEnabled() };
+  }
+});
+
+ipcMain.handle("set-beta-tester", async (_, enabled) => {
+  const value = enabled === true;
+  saveConfig({ betaTester: value });
+  applyUpdateChannelToAutoUpdater();
+  console.log(`[BetaChannel] Beta Tester ${value ? "ACTIVE" : "DESACTIVE"}`);
+  try {
+    const targets = await fetchLauncherUpdateTargets();
+    return { success: true, betaEnabled: value, ...targets };
+  } catch {
+    return { success: true, betaEnabled: value, current: app.getVersion(), currentChannel: getVersionChannel(app.getVersion()) };
+  }
+});
+
+ipcMain.handle("check-beta-update", async () => {
+  try {
+    const targets = await fetchLauncherUpdateTargets();
+    return { success: true, ...targets };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("install-update-version", async (_, targetVersion) => {
+  try {
+    const version = normalizeVersion(targetVersion);
+    if (!parseLauncherVersion(version)) throw new Error("Version demandée invalide.");
+    if (requestedUpdateVersion) throw new Error("Une installation est déjà en cours.");
+    return await installRequestedUpdate(autoUpdater, version, value => { requestedUpdateVersion = value; });
+  } catch (err) {
+    console.error("[BetaChannel] install-update-version failed:", err.message);
+    return { success: false, error: err.message };
   }
 });
 
@@ -1470,16 +2764,49 @@ ipcMain.on("overlay-options", (_, opts) => {
 // Config IPC
 // ============================================================
 ipcMain.handle("get-system-ram", () => Math.floor(os.totalmem() / (1024 * 1024 * 1024)));
-ipcMain.handle("get-config", () => loadConfig());
-ipcMain.handle("save-config", (_, config) => { saveConfig(config); return { success: true }; });
+ipcMain.handle("get-config", () => loadConfigNormalized());
+ipcMain.handle("save-config", (_, config) => {
+  if (config?.onboardingCompleted === true) {
+    const blocked = invitationGate.required();
+    if (blocked) return blocked;
+  }
+  return saveConfig(config) ? { success: true } : { success: false, error: "Impossible d’enregistrer la configuration." };
+});
+ipcMain.handle("get-invitation-status", () => {
+  try { return invitationGate.status(); }
+  catch { return { accepted: false, error: "État d’invitation illisible." }; }
+});
+ipcMain.handle("verify-invitation", (_, code) => invitationGate.verify(code));
 ipcMain.handle("get-client-mods", () => getClientModsConfig());
 ipcMain.handle("save-client-mods", (_, mods) => {
   const updated = saveClientModsConfig(mods);
   return { success: true, clientMods: updated };
 });
 ipcMain.handle("apply-client-mods", (_, mods) => {
-  syncClientOptionsToMinecraft(mods);
+  // Fusionne avec la config stockee : un patch partiel ne doit jamais
+  // rebasculer les autres modules sur leurs defauts au lancement.
+  const current = getClientModsConfig();
+  const merged = { ...current };
+  for (const key of Object.keys(DEFAULT_CLIENT_MODS)) {
+    if (key === "hudPositions") {
+      merged.hudPositions = {
+        ...(current.hudPositions || {}),
+        ...((mods || {}).hudPositions || {})
+      };
+    } else {
+      merged[key] = { ...(current[key] || {}), ...(((mods || {})[key]) || {}) };
+    }
+  }
+  syncClientOptionsToMinecraft(merged);
   return { success: true };
+});
+
+ipcMain.handle("apply-keyboard-layout", async (_, layout) => {
+  const chosen = (layout === "qwerty") ? "qwerty" : "azerty";
+  saveConfig({ keyboardLayout: chosen });
+  ensureNeoForgeFmlConfig();
+  const res = applyKeyboardLayoutToOptionsTxt(chosen, true);
+  return { success: true, layout: chosen, ...res };
 });
 
 // First-launch-after-update detection: returns true when the stored
@@ -1602,6 +2929,8 @@ function isMicrosoftAccount(account) {
   return t === "microsoft" || t === "xbox" || !!account?.refresh_token;
 }
 ipcMain.handle("auth-microsoft", async () => {
+  const blocked = invitationGate.required();
+  if (blocked) return blocked;
   try {
     const microsoft = new Microsoft();
     const account = await microsoft.getAuth();
@@ -1643,6 +2972,8 @@ ipcMain.handle("auth-microsoft", async () => {
 });
 
 ipcMain.handle("auth-offline", async (_, username) => {
+  const blocked = invitationGate.required();
+  if (blocked) return blocked;
   if (!username || username.trim().length < 3) {
     return { success: false, error: "Le pseudo doit faire au moins 3 caracteres." };
   }
@@ -1676,6 +3007,8 @@ ipcMain.handle("auth-offline", async (_, username) => {
 
 // Try to restore saved session on startup
 ipcMain.handle("auto-login", async () => {
+  const blocked = invitationGate.required();
+  if (blocked) return blocked;
   const data = loadAccounts();
 
   // If there's an active account, try to restore it
@@ -1769,6 +3102,8 @@ ipcMain.handle("get-accounts", () => {
 
 // Switch to a different saved account
 ipcMain.handle("switch-account", async (_, index) => {
+  const blocked = invitationGate.required();
+  if (blocked) return blocked;
   const data = loadAccounts();
   if (index < 0 || index >= data.accounts.length) return { success: false };
 
@@ -1848,7 +3183,47 @@ ipcMain.handle("auth-logout", async () => {
 // Launch Minecraft
 // ============================================================
 ipcMain.handle("launch-game", async (_, options) => {
+  const blocked = invitationGate.required();
+  if (blocked) return blocked;
   if (!authAccount) return { success: false, error: "Non connectÃ©." };
+
+  // 0. Maintenance distante (espace admin du site) : bloque tout lancement.
+  // Les paramètres restent accessibles, seuls JOUER + Mods sont coupés côté renderer.
+  // Plafonné à 3s : en cas de site injoignable, le cache local décide.
+  try {
+    const maint = await withTimeout(getFreshMaintenanceState(), 3000).catch(() => getMaintenanceState());
+    if (maint.maintenance) {
+      console.log("[Maintenance] Lancement bloqué : mode maintenance actif.");
+      return { success: false, code: "LAUNCH_MAINTENANCE", error: maint.message || "Launcher en maintenance." };
+    }
+  } catch {}
+
+  // 0b. Codes d'accès serveur (définis dans l'espace admin) : à taper dans l'ordre.
+  try {
+    const requestedId = (options || {}).serverId || loadConfig().activeServerId || "adoserv2";
+    const target = getRemoteServerById(requestedId);
+    if (target && target.codesRequired && !sessionVerifiedServers.has(target.id)) {
+      console.log(`[ServerCodes] Lancement bloqué : codes requis pour ${target.id}.`);
+      return {
+        success: false,
+        code: "SERVER_CODES_REQUIRED",
+        serverId: target.id,
+        serverName: target.name,
+        codesCount: target.codesCount || 0,
+        error: "Codes d'accès requis pour ce serveur.",
+      };
+    }
+  } catch {}
+
+  // Verrou par mot de passe : bloque le lancement si le PC n'est ni
+  // retenu (empreinte carte mère) ni déverrouillé ponctuellement.
+  try {
+    const gate = checkLaunchLockForGame();
+    if (!gate.allowed) {
+      console.log("[LaunchLock] Lancement bloqué : mot de passe requis.");
+      return { success: false, error: "Mot de passe requis pour lancer le jeu.", code: "LAUNCH_LOCKED" };
+    }
+  } catch {}
 
   try {
     const { version, loader, ram, serverId } = options || {};
@@ -1894,18 +3269,39 @@ ipcMain.handle("launch-game", async (_, options) => {
     // Load full config for user settings
     const config = loadConfig();
 
+    // Vérifie si options.txt a fullscreen:true ou si config.fullscreen est true
+    let isFullscreen = !!config.fullscreen;
+    const optionsPath = path.join(gameDir, "options.txt");
+    if (fs.existsSync(optionsPath)) {
+      try {
+        const optText = fs.readFileSync(optionsPath, "utf-8");
+        const match = optText.match(/^fullscreen:(true|false)/m);
+        if (match) {
+          isFullscreen = match[1] === "true";
+        }
+      } catch {}
+    }
+
     // Apply resolution from config
     const resolution = config.resolution || "1280x720";
     const [screenW, screenH] = resolution.split("x").map(Number);
+
+    const gameArgs = ["--server", targetServer.host, "--port", String(targetServer.gamePort)];
+    if (isFullscreen) {
+      gameArgs.push("--fullscreen");
+    }
 
     const launchConfig = {
       authenticator: authAccount,
       path: gameDir,
       version: version || getServerGameVersion(targetServer),
       memory: { max: `${ram || 4}G`, min: "1G" },
-      screen: { width: screenW || 1280, height: screenH || 720, fullscreen: config.fullscreen || false },
+      // Si fullscreen est actif, ne pas forcer width/height pour ne pas casser le mode plein écran
+      screen: isFullscreen
+        ? { fullscreen: true }
+        : { width: screenW || 1280, height: screenH || 720, fullscreen: false },
       java: config.javaPath ? { path: config.javaPath } : { type: "jre" },
-      GAME_ARGS: ["--server", targetServer.host, "--port", String(targetServer.gamePort)],
+      GAME_ARGS: gameArgs,
     };
 
     if (config.jvmArgs) {
@@ -1919,9 +3315,18 @@ ipcMain.handle("launch-game", async (_, options) => {
     const send = (ch, d) => sendToRenderer(ch, d);
 
     // Stage the active server's mods (NeoForge + Fabric together) into the game mods folder
-    send("progress", { type: "mod-sync", value: `PrÃ©paration des mods de ${targetServer.name}...` });
-    stageModsForLaunch(targetServer.id);
-    console.log(`[Launch] ${targetServer.name} (${activeLoader}) mods staged. Setting up game launch pipeline...`);
+    send("progress", { type: "mod-sync", value: `Préparation des mods de ${targetServer.name}...` });
+    const staged = stageModsForLaunch(targetServer.id);
+    const stagedCount = staged?.staged ?? 0;
+    const stagedFailed = staged?.failed ?? 0;
+    console.log(`[Launch] ${targetServer.name} (${activeLoader}) mods staged (${stagedCount} fichier(s), ${stagedFailed} échec(s)). Setting up game launch pipeline...`);
+    if (stagedCount === 0) {
+      console.warn(`[Launch] Aucun mod installé pour ${targetServer.id} — le jeu démarrera sans mods. Pensez à synchroniser depuis l'onglet Mods.`);
+      send("progress", { type: "mod-sync", value: "Aucun mod installé — synchronisez depuis l'onglet Mods." });
+    } else if (stagedFailed > 0) {
+      console.warn(`[Launch] ${stagedFailed} mod(s) non copiés (fichiers verrouillés ?) : ${(staged.failedNames || []).join(", ")}`);
+      send("progress", { type: "mod-sync", value: `${stagedFailed} mod(s) non copiés — fermez le jeu déjà ouvert puis relancez.` });
+    }
 
     launcher.on("extract", (extract) => send("progress", { type: "extract", value: extract }));
     launcher.on("progress", (progress, total) => {
@@ -1963,6 +3368,18 @@ ipcMain.handle("launch-game", async (_, options) => {
         mainWindow.focus();
       }
       send("game-closed", code ?? 0);
+      // Synchronise les éventuels changements faits en jeu (positions HUD, fullscreen, etc.)
+      try {
+        const refreshedMods = getClientModsConfig();
+        send("client-mods-updated", refreshedMods);
+        if (fs.existsSync(optionsPath)) {
+          const optText = fs.readFileSync(optionsPath, "utf-8");
+          const fsMatch = optText.match(/^fullscreen:(true|false)/m);
+          if (fsMatch) {
+            saveConfig({ fullscreen: fsMatch[1] === "true" });
+          }
+        }
+      } catch {}
     });
     launcher.on("error", (err) => {
       console.error("[Launch] Game launch error event:", err);
@@ -1973,11 +3390,18 @@ ipcMain.handle("launch-game", async (_, options) => {
     await launcher.Launch(launchConfig);
     console.log("[Launch] Launch() resolved - game process spawned.");
 
+    // Consomme le déverrouillage ponctuel : sans PC retenu, le prochain
+    // lancement redemandera le mot de passe.
+    try {
+      const lockAfter = loadLaunchLock();
+      if (lockAfter.enabled && !isTrustedPC(lockAfter)) launchUnlockedAt = 0;
+    } catch {}
+
     if (config.closeOnLaunch && mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.close();
     }
 
-    return { success: true };
+    return { success: true, modsStaged: stagedCount, modsFailed: stagedFailed };
   } catch (error) {
     console.error("Launch error:", error);
     return { success: false, error: error.message };
@@ -1988,16 +3412,20 @@ ipcMain.handle("launch-game", async (_, options) => {
 // Multi-Server IPC Handlers
 // ============================================================
 ipcMain.handle("get-servers", () => {
+  const all = getAllServers();
   const active = getActiveServer();
   return {
-    servers: SERVERS.map((s) => ({ ...s, gameVersion: getServerGameVersion(s) })),
+    servers: all.map((s) => ({ ...s, gameVersion: getServerGameVersion(s) })),
     activeServerId: active.id,
     activeServer: { ...active, gameVersion: getServerGameVersion(active) },
+    launcherConfig: getMaintenanceState(),
   };
 });
 
 ipcMain.handle("set-active-server", (_, serverId) => {
-  const server = getServerById(serverId);
+  const server = getAllServers({ includeDisabled: true }).find((s) => s.id === serverId);
+  if (!server) return { success: false, error: "Serveur introuvable." };
+  if (server.enabled === false) return { success: false, error: "Ce serveur est désactivé." };
   saveConfig({ activeServerId: server.id });
   runServerStatusCheck(server);
   return { success: true, activeServer: server };
@@ -2010,34 +3438,93 @@ ipcMain.handle("check-server-status", async (_, serverId) => {
 });
 
 // ============================================================
+// Remote launcher state (admin site) : maintenance + codes d'accès
+// ============================================================
+ipcMain.handle("get-launcher-config", () => {
+  // Réponse immédiate sur le cache + rafraîchissement en tâche de fond
+  // (le garde-fou faisant foi est dans "launch-game", plafonné).
+  refreshRemoteLauncherState().catch(() => {});
+  return { success: true, ...getMaintenanceState() };
+});
+
+ipcMain.handle("refresh-remote-servers", async () => {
+  try {
+    const res = await refreshRemoteLauncherState();
+    // Le renderer applique lui-même cette réponse : on cale la signature
+    // pour que le watcher ne la re-pousse pas au cycle suivant.
+    remoteStateSignature = computeRemoteStateSignature();
+    const all = getAllServers();
+    const active = getActiveServer();
+    return {
+      success: true,
+      ...res,
+      servers: all.map((s) => ({ ...s, gameVersion: getServerGameVersion(s) })),
+      activeServerId: active.id,
+      activeServer: { ...active, gameVersion: getServerGameVersion(active) },
+      launcherConfig: getMaintenanceState(),
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("check-server-access", (_, serverId) => {
+  const target = getRemoteServerById(serverId || loadConfig().activeServerId || "adoserv2");
+  if (!target) return { codesRequired: false, codesCount: 0, verified: false, serverId: null };
+  return {
+    codesRequired: Boolean(target.codesRequired),
+    codesCount: Number(target.codesCount) || 0,
+    verified: sessionVerifiedServers.has(target.id),
+    serverId: target.id,
+    serverName: target.name,
+  };
+});
+
+ipcMain.handle("verify-server-codes", async (_, payload) => {
+  const serverId = String(payload?.serverId || "").trim();
+  const codes = Array.isArray(payload?.codes) ? payload.codes.map((c) => String(c ?? "")) : [];
+  const target = getRemoteServerById(serverId);
+  if (!target) return { success: false, valid: false, error: "Serveur introuvable." };
+  if (!target.codesRequired) {
+    sessionVerifiedServers.add(target.id);
+    return { success: true, valid: true, codesRequired: false, serverId: target.id };
+  }
+  for (const base of serverVerifyApiCandidates()) {
+    try {
+      const res = await httpPostJson(base, { serverId: target.id, codes });
+      if (res && res.ok) {
+        if (res.valid) sessionVerifiedServers.add(target.id);
+        return {
+          success: true,
+          valid: Boolean(res.valid),
+          codesRequired: true,
+          codesCount: Number(res.codesCount ?? target.codesCount) || 0,
+          serverId: target.id,
+        };
+      }
+    } catch (err) {
+      console.warn(`[ServerCodes] Vérification injoignable ${base}:`, err.message);
+    }
+  }
+  return { success: false, valid: false, error: "Vérification impossible : site injoignable (hors-ligne ?)." };
+});
+
+// ============================================================
 // Mods
 // ============================================================
 ipcMain.handle("get-mods", async (_, serverId) => {
   try {
     const activeServer = serverId ? getServerById(serverId) : getActiveServer();
     const serverModsDir = getServerModsDir(activeServer.id);
-    const customMods = fs.existsSync(customModsDir)
-      ? fs.readdirSync(customModsDir).filter((f) => f.toLowerCase().endsWith(".jar"))
-      : [];
+    const customMods = listJarFiles(customModsDir);
 
-    let names = [];
-    if (activeServer?.modsSource?.type === "b2") {
-      const remote = await fetchRemoteModsListB2(activeServer);
-      if (remote) {
-        names = remote.map((m) => m.name);
-      } else {
-        names = fs.existsSync(serverModsDir)
-          ? fs.readdirSync(serverModsDir).filter((f) => f.toLowerCase().endsWith(".jar"))
-          : [];
-      }
-    } else {
-      names = fs.existsSync(serverModsDir)
-        ? fs.readdirSync(serverModsDir).filter((f) => f.toLowerCase().endsWith(".jar"))
-        : [];
-    }
+    // Source de vérité locale : ce qui est réellement installé pour ce serveur.
+    // (Le listing distant B2/Gitea sert uniquement à la synchronisation,
+    // pas à l'affichage — sinon la liste ment quand on est hors-ligne.)
+    let names = listJarFiles(serverModsDir);
 
-    // AdoServ67 / B2 : afficher uniquement le listing distant.
-    // Les jars de mods-custom restent installables au lancement, mais ne polluent plus la liste.
+    // AdoServ67 / B2 : afficher uniquement les mods installés.
+    // Les jars de mods-custom copiés dans le dossier serveur sont déjà inclus.
     if (activeServer?.modsSource?.type !== "b2") {
       names = [...new Set([...names, ...customMods])];
     }
@@ -2049,23 +3536,45 @@ ipcMain.handle("get-mods", async (_, serverId) => {
       loader: normalizeLoader(null, activeServer),
       serverId: activeServer.id,
       serverName: activeServer.name,
+      serverModsDir,
     };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-ipcMain.handle("get-launcher-dir", () => ({ modsDir, gameDir, launcherDir, customModsDir }));
+ipcMain.handle("get-launcher-dir", (_, serverId) => {
+  const activeServer = serverId ? getServerById(serverId) : getActiveServer();
+  return { modsDir, gameDir, launcherDir, customModsDir, serverModsDir: getServerModsDir(activeServer.id) };
+});
 
 ipcMain.handle("sync-mods", async (_, serverId) => {
   try {
     const targetServer = serverId ? getServerById(serverId) : getActiveServer();
     const result = await syncModsFromRemote(targetServer);
+    // Propager l'erreur réseau : avant, on renvoyait success:true même si
+    // Gitea/B2 était injoignable, le launcher affichait "synchronisé" à tort.
+    if (!result || result.error) {
+      const localCount = listJarFiles(getServerModsDir(targetServer.id)).length;
+      return { success: false, error: (result && result.error) || "Synchronisation impossible.", count: localCount, serverId: targetServer.id };
+    }
     const serverModsDir = getServerModsDir(targetServer.id);
-    const activeMods = fs.existsSync(serverModsDir)
-      ? fs.readdirSync(serverModsDir).filter((f) => f.endsWith(".jar"))
-      : [];
-    return { success: true, count: activeMods.length, downloaded: result.downloaded || 0, removed: result.removed || 0, serverId: result.serverId || targetServer.id, repo: result.repo || "" };
+    const activeMods = listJarFiles(serverModsDir);
+    return { success: true, count: result.count ?? activeMods.length, downloaded: result.downloaded || 0, removed: result.removed || 0, serverId: result.serverId || targetServer.id, repo: result.repo || "" };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Ouvre le VRAI dossier où les mods du serveur sont installés
+// (avant : "Dossier Mods" ouvrait seulement mods-custom, vide après sync).
+ipcMain.handle("open-server-mods", async (_, serverId) => {
+  try {
+    const targetServer = serverId ? getServerById(serverId) : getActiveServer();
+    const dir = getServerModsDir(targetServer.id);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    shell.openPath(dir);
+    return { success: true, path: dir };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -2085,6 +3594,304 @@ ipcMain.handle("get-window-state", () => {
   return { isMaximized: mainWindow ? mainWindow.isMaximized() : false };
 });
 
+// ============================================================
+// Verrouillage par mot de passe (lancement du jeu)
+// ============================================================
+ipcMain.handle("get-launch-lock-status", () => {
+  try {
+    const lock = loadLaunchLock();
+    const trusted = isTrustedPC(lock);
+    return {
+      success: true,
+      enabled: !!lock.enabled,
+      hasPassword: !!(lock.hash && lock.salt),
+      isTrusted: trusted,
+      trustedAt: lock.trustedAt || null,
+      trustedDeviceName: lock.trustedDeviceName || null,
+      // Changement de carte mère / PC différent : l'empreinte enregistrée
+      // ne correspond plus -> on signale qu'il faudra re-valider.
+      needsReauth: !!lock.enabled && !!lock.trustedHwidHash && !trusted,
+      lockedUntil: launchLockFails.lockUntil > Date.now() ? launchLockFails.lockUntil : 0,
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("set-launch-password", (_, payload) => {
+  try {
+    const password = String(payload?.password || "");
+    const currentPassword = payload?.currentPassword !== undefined ? String(payload.currentPassword) : null;
+    if (password.length < 4) return { success: false, error: "Le mot de passe doit contenir au moins 4 caractères." };
+    if (password.length > 128) return { success: false, error: "Mot de passe trop long (128 caractères max)." };
+    const nodeCrypto = require("crypto");
+    const existing = loadLaunchLock();
+    // Changement de mot de passe : l'ancien est exigé.
+    if (existing.hash && existing.salt) {
+      if (!currentPassword) return { success: false, error: "Mot de passe actuel requis." };
+      if (!verifyLaunchPasswordHash(currentPassword, existing)) return { success: false, error: "Mot de passe actuel incorrect." };
+    }
+    const salt = nodeCrypto.randomBytes(16).toString("hex");
+    const iterations = 120000;
+    const hash = hashLaunchPassword(password, salt, iterations);
+    const now = new Date().toISOString();
+    const next = {
+      enabled: true,
+      salt,
+      hash,
+      iterations,
+      createdAt: existing.createdAt || now,
+      updatedAt: now,
+      // Nouveau mot de passe = on oublie l'ancien PC retenu par sécurité.
+      trustedHwidHash: null,
+      trustedAt: null,
+      trustedDeviceName: null,
+    };
+    saveLaunchLock(next);
+    launchUnlockedAt = 0;
+    launchLockFails = { count: 0, lockUntil: 0 };
+    console.log("[LaunchLock] Mot de passe défini, verrou activé.");
+    return { success: true, enabled: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("verify-launch-password", (_, payload) => {
+  try {
+    const password = String(payload?.password || "");
+    const rememberPC = !!payload?.rememberPC;
+    const now = Date.now();
+    if (launchLockFails.lockUntil > now) {
+      const retryIn = Math.ceil((launchLockFails.lockUntil - now) / 1000);
+      return { success: false, error: `Trop de tentatives. Réessayez dans ${retryIn}s.`, retryIn, code: "RATE_LIMITED" };
+    }
+    const lock = loadLaunchLock();
+    if (!lock.enabled || !lock.hash) return { success: false, error: "Aucun verrou configuré." };
+    if (!password) return { success: false, error: "Mot de passe requis." };
+    if (!verifyLaunchPasswordHash(password, lock)) {
+      launchLockFails.count += 1;
+      if (launchLockFails.count >= LAUNCH_LOCK_MAX_TRIES) {
+        launchLockFails.lockUntil = Date.now() + LAUNCH_LOCK_BLOCK_MS;
+        launchLockFails.count = 0;
+        return { success: false, error: "Trop de tentatives. Réessayez dans 30s.", code: "RATE_LIMITED", retryIn: 30 };
+      }
+      const left = LAUNCH_LOCK_MAX_TRIES - launchLockFails.count;
+      return { success: false, error: `Mot de passe incorrect. (${left} essai(s) restant(s))` };
+    }
+    // Succès : reset anti-bruteforce + déverrouillage ponctuel.
+    launchLockFails = { count: 0, lockUntil: 0 };
+    launchUnlockedAt = Date.now();
+    let trusted = isTrustedPC(lock);
+    // "Retenir ce PC" : (ré)enregistre l'empreinte de la carte mère
+    // actuelle — y compris après un changement de carte mère.
+    if (rememberPC) {
+      const hwidHash = getCurrentHwidHash();
+      if (!hwidHash) return { success: false, error: "Impossible de lire l'identifiant de ce PC." };
+      const wasDifferent = !!lock.trustedHwidHash && lock.trustedHwidHash !== hwidHash;
+      lock.trustedHwidHash = hwidHash;
+      lock.trustedAt = new Date().toISOString();
+      try { lock.trustedDeviceName = os.hostname(); } catch { lock.trustedDeviceName = "Ce PC"; }
+      lock.updatedAt = new Date().toISOString();
+      saveLaunchLock(lock);
+      trusted = true;
+      console.log(`[LaunchLock] PC retenu (empreinte carte mère enregistrée${wasDifferent ? " — nouvelle carte mère" : ""}).`);
+    }
+    return { success: true, trusted };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("disable-launch-lock", (_, payload) => {
+  try {
+    const password = String(payload?.password || "");
+    const lock = loadLaunchLock();
+    if (!lock.enabled) return { success: true, enabled: false };
+    if (!verifyLaunchPasswordHash(password, lock)) return { success: false, error: "Mot de passe incorrect." };
+    saveLaunchLock({ enabled: false, salt: null, hash: null, iterations: 120000, createdAt: lock.createdAt || null, updatedAt: new Date().toISOString(), trustedHwidHash: null, trustedAt: null, trustedDeviceName: null });
+    launchUnlockedAt = 0;
+    console.log("[LaunchLock] Verrou désactivé.");
+    return { success: true, enabled: false };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("forget-trusted-pc", (_, payload) => {
+  try {
+    const lock = loadLaunchLock();
+    // Si le verrou est actif, le mot de passe est exigé pour oublier le PC.
+    if (lock.enabled && lock.hash) {
+      const password = String(payload?.password || "");
+      if (!password) return { success: false, error: "Mot de passe requis pour oublier ce PC." };
+      if (!verifyLaunchPasswordHash(password, lock)) return { success: false, error: "Mot de passe incorrect." };
+    }
+    lock.trustedHwidHash = null;
+    lock.trustedAt = null;
+    lock.trustedDeviceName = null;
+    lock.updatedAt = new Date().toISOString();
+    saveLaunchLock(lock);
+    launchUnlockedAt = 0;
+    console.log("[LaunchLock] PC oublié : mot de passe redemandé au prochain lancement.");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// ============================================================
+// Boot preload — pré-chargement pendant que le logo (splash) s'affiche.
+// L'historique : la fenêtre s'ouvrait puis le renderer lançait en série
+// autoLogin (refresh Microsoft lent) + getServers + getMods (réseau B2)
+// + release notes → flash "Non connecté" / mods vides pendant 2-5s.
+// Désormais le main pré-charge tout en tâche de fond dès le démarrage
+// et le renderer peint l'UI correcte dès la 1ère frame via get-initial-state.
+// ============================================================
+let bootPreloadPromise = null;
+
+function withTimeout(promise, ms) {
+  let timer = null;
+  const guard = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error("boot-timeout")), ms);
+  });
+  return Promise.race([promise, guard]).finally(() => { if (timer) clearTimeout(timer); });
+}
+
+async function refreshAccountForBoot(saved) {
+  try {
+    const microsoft = new Microsoft();
+    const refreshed = await withTimeout(microsoft.refresh(saved), 8000);
+    if (refreshed && !refreshed.error) {
+      if (!refreshed.meta) refreshed.meta = {};
+      if (!refreshed.meta.type) refreshed.meta.type = "microsoft";
+      return refreshed;
+    }
+  } catch {}
+  return null;
+}
+
+async function runBootPreload() {
+  // Config normalisee (defauts garantis) + clientMods resous : le renderer
+  // peint le HUD simulateur des la 1ere frame sans 2e appel IPC qui pouvait
+  // rater la config enregistree au lancement precedent.
+  const config = loadConfigNormalized();
+  let clientMods = null;
+  try {
+    clientMods = getClientModsConfig();
+    config.clientMods = clientMods;
+  } catch { clientMods = null; }
+  const activeServer = getActiveServer();
+  const serversPayload = {
+    servers: getAllServers().map((s) => ({ ...s, gameVersion: getServerGameVersion(s) })),
+    activeServerId: activeServer.id,
+    activeServer: { ...activeServer, gameVersion: getServerGameVersion(activeServer) },
+    launcherConfig: getMaintenanceState(),
+  };
+
+  // Serveurs distants + maintenance (espace admin du site) : rafraîchi au boot,
+  // plafonné pour ne pas retarder l'affichage (repli : cache local / valeurs codées en dur).
+  const remotePromise = (async () => {
+    try {
+      await withTimeout(refreshRemoteLauncherState(), 8000);
+      const all = getAllServers();
+      const active = getActiveServer();
+      serversPayload.servers = all.map((s) => ({ ...s, gameVersion: getServerGameVersion(s) }));
+      serversPayload.activeServerId = active.id;
+      serversPayload.activeServer = { ...active, gameVersion: getServerGameVersion(active) };
+      serversPayload.launcherConfig = getMaintenanceState();
+      // Évite que le 1er cycle du watcher re-pousse cet état de boot.
+      remoteStateSignature = computeRemoteStateSignature();
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
+  // Mods locaux du serveur actif (rapide : lecture disque, aucun réseau)
+  let bootMods = [];
+  try {
+    bootMods = listJarFiles(getServerModsDir(activeServer.id));
+    bootMods.sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+  } catch { bootMods = []; }
+
+  // Statut serveur en tâche de fond (plafonné pour ne pas retarder l'affichage)
+  const statusPromise = (async () => {
+    try {
+      return await withTimeout(runServerStatusCheck(activeServer), 6000);
+    } catch {
+      return serverStatusCache[activeServer.id]?.online ?? null;
+    }
+  })();
+
+  // Auto-login avec refresh Microsoft plafonné (même logique que "auto-login")
+  const loginPromise = (async () => {
+    const blocked = invitationGate.required();
+    if (blocked) return blocked;
+    try {
+      const data = loadAccounts();
+      if (data.activeIndex >= 0 && data.accounts[data.activeIndex]) {
+        const saved = data.accounts[data.activeIndex];
+        if (isMicrosoftAccount(saved)) {
+          const refreshed = await refreshAccountForBoot(saved);
+          if (refreshed) {
+            authAccount = refreshed;
+            data.accounts[data.activeIndex] = refreshed;
+            saveAccounts(data);
+            return { success: true, username: refreshed.name, uuid: refreshed.uuid };
+          }
+          return { success: false, error: "Session expiree, reconnecte-toi via Microsoft." };
+        }
+        if (saved.name && saved.uuid) {
+          authAccount = saved;
+          return { success: true, username: saved.name, uuid: saved.uuid };
+        }
+      }
+      // Repli : compte offline valide (pas de refresh réseau pour les autres
+      // comptes Microsoft ici — le handler auto-login complet reste dispo).
+      const data2 = loadAccounts();
+      for (let i = 0; i < data2.accounts.length; i++) {
+        const s = data2.accounts[i];
+        if (!isMicrosoftAccount(s) && s.name && s.uuid) {
+          authAccount = s;
+          data2.activeIndex = i;
+          saveAccounts(data2);
+          return { success: true, username: s.name, uuid: s.uuid };
+        }
+      }
+      return { success: false };
+    } catch {
+      return { success: false };
+    }
+  })();
+
+  const [online, login] = await Promise.all([
+    statusPromise.catch(() => null),
+    withTimeout(loginPromise, 9500).catch(() => ({ success: false })),
+    remotePromise.catch(() => false),
+  ]);
+
+  return {
+    config,
+    clientMods,
+    login: login || { success: false },
+    servers: serversPayload,
+    serverOnline: typeof online === "boolean" ? online : null,
+    serverId: activeServer.id,
+    mods: bootMods,
+    appVersion: app.getVersion(),
+  };
+}
+
+ipcMain.handle("get-initial-state", async () => {
+  try {
+    if (!bootPreloadPromise) bootPreloadPromise = runBootPreload();
+    return await bootPreloadPromise;
+  } catch {
+    return null;
+  }
+});
+
 ipcMain.handle("open-external", async (_, url) => {
   try {
     if (url && (url.startsWith("https://") || url.startsWith("http://"))) {
@@ -2100,7 +3907,7 @@ ipcMain.handle("open-external", async (_, url) => {
 ipcMain.handle("get-latest-release-info", async () => {
   const fallback = {
     version: app.getVersion(),
-    notes: "Yapapouaiye Launcher v1.5.9-1 : Mise à jour automatique opérationnelle."
+    notes: `Yapapouaiye Launcher v${app.getVersion()} : Mise à jour automatique opérationnelle.`
   };
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
 
@@ -2110,7 +3917,7 @@ ipcMain.handle("get-latest-release-info", async () => {
         method: "GET",
         headers: {
           "Accept": "application/vnd.github+json",
-          "User-Agent": "YapapouaiyeLauncher/1.5.9-1"
+          "User-Agent": `YapapouaiyeLauncher/${app.getVersion()}`
         }
       };
       if (token) options.headers["Authorization"] = `Bearer ${token}`;

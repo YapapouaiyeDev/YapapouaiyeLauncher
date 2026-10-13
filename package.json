@@ -1,13 +1,22 @@
 {
   "name": "yapapouaiye-launcher",
-  "version": "1.5.9-1",
+  "version": "1.6.1-1",
   "description": "Launcher Minecraft moddé - Yapapouaiye",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win",
     "build:publish": "electron-builder --win --publish always",
-    "publish:mods": "powershell -ExecutionPolicy Bypass -File publish-mods-b2.ps1"
+    "publish:mods": "powershell -ExecutionPolicy Bypass -File publish-mods-b2.ps1",
+    "deploy": "npm run deploy --prefix site",
+    "tauri:dev": "cargo run --manifest-path src-tauri/Cargo.toml",
+    "tauri:build": "cargo build --release --manifest-path src-tauri/Cargo.toml",
+    "version:sync": "node scripts/sync-version.cjs",
+    "prestart": "npm run version:sync",
+    "prebuild": "npm run version:sync",
+    "prebuild:publish": "npm run version:sync",
+    "pretauri:dev": "npm run version:sync",
+    "pretauri:build": "npm run version:sync"
   },
   "author": "Yapapouaiye",
   "license": "MIT",
@@ -18,6 +27,7 @@
   "dependencies": {
     "dotenv": "^16.6.1",
     "electron-updater": "^6.8.3",
+    "eletron": "^0.0.1-security",
     "minecraft-java-core": "^4.2.7"
   },
   "build": {
@@ -28,6 +38,28 @@
       "icon": "assets/logo.ico",
       "artifactName": "Yapapouaiye-Launcher-Setup-${version}.${ext}"
     },
+    "files": [
+      "**/*",
+      "!.git{,/**}",
+      "!.env",
+      "!.env.example",
+      "!src-tauri{,/**}",
+      "!LePlugin{,/**}",
+      "!dist{,/**}",
+      "!site{,/**}",
+      "!IMG{,/**}",
+      "!mods{,/**}",
+      "!*.log",
+      "!*.ps1",
+      "!*.cmd",
+      "!TODO.md",
+      "!AGENT.md",
+      "!overview*",
+      "!latest-release.json",
+      "!logo.png",
+      "!package-lock.json",
+      "!dev-app-update.yml"
+    ],
     "extraResources": [
       {
         "from": "mods",
@@ -35,6 +67,10 @@
         "filter": [
           "**/*.jar"
         ]
+      },
+      {
+        "from": "assets/logo.ico",
+        "to": "logo.ico"
       }
     ],
     "directories": {

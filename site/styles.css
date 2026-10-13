@@ -125,8 +125,8 @@ a {
 .logo-circle {
   width: 38px;
   height: 38px;
-  border-radius: 10px;
-  object-fit: contain;
+  border-radius: 4px;
+  object-fit: cover;
   box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
   border: 1px solid rgba(16, 185, 129, 0.35);
   background: rgba(18, 24, 32, 0.8);

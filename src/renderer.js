@@ -33,6 +33,7 @@ Voici le schéma JSON supporté :
   "author": "Créateur / IA",
   "styleMode": "cyber",
   "fontFamily": "Inter",
+  "layout": "top",
   "colors": {
     "primary": "#38bdf8",
     "primaryHover": "#7dd3fc",
@@ -66,142 +67,169 @@ Voici le schéma JSON supporté :
 
 Valeurs disponibles :
 - styleMode : "cyber" (polygone néon), "forged" (armure 3D lourde), "rounded" (arrondi moderne), "glass" (verre givré), "classic" (Minecraft)
+- layout : "top" (barre de boutons en haut), "right" (barre de boutons verticale à droite), "bottom" (barre de boutons en bas)
 - fontFamily : "Inter", "Orbitron", "Rajdhani", "Cinzel", "Press Start 2P", "Montserrat", "Poppins"
 - playButtonIcon : "play", "rocket", "swords", "pickaxe", "shield", "zap", "fire", "star", "eye", "diamond", "cube", "heart", "crown", "gamepad", "skull", "compass", "portal", "axe", "potion"
 - soundProfile : "minecraft_stone", "minecraft_wood", "cyber_beep", "laser_click", "magic_chime", "anvil_heavy", "bubble_pop", "retro_8bit"
 - launchSoundProfile : "minecraft_levelup", "portal_warp", "cyber_charge", "forge_impact"`;
 
 const THEME_ICONS_SVG = {
+  classic: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 3h12l4 7-10 11L2 10l4-7z" fill="#38cc56" stroke="#1fa33a" stroke-width="1.5"/></svg>`,
   emerald: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 3h12l4 7-10 11L2 10l4-7z" fill="#38cc56" stroke="#1fa33a" stroke-width="1.5"/></svg>`,
-  diamond: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 3h12l4 7-10 11L2 10l4-7z" fill="#2db7ff" stroke="#0e7ab0" stroke-width="1.5"/></svg>`,
-  nether: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" fill="#ff5c4d"/></svg>`,
-  ender: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#b45cff" stroke-width="2"/><circle cx="12" cy="12" r="3.5" fill="#b45cff"/></svg>`,
-  obsidian: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" fill="#232833" stroke="#ffc93d" stroke-width="1.5"/></svg>`,
-  copper: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" fill="#e07038" stroke="#b24e1d" stroke-width="1.5"/><line x1="3" y1="12" x2="21" y2="12" stroke="#b24e1d"/><line x1="12" y1="3" x2="12" y2="21" stroke="#b24e1d"/></svg>`,
-  sculk: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="#00dfc4" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="#00dfc4"/></svg>`,
-  amethyst: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9" fill="#c85bf5"/></svg>`,
-  cyber: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#ff0055" stroke="#00f0ff" stroke-width="1.5"/></svg>`,
-  netherite: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l2 2 4-4-2-2M19 13l2 2-4 4-2-2" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/></svg>`,
   gem: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 3h12l4 7-10 11L2 10l4-7z" fill="var(--mc-green-primary)" stroke="currentColor" stroke-width="1.5"/></svg>`,
-  fire: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" fill="#f97316"/></svg>`,
-  eye: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#c084fc" stroke-width="2"/><circle cx="12" cy="12" r="3.5" fill="#c084fc"/></svg>`,
-  shield: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" fill="currentColor" stroke="#e2e8f0" stroke-width="1.5"/></svg>`,
-  brick: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" fill="#fb923c"/></svg>`,
-  pulse: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#2dd4bf" stroke-width="2"/></svg>`,
-  crystal: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9" fill="#e879f9"/></svg>`,
-  zap: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#facc15"/></svg>`,
-  swords: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l2 2 4-4-2-2M19 13l2 2-4 4-2-2" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/></svg>`,
-  star: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="var(--mc-green-primary)"/></svg>`,
-  custom: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14"/></svg>`
+  custom: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14"/></svg>`,
+  sidebar: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="15" y1="4" x2="15" y2="20"/><line x1="17.5" y1="9" x2="17.5" y2="9.01"/><line x1="17.5" y1="12" x2="17.5" y2="12.01"/><line x1="17.5" y1="15" x2="17.5" y2="15.01"/></svg>`,
+  dock: `<svg class="theme-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="16" x2="21" y2="16"/><circle cx="9" cy="18.5" r="0.6" fill="currentColor"/><circle cx="12" cy="18.5" r="0.6" fill="currentColor"/><circle cx="15" cy="18.5" r="0.6" fill="currentColor"/></svg>`
 };
 
 function getThemeFaviconSvg(theme) {
-  if (!theme) return THEME_ICONS_SVG.emerald;
+  if (!theme) return THEME_ICONS_SVG.classic;
   if (THEME_ICONS_SVG[theme.id]) return THEME_ICONS_SVG[theme.id];
   if (theme.icon && THEME_ICONS_SVG[theme.icon]) return THEME_ICONS_SVG[theme.icon];
   if (theme.icon && typeof theme.icon === 'string' && theme.icon.trim()) {
     const trimmed = theme.icon.trim();
+    const iconKey = trimmed.toLowerCase();
+    const aliases = { sword: 'swords', crystal: 'diamond' };
+    const resolvedKey = aliases[iconKey] || iconKey;
+    if (BUTTON_ICONS_SVG[resolvedKey]) {
+      return BUTTON_ICONS_SVG[resolvedKey].replace('<svg ', '<svg class="theme-icon-svg" aria-hidden="true" ');
+    }
+    if (iconKey === 'brick' || iconKey === 'pulse') {
+      const shape = iconKey === 'brick'
+        ? '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 12h18M12 4v8M8 12v8M16 12v8"/>'
+        : '<path d="M2 12h5l3-8 4 16 3-8h5"/>';
+      return `<svg class="theme-icon-svg" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${shape}</svg>`;
+    }
     if (trimmed.startsWith('<svg')) return trimmed;
     return `<span class="theme-custom-favicon-emoji" style="font-size: 14px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;">${escapeHtml(trimmed)}</span>`;
   }
-  return THEME_ICONS_SVG.gem;
+  return THEME_ICONS_SVG.classic;
 }
 
 const THEME_REGISTRY = [
   {
-    id: 'emerald',
-    name: 'Émeraude',
-    tag: 'Classique',
-    icon: 'emerald',
+    id: 'classic',
+    name: 'Classic',
+    tag: 'Défaut',
+    icon: 'classic',
     desc: 'L\'esprit Minecraft original : boutons biseautés verts et accents soignés.',
     colors: ['#38cc56', '#1fa33a', '#0d1810'],
     audio: { soundProfile: 'minecraft_stone', launchSoundProfile: 'minecraft_levelup' }
   },
   {
-    id: 'diamond',
-    name: 'Diamant',
-    tag: 'Précieux',
-    icon: 'diamond',
-    desc: 'Bleu ciel étincelant et cristaux de diamant.',
-    colors: ['#2db7ff', '#0e7ab0', '#0a1017'],
-    audio: { soundProfile: 'magic_chime', launchSoundProfile: 'minecraft_levelup' }
+    id: 'sidebar',
+    name: 'Sidebar',
+    tag: 'Barre à droite',
+    icon: 'sidebar',
+    desc: 'Barre de boutons verticale sur le côté droit, accents indigo électriques.',
+    colors: ['#818cf8', '#4f46e5', '#0d1023'],
+    styleMode: 'rounded',
+    layout: 'right',
+    audio: { soundProfile: 'cyber_beep', launchSoundProfile: 'cyber_charge' }
   },
   {
-    id: 'nether',
-    name: 'Nether',
-    tag: 'Chaud',
-    icon: 'nether',
-    desc: 'Rouge feu incandescent et roches du Nether.',
-    colors: ['#ff5c4d', '#b3291c', '#120a0b'],
-    audio: { soundProfile: 'anvil_heavy', launchSoundProfile: 'forge_impact' }
-  },
-  {
-    id: 'ender',
-    name: 'Ender',
-    tag: 'Mystique',
-    icon: 'ender',
-    desc: 'Violet nébuleux inspiré de l\'End et des perles d\'Ender.',
-    colors: ['#b45cff', '#7a2bb8', '#0f0a16'],
-    audio: { soundProfile: 'magic_chime', launchSoundProfile: 'portal_warp' }
-  },
-  {
-    id: 'obsidian',
-    name: 'Obsidienne',
-    tag: 'Sombre & Or',
-    icon: 'obsidian',
-    desc: 'Noir profond texturé rehaussé de reflets quartz dorés.',
-    colors: ['#ffc93d', '#c9a227', '#0d0f14'],
-    audio: { soundProfile: 'minecraft_stone', launchSoundProfile: 'minecraft_levelup' }
-  },
-  {
-    id: 'copper',
-    name: 'Cuivre',
-    tag: 'Métallique',
-    icon: 'copper',
-    desc: 'Tons chauds oxydés inspirés des Chambres des Épreuves.',
-    colors: ['#e07038', '#b24e1d', '#110a06'],
-    audio: { soundProfile: 'minecraft_wood', launchSoundProfile: 'minecraft_levelup' }
-  },
-  {
-    id: 'sculk',
-    name: 'Sculk',
-    tag: 'Abyssal',
-    icon: 'sculk',
-    desc: 'Cyan bioluminescent des profondeurs sombres (Deep Dark).',
-    colors: ['#00dfc4', '#009684', '#050b10'],
-    audio: { soundProfile: 'bubble_pop', launchSoundProfile: 'portal_warp' }
-  },
-  {
-    id: 'amethyst',
-    name: 'Améthyste',
-    tag: 'Cristallin',
-    icon: 'amethyst',
-    desc: 'Reflets pourpres et mélodies cristallines de géodes.',
-    colors: ['#c85bf5', '#8e27bf', '#0f0714'],
-    audio: { soundProfile: 'magic_chime', launchSoundProfile: 'portal_warp' }
-  },
-  {
-    id: 'cyber',
-    name: 'Cyber / Néo',
-    tag: 'Futuriste',
-    icon: 'cyber',
-    desc: 'Interface Mecha Sci-Fi à géométrie biseautée, bordures néon et énergie pulsée.',
-    colors: ['#ff0055', '#b8003d', '#07080c'],
-    audio: { soundProfile: 'laser_click', launchSoundProfile: 'cyber_charge' }
-  },
-  {
-    id: 'netherite',
-    name: 'Netherite Royale',
-    tag: 'Forgée',
-    icon: 'netherite',
-    desc: 'Plaques d\'armure titane-acier forgées, rivets or liquide et biseaux runiques.',
-    colors: ['#f59e0b', '#b45309', '#0d0c11'],
-    audio: { soundProfile: 'anvil_heavy', launchSoundProfile: 'forge_impact' }
+    id: 'dock',
+    name: 'Dock',
+    tag: 'Barre en bas',
+    icon: 'dock',
+    desc: 'Barre de boutons en dock sous le contenu, accents orange braise.',
+    colors: ['#fb923c', '#c2410c', '#170e06'],
+    styleMode: 'rounded',
+    layout: 'bottom',
+    audio: { soundProfile: 'minecraft_wood', launchSoundProfile: 'forge_impact' }
   }
 ];
 
-const DEFAULT_THEME = 'emerald';
+const DEFAULT_THEME = 'classic';
 let customThemes = [];
+// Surcharge des thèmes par défaut (id builtin -> objet thème complet).
+// Permet de "Modifier" Classic / Sidebar / Dock sans perdre l'original
+// (reset = suppression de l'entrée). Persisté dans config.themeOverrides.
+let themeOverrides = {};
+
+function isBuiltinThemeId(id) {
+  return THEME_REGISTRY.some(t => t.id === id);
+}
+
+function isCustomThemeId(id) {
+  return typeof id === 'string' && id.startsWith('custom-');
+}
+
+// Construit un objet thème COMPLET (éditable) à partir d'un builtin minimal.
+// Utilisé par l'éditeur visuel pour pré-remplir tous les champs.
+function expandBuiltinToFullTheme(builtin) {
+  if (!builtin) return null;
+  const arr = Array.isArray(builtin.colors) ? builtin.colors : [];
+  const primary = (builtin.colors && builtin.colors.primary) || arr[0] || '#38cc56';
+  const secondary = (builtin.colors && (builtin.colors.primaryDark || builtin.colors.secondary)) || arr[1] || primary;
+  const bg = (builtin.colors && builtin.colors.bgDark) || arr[2] || '#0d1810';
+  const pRgb = hexToRgb(primary);
+  const sRgb = hexToRgb(secondary);
+  const bgRgb = hexToRgb(bg);
+  const isPLight = isLightColor(primary);
+  const isBgLight = isLightColor(bg);
+  const styleMode = builtin.styleMode || 'classic';
+  const layout = normalizeNavLayout(builtin.layout);
+  return {
+    id: builtin.id,
+    name: builtin.name,
+    icon: builtin.icon || 'gem',
+    tag: builtin.tag || 'Défaut',
+    desc: builtin.desc || '',
+    author: 'Défaut',
+    styleMode,
+    layout,
+    fontFamily: builtin.fontFamily || 'Inter',
+    builtin: true,
+    colors: {
+      primary,
+      primaryHover: primary,
+      primaryDark: secondary,
+      bevelTop: isPLight ? '#000000' : '#ffffff',
+      bevelBottom: '#000000',
+      accentRgb: pRgb,
+      accentRgb2: sRgb,
+      bgDark: bg,
+      bgDarkRgb: bgRgb,
+      panelBg: isBgLight ? `rgba(${bgRgb}, 0.92)` : `rgba(${bgRgb}, 0.85)`,
+      playGradientA: primary,
+      playGradientB: secondary,
+      playGradientHoverA: primary,
+      playGradientHoverB: secondary,
+      playText: isPLight ? '#090d14' : '#ffffff',
+      validateGradientA: primary,
+      validateGradientB: secondary,
+      validateBorder: primary,
+      validateText: isPLight ? '#090d14' : '#ffffff',
+      heroCardA: isBgLight ? `rgba(${bgRgb}, 0.96)` : `rgba(${bgRgb}, 0.95)`,
+      heroCardB: isBgLight ? `rgba(${bgRgb}, 0.88)` : `rgba(${bgRgb}, 0.85)`
+    },
+    images: {
+      backgroundImage: builtin.images?.backgroundImage || '',
+      backgroundBlur: builtin.images?.backgroundBlur || '8px',
+      backgroundBrightness: builtin.images?.backgroundBrightness !== undefined ? builtin.images.backgroundBrightness : 0.45,
+      playButtonText: builtin.images?.playButtonText || 'JOUER',
+      playButtonIcon: builtin.images?.playButtonIcon || 'play'
+    },
+    audio: {
+      soundProfile: builtin.audio?.soundProfile || 'minecraft_stone',
+      launchSoundProfile: builtin.audio?.launchSoundProfile || 'minecraft_levelup',
+      customClickSound: builtin.audio?.customClickSound || '',
+      customLaunchSound: builtin.audio?.customLaunchSound || ''
+    }
+  };
+}
+
+function getBuiltinBase(id) {
+  return THEME_REGISTRY.find(t => t.id === id) || null;
+}
+
+function getEffectiveBuiltin(id) {
+  const base = getBuiltinBase(id);
+  if (!base) return null;
+  if (themeOverrides[id]) return themeOverrides[id];
+  return base;
+}
 
 let currentClickSoundProfile = 'minecraft_stone';
 let currentCustomClickAudio = '';
@@ -209,11 +237,19 @@ let currentLaunchSoundProfile = 'minecraft_levelup';
 let currentCustomLaunchAudio = '';
 
 function getAllThemes() {
-  return [...THEME_REGISTRY, ...customThemes];
+  const builtins = THEME_REGISTRY.map(t => themeOverrides[t.id] || t);
+  return [...builtins, ...customThemes];
 }
 
 function getThemeObj(themeId) {
-  return getAllThemes().find(t => t.id === themeId) || THEME_REGISTRY[0];
+  const id = themeId === 'emerald' ? 'classic' : themeId;
+  return getAllThemes().find(t => t.id === id) || getEffectiveBuiltin(DEFAULT_THEME) || THEME_REGISTRY[0];
+}
+
+// Disposition de la barre de boutons : "top" (défaut), "right" ou "bottom".
+// Toute valeur inconnue retombe sur "top".
+function normalizeNavLayout(layout) {
+  return (layout === 'right' || layout === 'bottom') ? layout : 'top';
 }
 
 function hexToRgb(hex) {
@@ -558,18 +594,29 @@ function updateDynamicThemeStyles() {
     styleEl.id = 'dynamic-custom-themes-style';
     document.head.appendChild(styleEl);
   }
-  styleEl.textContent = customThemes.map(t => generateThemeCss(t)).join('\n\n');
+  // Customs + overrides des thèmes par défaut (ces derniers doivent passer
+  // APRÈS le CSS statique pour écraser Classic / Sidebar / Dock).
+  const overrideList = Object.values(themeOverrides || {});
+  styleEl.textContent = [...overrideList, ...customThemes].map(t => generateThemeCss(t)).join('\n\n');
+}
+
+function persistThemes() {
+  try { window.launcher.saveConfig({ customThemes, themeOverrides }); } catch {}
 }
 
 function applyTheme(theme, notify = false) {
   const all = getAllThemes();
-  const found = all.find(t => t.id === theme);
-  const t = found ? theme : DEFAULT_THEME;
+  const requested = (theme === 'emerald' ? 'classic' : theme) || DEFAULT_THEME;
+  const found = all.find(t => t.id === requested);
+  const t = found ? requested : DEFAULT_THEME;
   document.body.dataset.theme = t;
 
   updateDynamicThemeStyles();
 
   const currentThemeObj = getThemeObj(t);
+
+  // Disposition de la barre de boutons (haut / droite / bas)
+  document.body.dataset.navLayout = normalizeNavLayout(currentThemeObj.layout);
 
   // Apply fonts, background image/blur, play button icon/text & audio
   applyThemeMediaAndCustomization(currentThemeObj);
@@ -611,11 +658,13 @@ function syncSettingsThemeDropdown(activeId) {
   if (!themeSelect) return;
 
   const all = getAllThemes();
-  themeSelect.innerHTML = all.map(t => `
+  themeSelect.innerHTML = all.map(t => {
+    const suffix = isCustomThemeId(t.id) ? ' (Personnalisé)' : (themeOverrides[t.id] ? ' (Modifié)' : '');
+    return `
     <option value="${escapeHtml(t.id)}" ${t.id === activeId ? 'selected' : ''}>
-      ${escapeHtml(t.name)} ${t.id.startsWith('custom-') ? '(Personnalisé)' : ''}
+      ${escapeHtml(t.name)}${suffix}
     </option>
-  `).join('');
+  `;}).join('');
 }
 
 function sanitizeAndParseJson(rawInput) {
@@ -743,6 +792,7 @@ function parseThemeJson(rawInput) {
     author: parsed.author || 'Moi / IA',
     styleMode: parsed.styleMode || 'cyber',
     fontFamily: parsed.fontFamily || 'Inter',
+    layout: normalizeNavLayout(parsed.layout),
     colors,
     images: {
       backgroundImage: images.backgroundImage || parsed.backgroundImage || '',
@@ -761,22 +811,65 @@ function parseThemeJson(rawInput) {
 }
 
 let currentEditingThemeId = null;
+let currentEditingBuiltinId = null;
 let setVisualEditorCustomAudio = null;
 let updateVisualEditorPreviewFn = null;
+
+function getEditingContext() {
+  if (currentEditingThemeId && customThemes.some(t => t.id === currentEditingThemeId)) {
+    return { kind: 'custom', id: currentEditingThemeId };
+  }
+  if (currentEditingBuiltinId && isBuiltinThemeId(currentEditingBuiltinId)) {
+    return { kind: 'builtin', id: currentEditingBuiltinId };
+  }
+  return { kind: 'new', id: null };
+}
+
+function clearEditingContext() {
+  currentEditingThemeId = null;
+  currentEditingBuiltinId = null;
+}
+
+function refreshEditorSaveUI() {
+  const ctx = getEditingContext();
+  const labelSave = document.getElementById('label-save-editor-theme');
+  const btnSaveAsNew = document.getElementById('btn-editor-save-as-new');
+  const notice = document.getElementById('editor-builtin-notice');
+  const noticeName = document.getElementById('editor-builtin-notice-name');
+  if (ctx.kind === 'custom') {
+    const t = customThemes.find(x => x.id === ctx.id);
+    if (labelSave) labelSave.textContent = t ? `Mettre à jour « ${t.name} »` : 'Mettre à jour ce thème';
+    if (btnSaveAsNew) btnSaveAsNew.classList.remove('hidden');
+    if (notice) notice.classList.add('hidden');
+  } else if (ctx.kind === 'builtin') {
+    const t = getEffectiveBuiltin(ctx.id);
+    if (labelSave) labelSave.textContent = t ? `Mettre à jour « ${t.name} » (défaut)` : 'Mettre à jour le thème par défaut';
+    if (btnSaveAsNew) btnSaveAsNew.classList.remove('hidden');
+    if (notice) notice.classList.remove('hidden');
+    if (noticeName && t) noticeName.textContent = t.name;
+  } else {
+    if (labelSave) labelSave.textContent = 'Créer & Activer le thème';
+    if (btnSaveAsNew) btnSaveAsNew.classList.add('hidden');
+    if (notice) notice.classList.add('hidden');
+  }
+}
 
 function populateExistingThemesDropdown() {
   const selectEl = document.getElementById('editor-select-existing-theme');
   if (!selectEl) return;
 
-  const currentVal = selectEl.value;
+  const ctx = getEditingContext();
+  const activeVal = ctx.id || selectEl.value;
   const officialThemes = THEME_REGISTRY;
   const customs = customThemes;
 
   let html = '<option value="">-- Choisir un thème existant à modifier --</option>';
 
-  html += '<optgroup label="Thèmes Minecraft Officiels (10)">';
+  html += `<optgroup label="Thèmes par défaut (${officialThemes.length}) — modifiables">`;
   officialThemes.forEach(t => {
-    html += `<option value="${t.id}">${escapeHtml(t.name)} (${escapeHtml(t.tag || 'Officiel')})</option>`;
+    const eff = getEffectiveBuiltin(t.id);
+    const mod = themeOverrides[t.id] ? ' ● modifié' : '';
+    html += `<option value="${t.id}">${escapeHtml(eff.name || t.name)} (${escapeHtml(eff.tag || t.tag || 'Défaut')})${mod}</option>`;
   });
   html += '</optgroup>';
 
@@ -789,7 +882,7 @@ function populateExistingThemesDropdown() {
   }
 
   selectEl.innerHTML = html;
-  if (currentVal) selectEl.value = currentVal;
+  if (activeVal) selectEl.value = activeVal;
 }
 
 function loadThemeIntoVisualEditor(themeOrId, openModalAndSwitchTab = false) {
@@ -801,13 +894,34 @@ function loadThemeIntoVisualEditor(themeOrId, openModalAndSwitchTab = false) {
   }
   if (!theme) return;
 
-  const isCustom = theme.id && theme.id.startsWith('custom-');
-  currentEditingThemeId = isCustom ? theme.id : null;
+  const isCustom = isCustomThemeId(theme.id);
+  const isBuiltin = isBuiltinThemeId(theme.id);
+  // Mémorise ce qu'on édite : custom (mise à jour par id) ou builtin (override).
+  // Pour un builtin on charge la version effective (override si déjà modifié).
+  if (isCustom) {
+    currentEditingThemeId = theme.id;
+    currentEditingBuiltinId = null;
+  } else if (isBuiltin) {
+    currentEditingThemeId = null;
+    currentEditingBuiltinId = theme.id;
+    theme = getEffectiveBuiltin(theme.id) || theme;
+  } else {
+    clearEditingContext();
+  }
+  // Un builtin minimal (colors = tableau) devient un objet complet éditable.
+  if (isBuiltin && Array.isArray(theme.colors)) {
+    const base = getBuiltinBase(theme.id) || theme;
+    const expanded = expandBuiltinToFullTheme(base);
+    const eff = getEffectiveBuiltin(theme.id);
+    // Si un override existe déjà, on édite l'override (complet).
+    theme = (eff && !Array.isArray(eff.colors)) ? eff : { ...expanded, id: base.id, name: eff?.name || base.name, tag: eff?.tag || base.tag };
+  }
 
   const editorName = document.getElementById('editor-theme-name');
   const editorIcon = document.getElementById('editor-theme-icon');
   const editorTag = document.getElementById('editor-theme-tag');
   const editorStyle = document.getElementById('editor-theme-style-mode');
+  const editorLayout = document.getElementById('editor-theme-layout');
   const editorFont = document.getElementById('editor-font-family');
   const editorPlayText = document.getElementById('editor-play-text');
   const editorPlayIcon = document.getElementById('editor-play-icon');
@@ -830,10 +944,11 @@ function loadThemeIntoVisualEditor(themeOrId, openModalAndSwitchTab = false) {
   const labelCustomAudio = document.getElementById('label-custom-audio');
   const btnClearCustomAudio = document.getElementById('btn-clear-custom-audio');
 
-  if (editorName) editorName.value = isCustom ? theme.name : `${theme.name} (Modifié)`;
+  if (editorName) editorName.value = theme.name || '';
   if (editorIcon) editorIcon.value = theme.icon || 'gem';
-  if (editorTag) editorTag.value = theme.tag || 'Modifié';
-  if (editorStyle) editorStyle.value = theme.styleMode || (theme.id === 'cyber' ? 'cyber' : (theme.id === 'netherite' ? 'forged' : 'classic'));
+  if (editorTag) editorTag.value = theme.tag || (isBuiltin ? theme.tag : 'Perso');
+  if (editorStyle) editorStyle.value = theme.styleMode || 'classic';
+  if (editorLayout) editorLayout.value = normalizeNavLayout(theme.layout);
   if (editorFont) editorFont.value = theme.fontFamily || 'Inter';
   if (editorPlayText) editorPlayText.value = theme.images?.playButtonText || 'JOUER';
 
@@ -884,13 +999,7 @@ function loadThemeIntoVisualEditor(themeOrId, openModalAndSwitchTab = false) {
     if (btnClearCustomAudio) btnClearCustomAudio.classList.add('hidden');
   }
 
-  if (labelSave) {
-    labelSave.textContent = isCustom ? 'Mettre à jour ce thème' : 'Sauvegarder comme nouveau thème';
-  }
-  if (btnSaveAsNew) {
-    if (isCustom) btnSaveAsNew.classList.remove('hidden');
-    else btnSaveAsNew.classList.add('hidden');
-  }
+  refreshEditorSaveUI();
 
   if (openModalAndSwitchTab) {
     const modal = document.getElementById('modal-custom-theme');
@@ -923,7 +1032,7 @@ function renderThemeGrid(force = false) {
 
   const activeTheme = document.body.dataset.theme || DEFAULT_THEME;
   const allThemes = getAllThemes();
-  const signature = allThemes.map(t => `${t.id}:${t.name}`).join('|');
+  const signature = allThemes.map(t => `${t.id}:${t.name}:${themeOverrides[t.id] ? 'mod' : ''}`).join('|');
 
   // If already rendered and themes haven't changed, just sync active classes (0ms CPU/DOM)
   if (!force && grid.children.length > 0 && lastRenderedThemesSignature === signature) {
@@ -938,7 +1047,8 @@ function renderThemeGrid(force = false) {
 
   grid.innerHTML = allThemes.map(theme => {
     const isActive = theme.id === activeTheme;
-    const isCustom = theme.id.startsWith('custom-');
+    const isCustom = isCustomThemeId(theme.id);
+    const isOverridden = !isCustom && !!themeOverrides[theme.id];
     const colors = Array.isArray(theme.colors)
       ? theme.colors
       : [theme.colors?.primary || '#38cc56', theme.colors?.playGradientB || theme.colors?.primaryDark || '#1fa33a', theme.colors?.bgDark || '#0d1810'];
@@ -954,6 +1064,7 @@ function renderThemeGrid(force = false) {
           </div>
           <div class="theme-card-badges">
             <span class="theme-card-active-badge"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>Actif</span>
+            ${isOverridden ? '<span class="theme-card-tag tag-modified">● modifié</span>' : ''}
             <span class="theme-card-tag ${isCustom ? 'tag-custom' : ''}">${escapeHtml(theme.tag || (isCustom ? 'IA' : 'Style'))}</span>
           </div>
         </div>
@@ -967,6 +1078,11 @@ function renderThemeGrid(force = false) {
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
               <span>Modifier</span>
             </button>
+            ${isOverridden ? `
+              <button class="theme-mini-btn reset" data-action="reset" data-theme-id="${theme.id}" title="Restaurer le thème par défaut d'origine">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+              </button>
+            ` : ''}
             ${isCustom ? `
               <button class="theme-mini-btn export" data-action="export" data-theme-id="${theme.id}" title="Exporter ce thème (.json)">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -1006,11 +1122,18 @@ function renderThemeGrid(force = false) {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const themeId = btn.dataset.themeId;
-      const theme = customThemes.find(t => t.id === themeId);
+      const theme = getAllThemes().find(t => t.id === themeId);
       if (theme && window.launcher.exportCustomTheme) {
         const res = await window.launcher.exportCustomTheme(theme);
         if (res?.success) showToast('Thème exporté avec succès !', 'info');
       }
+    });
+  });
+
+  grid.querySelectorAll('.theme-mini-btn[data-action="reset"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetBuiltinTheme(btn.dataset.themeId);
     });
   });
 
@@ -1036,7 +1159,7 @@ function saveCustomTheme(themeObj, andActivate = true) {
   }
 
   updateDynamicThemeStyles();
-  window.launcher.saveConfig({ customThemes });
+  persistThemes();
   renderThemeGrid(true);
 
   if (andActivate) {
@@ -1046,6 +1169,46 @@ function saveCustomTheme(themeObj, andActivate = true) {
 
   updateCustomThemesManageList();
   populateExistingThemesDropdown();
+}
+
+function saveBuiltinOverride(themeObj, andActivate = true) {
+  if (!themeObj || !isBuiltinThemeId(themeObj.id)) return;
+  themeOverrides[themeObj.id] = { ...themeObj, builtin: true };
+  updateDynamicThemeStyles();
+  persistThemes();
+  renderThemeGrid(true);
+
+  if (andActivate) {
+    applyTheme(themeObj.id, true);
+    window.launcher.saveConfig({ theme: themeObj.id });
+  }
+
+  updateCustomThemesManageList();
+  populateExistingThemesDropdown();
+  refreshEditorSaveUI();
+}
+
+function resetBuiltinTheme(themeId) {
+  if (!isBuiltinThemeId(themeId) || !themeOverrides[themeId]) return;
+  const base = getBuiltinBase(themeId);
+  const name = base ? base.name : themeId;
+  showConfirmDialog(
+    'Restaurer le thème par défaut ?',
+    `Restaurer le thème <strong>"${escapeHtml(name)}"</strong> à son apparence d'origine ? Vos modifications seront perdues.`,
+    () => {
+      delete themeOverrides[themeId];
+      updateDynamicThemeStyles();
+      persistThemes();
+      renderThemeGrid(true);
+      if (currentEditingBuiltinId === themeId) {
+        loadThemeIntoVisualEditor(themeId);
+      } else {
+        populateExistingThemesDropdown();
+      }
+      if (document.body.dataset.theme === themeId) applyTheme(themeId, true);
+      showToast(`Thème "${name}" restauré à l'original.`, 'info');
+    }
+  );
 }
 
 function showConfirmDialog(title, messageHtml, onConfirm) {
@@ -1098,7 +1261,8 @@ function deleteCustomTheme(themeId) {
     `Voulez-vous vraiment supprimer définitivement le thème <strong>"${escapeHtml(name)}"</strong> ?`,
     () => {
       customThemes = customThemes.filter(t => t.id !== themeId);
-      window.launcher.saveConfig({ customThemes });
+      if (currentEditingThemeId === themeId) clearEditingContext();
+      persistThemes();
       updateDynamicThemeStyles();
 
       if (document.body.dataset.theme === themeId) {
@@ -1109,6 +1273,7 @@ function deleteCustomTheme(themeId) {
       renderThemeGrid(true);
       updateCustomThemesManageList();
       populateExistingThemesDropdown();
+      refreshEditorSaveUI();
       showToast(`Thème "${name}" supprimé.`, 'info');
     }
   );
@@ -1120,7 +1285,36 @@ function updateCustomThemesManageList() {
   if (countEl) countEl.textContent = customThemes.length;
   if (!listEl) return;
 
-  if (customThemes.length === 0) {
+  const overriddenIds = Object.keys(themeOverrides || {}).filter(id => isBuiltinThemeId(id));
+  const overriddenHtml = overriddenIds.map(id => {
+    const theme = themeOverrides[id];
+    return `
+    <div class="custom-manage-item manage-item-builtin">
+      <div class="custom-manage-info">
+        <span class="custom-manage-icon">${getThemeFaviconSvg(theme)}</span>
+        <div>
+          <strong>${escapeHtml(theme.name)}</strong>
+          <span class="custom-manage-sub">Thème par défaut ● modifié • ${escapeHtml(theme.styleMode || 'classic')}</span>
+        </div>
+      </div>
+      <div class="custom-manage-actions">
+        <button class="custom-manage-btn edit btn-edit-builtin-from-list" data-theme-id="${id}" title="Modifier ce thème par défaut">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          <span>Modifier</span>
+        </button>
+        <button class="custom-manage-btn apply btn-apply-from-list" data-theme-id="${id}" title="Activer ce thème">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Appliquer</span>
+        </button>
+        <button class="custom-manage-btn reset btn-reset-builtin-from-list" data-theme-id="${id}" title="Restaurer l'original">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+          <span>Restaurer</span>
+        </button>
+      </div>
+    </div>
+  `;}).join('');
+
+  if (customThemes.length === 0 && overriddenIds.length === 0) {
     listEl.innerHTML = `
       <div class="empty-state">
         <p>Aucun thème personnalisé créé pour l'instant.</p>
@@ -1130,7 +1324,7 @@ function updateCustomThemesManageList() {
     return;
   }
 
-  listEl.innerHTML = customThemes.map(theme => `
+  listEl.innerHTML = overriddenHtml + customThemes.map(theme => `
     <div class="custom-manage-item">
       <div class="custom-manage-info">
         <span class="custom-manage-icon">${getThemeFaviconSvg(theme)}</span>
@@ -1185,6 +1379,18 @@ function updateCustomThemesManageList() {
         if (res?.success) showToast('Thème exporté avec succès !', 'info');
       }
     });
+  });
+
+  listEl.querySelectorAll('.btn-edit-builtin-from-list').forEach(btn => {
+    btn.addEventListener('click', () => {
+      loadThemeIntoVisualEditor(btn.dataset.themeId);
+      const tabBtn = document.querySelector('.modal-tab-btn[data-tab="tab-visual-editor"]');
+      if (tabBtn) tabBtn.click();
+    });
+  });
+
+  listEl.querySelectorAll('.btn-reset-builtin-from-list').forEach(btn => {
+    btn.addEventListener('click', () => resetBuiltinTheme(btn.dataset.themeId));
   });
 
   listEl.querySelectorAll('.btn-delete-from-list').forEach(btn => {
@@ -1577,6 +1783,13 @@ const pages = document.querySelectorAll('.page');
 navItems.forEach(item => {
   item.addEventListener('click', () => {
     const targetPage = item.dataset.page;
+    // Maintenance (espace admin du site) : l'onglet Mods est bloqué,
+    // les Paramètres restent accessibles.
+    if (targetPage === 'mods' && maintenanceState.maintenance) {
+      playMinecraftClickSound();
+      openMaintenanceModal();
+      return;
+    }
     navItems.forEach(n => n.classList.remove('active'));
     pages.forEach(p => p.classList.remove('active'));
 
@@ -1585,6 +1798,7 @@ navItems.forEach(item => {
     if (pageEl) pageEl.classList.add('active');
 
     if (targetPage === 'accounts') loadAccountsList();
+    if (targetPage === 'client') loadClientPageSettings();
     if (targetPage === 'mods') loadMods();
     if (targetPage === 'settings') { loadSettings(); renderThemeGrid(); }
     if (targetPage === 'news' || targetPage === 'home') loadLatestReleaseInfo();
@@ -1712,30 +1926,76 @@ async function initServerSelector() {
     const data = await window.launcher.getServers();
     if (data && data.activeServer) {
       currentServerId = data.activeServerId || 'adoserv2';
+      if (Array.isArray(data.servers)) {
+        renderServerTabs(data.servers, currentServerId);
+      }
       applyServerUI(data.activeServer);
     }
+    if (data && data.launcherConfig) applyMaintenanceState(data.launcherConfig);
   } catch (e) {
     console.error('[ServerSelector] Initialization error:', e);
   }
 
+  bindServerTabs();
+}
+
+function serverTabBadge(server) {
+  const lock = server.codesRequired ? ' 🔑' : '';
+  if (server.apiType) return `${String(server.apiType).toUpperCase().slice(0, 5)}${lock}`;
+  return `${String(server.defaultLoader || server.loader || 'MC').toUpperCase().slice(0, 5)}${lock}`;
+}
+
+// Onglets serveurs dynamiques (liste pilotée par l'espace admin du site).
+// Le HTML statique sert de repli si l'IPC échoue.
+function renderServerTabs(servers, activeId) {
+  const group = document.getElementById('server-tabs-group');
+  if (!group || !Array.isArray(servers)) return;
+  if (servers.length === 0) {
+    group.innerHTML = '<p class="server-list-empty">Aucun serveur ouvert pour le moment.</p>';
+    return;
+  }
+  group.innerHTML = servers.map((s) => {
+    const isOpen = s.enabled !== false;
+    return `
+      <button class="server-tab ${s.id === activeId ? 'active' : ''}" data-server-id="${escapeHtml(s.id)}" title="${escapeHtml(s.description || s.name)}${s.codesRequired ? ' — codes d\u2019accès requis' : ''}" aria-pressed="${s.id === activeId}" ${isOpen ? '' : 'disabled aria-disabled="true"'}>
+        <span class="server-tab-main">
+          <span class="server-tab-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span>
+          <span class="server-tab-name">${escapeHtml(s.shortName || s.name)}</span>
+        </span>
+        <span class="server-tab-meta">
+          <span class="server-tab-badge">${escapeHtml(serverTabBadge(s))}</span>
+          <span class="server-open-state ${isOpen ? 'is-open' : 'is-closed'}"><span class="status-dot ${isOpen ? 'online' : 'offline'}"></span>${isOpen ? 'OUVERT' : 'FERMÉ'}</span>
+        </span>
+      </button>`;
+  }).join('');
+}
+
+async function onServerTabClick(tab, serverTabs) {
+  const serverId = tab.dataset.serverId;
+  if (serverId === currentServerId) return;
+
+  serverTabs.forEach((t) => t.classList.remove('active'));
+  tab.classList.add('active');
+
+  const res = await window.launcher.setActiveServer(serverId);
+  if (res && res.success && res.activeServer) {
+    currentServerId = res.activeServer.id;
+    applyServerUI(res.activeServer);
+    updateLiveServerBadge();
+    loadMods();
+    showToast(`Serveur sélectionné : ${res.activeServer.name}`, 'info');
+  } else {
+    showToast(res?.error || 'Serveur indisponible.', 'error');
+    tab.classList.remove('active');
+    const current = document.querySelector(`.server-tab[data-server-id="${currentServerId}"]`);
+    if (current) current.classList.add('active');
+  }
+}
+
+function bindServerTabs() {
   const serverTabs = document.querySelectorAll('.server-tab');
   serverTabs.forEach((tab) => {
-    tab.addEventListener('click', async () => {
-      const serverId = tab.dataset.serverId;
-      if (serverId === currentServerId) return;
-
-      serverTabs.forEach((t) => t.classList.remove('active'));
-      tab.classList.add('active');
-
-      const res = await window.launcher.setActiveServer(serverId);
-      if (res && res.activeServer) {
-        currentServerId = res.activeServer.id;
-        applyServerUI(res.activeServer);
-        updateLiveServerBadge();
-        loadMods();
-        showToast(`Serveur sélectionné : ${res.activeServer.name}`, 'info');
-      }
-    });
+    tab.addEventListener('click', () => onServerTabClick(tab, serverTabs));
   });
 }
 
@@ -1947,6 +2207,47 @@ const langSelect = document.getElementById('settings-language');
 if (langSelect) {
   langSelect.addEventListener('change', (e) => {
     window.launcher.saveConfig({ language: e.target.value });
+  });
+}
+
+const keyboardLayoutSelect = document.getElementById('settings-keyboard-layout');
+if (keyboardLayoutSelect) {
+  keyboardLayoutSelect.addEventListener('change', async (e) => {
+    const layout = e.target.value;
+    try {
+      await window.launcher.applyKeyboardLayout(layout);
+      showToast(`Disposition ${layout.toUpperCase()} appliquée avec succès !`, 'success');
+    } catch (err) {
+      showToast('Erreur lors de l\'application des touches : ' + err.message, 'error');
+    }
+  });
+}
+
+const btnApplyKeyboardLayout = document.getElementById('btn-apply-keyboard-layout');
+if (btnApplyKeyboardLayout) {
+  btnApplyKeyboardLayout.addEventListener('click', async () => {
+    const layout = keyboardLayoutSelect ? keyboardLayoutSelect.value : 'azerty';
+    try {
+      await window.launcher.applyKeyboardLayout(layout);
+      if (typeof playMinecraftClickSound === 'function') playMinecraftClickSound();
+      showToast(`Touches ${layout.toUpperCase()} appliquées à Minecraft !`, 'success');
+    } catch (err) {
+      showToast('Erreur lors de l\'application des touches : ' + err.message, 'error');
+    }
+  });
+}
+
+const btnClientAzertyNow = document.getElementById('btn-client-azerty-now');
+if (btnClientAzertyNow) {
+  btnClientAzertyNow.addEventListener('click', async () => {
+    try {
+      if (keyboardLayoutSelect) keyboardLayoutSelect.value = 'azerty';
+      await window.launcher.applyKeyboardLayout('azerty');
+      if (typeof playMinecraftClickSound === 'function') playMinecraftClickSound();
+      showToast('Touches AZERTY (ZQSD) configurées et synchronisées !', 'success');
+    } catch (err) {
+      showToast('Erreur lors de la configuration AZERTY : ' + err.message, 'error');
+    }
   });
 }
 
@@ -2172,6 +2473,7 @@ function initCustomThemeModal() {
   const editorIcon = document.getElementById('editor-theme-icon');
   const editorTag = document.getElementById('editor-theme-tag');
   const editorStyle = document.getElementById('editor-theme-style-mode');
+  const editorLayout = document.getElementById('editor-theme-layout');
   const editorPlayText = document.getElementById('editor-play-text');
   const editorPlayIcon = document.getElementById('editor-play-icon');
   const editorPlayCustomIcon = document.getElementById('editor-play-custom-icon');
@@ -2314,20 +2616,14 @@ function initCustomThemeModal() {
 
   // Visual Editor Presets Dictionary
   const VISUAL_PRESETS = {
-    dragon: { name: 'Dragon End', icon: 'eye', tag: 'Mystique', style: 'cyber', font: 'Orbitron', primary: '#d946ef', secondary: '#86198f', bg: '#0f0814', play: '#d946ef', playText: 'EXPLORER', playIcon: 'play', sound: 'magic_chime', launch: 'dragon_roar', desc: 'Violet néon et vapeurs de dragon de l\'End.' },
-    glacier: { name: 'Glacier Arctique', icon: 'crystal', tag: 'Glace', style: 'glass', font: 'Rajdhani', primary: '#38bdf8', secondary: '#0284c7', bg: '#081119', play: '#7dd3fc', playText: 'DÉGELER', playIcon: 'play', sound: 'laser_click', launch: 'portal_warp', desc: 'Reflets purs de glace éternelle et froid polaire.' },
-    forge: { name: 'Forge Volcanique', icon: 'fire', tag: 'Lave 3D', style: 'forged', font: 'Cinzel', primary: '#f97316', secondary: '#c2410c', bg: '#140a08', play: '#fb923c', playText: 'FORGER', playIcon: 'swords', sound: 'anvil_heavy', launch: 'forge_impact', desc: 'Acier forgé en fusion et braises rougeoyantes.' },
-    pixel: { name: '8-Bit Arcade', icon: 'zap', tag: 'Retro', style: 'classic', font: 'Press Start 2P', primary: '#22c55e', secondary: '#15803d', bg: '#09120a', play: '#4ade80', playText: 'START', playIcon: 'rocket', sound: 'retro_8bit', launch: 'minecraft_levelup', desc: 'Ambiance arcade vintage et pixels nostalgiques.' },
-    amethyst: { name: 'Améthyste Pure', icon: 'crystal', tag: 'Cristal', style: 'glass', font: 'Montserrat', primary: '#c084fc', secondary: '#9333ea', bg: '#0f0714', play: '#c084fc', playText: 'CRISTAL', playIcon: 'star', sound: 'magic_chime', launch: 'minecraft_levelup', desc: 'Éclats pourpres et carillons harmonieux des géodes.' },
-    cyberpunk: { name: 'Néo-Tokyo 2077', icon: 'zap', tag: 'Cyber Tech', style: 'cyber', font: 'Orbitron', primary: '#ff0055', secondary: '#00f0ff', bg: '#07080c', play: '#ff0055', playText: 'CONNECT', playIcon: 'zap', sound: 'laser_click', launch: 'cyber_charge', desc: 'Boutons polygonaux biseautés sci-fi, néon carmin et viseur cyan.' },
-    emerald: { name: 'Émeraude Pure', icon: 'gem', tag: 'Classique', style: 'classic', font: 'Inter', primary: '#38cc56', secondary: '#1fa33a', bg: '#0d1810', play: '#38cc56', playText: 'JOUER', playIcon: 'play', sound: 'minecraft_stone', launch: 'minecraft_levelup', desc: 'L\'esprit Minecraft original : boutons biseautés verts et accents soignés.' }
+    classic: { name: 'Classic', icon: 'gem', tag: 'Classique', style: 'classic', font: 'Inter', primary: '#38cc56', secondary: '#1fa33a', bg: '#0d1810', play: '#38cc56', playText: 'JOUER', playIcon: 'play', sound: 'minecraft_stone', launch: 'minecraft_levelup', desc: 'L\'esprit Minecraft original : boutons biseautés verts et accents soignés.' }
   };
 
   // Wire Preset Chips
   document.querySelectorAll('#preset-chips-group .preset-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const presetId = chip.dataset.presetId;
-      const p = VISUAL_PRESETS[presetId];
+      const p = VISUAL_PRESETS[presetId] || VISUAL_PRESETS.classic;
       if (!p) return;
 
       document.querySelectorAll('#preset-chips-group .preset-chip').forEach(c => c.classList.remove('active'));
@@ -2372,13 +2668,8 @@ function initCustomThemeModal() {
 
   // Quick Palettes
   const QUICK_PALETTES = {
-    emerald: { primary: '#38cc56', secondary: '#1fa33a', bg: '#0d1810', play: '#38cc56' },
-    diamond: { primary: '#2db7ff', secondary: '#0e7ab0', bg: '#0a1017', play: '#2db7ff' },
-    cyber: { primary: '#ff0055', secondary: '#00f0ff', bg: '#07080c', play: '#ff0055' },
-    nether: { primary: '#ff5c4d', secondary: '#b3291c', bg: '#120a0b', play: '#ff5c4d' },
-    ender: { primary: '#b45cff', secondary: '#7a2bb8', bg: '#0f0a16', play: '#b45cff' },
-    gold: { primary: '#f59e0b', secondary: '#3d394b', bg: '#0d0c11', play: '#f59e0b' },
-    sculk: { primary: '#00dfc4', secondary: '#009684', bg: '#050b10', play: '#00dfc4' }
+    classic: { primary: '#38cc56', secondary: '#1fa33a', bg: '#0d1810', play: '#38cc56' },
+    emerald: { primary: '#38cc56', secondary: '#1fa33a', bg: '#0d1810', play: '#38cc56' }
   };
 
   document.querySelectorAll('#color-palettes-group .color-palette-btn').forEach(btn => {
@@ -2802,17 +3093,19 @@ function initCustomThemeModal() {
     });
   }
 
-  // Reset to Defaults
+  // Reset to Defaults (nouveau thème vierge)
   if (btnResetDefaults) {
     btnResetDefaults.addEventListener('click', () => {
-      currentEditingThemeId = null;
+      clearEditingContext();
       if (editorName) editorName.value = '';
       if (editorIcon) editorIcon.value = 'gem';
       if (editorTag) editorTag.value = 'Perso';
       if (editorStyle) editorStyle.value = 'cyber';
+      if (editorLayout) editorLayout.value = 'top';
       if (editorFont) editorFont.value = 'Inter';
       if (editorPlayText) editorPlayText.value = 'JOUER';
       if (editorPlayIcon) editorPlayIcon.value = 'play';
+      if (editorPlayCustomIcon) { editorPlayCustomIcon.value = ''; editorPlayCustomIcon.classList.add('hidden'); }
       if (editorSoundProfile) editorSoundProfile.value = 'laser_click';
       if (editorLaunchProfile) editorLaunchProfile.value = 'cyber_charge';
       if (editorBgImage) editorBgImage.value = '';
@@ -2823,18 +3116,16 @@ function initCustomThemeModal() {
       if (colBg) colBg.value = '#0b1118';
       if (colPlay) colPlay.value = '#38bdf8';
       customAudioUploaded = '';
+      if (typeof setVisualEditorCustomAudio === 'function') setVisualEditorCustomAudio('');
       if (labelCustomAudio) labelCustomAudio.textContent = 'Importer un fichier Audio (.mp3 / .wav / .ogg)';
       if (btnClearCustomAudio) btnClearCustomAudio.classList.add('hidden');
 
-      const labelSave = document.getElementById('label-save-editor-theme');
-      if (labelSave) labelSave.textContent = 'Créer & Activer le Thème';
-      const btnSaveAsNew = document.getElementById('btn-editor-save-as-new');
-      if (btnSaveAsNew) btnSaveAsNew.classList.add('hidden');
+      refreshEditorSaveUI();
 
       if (selectExistingTheme) selectExistingTheme.value = '';
 
       updateVisualEditorPreview(true);
-      showToast('Éditeur réinitialisé aux valeurs par défaut.', 'info');
+      showToast('Éditeur réinitialisé : prêt pour un nouveau thème.', 'info');
     });
   }
 
@@ -2875,7 +3166,7 @@ function initCustomThemeModal() {
 
     if (previewPlayText) previewPlayText.textContent = pText;
     if (previewPlayIcon) previewPlayIcon.innerHTML = getButtonIconSvg(pIcon);
-    if (previewFontPill) previewFontPill.textContent = `Font: ${fFamily}`;
+    if (previewFontPill) previewFontPill.textContent = `Police : ${fFamily}`;
 
     // Apply font and colors
     previewStage.style.fontFamily = `'${fFamily}', 'Inter', system-ui, sans-serif`;
@@ -2987,12 +3278,16 @@ function initCustomThemeModal() {
   });
 
   // Save Visual Editor Theme Function
+  // - Édition custom  -> mise à jour du custom (même id)
+  // - Édition builtin -> override du thème par défaut (même id, ex: "sidebar")
+  // - forceNew=true  -> TOUJOURS un nouveau custom-xxx avec le nom saisi
+  //   ("Enregistrer sous… / créer un autre thème avec un autre nom")
   function saveThemeFromEditor(forceNew = false) {
     const name = (editorName?.value || '').trim() || 'Mon Thème';
     const icon = (editorIcon?.value || '').trim() || 'custom';
     const tag = (editorTag?.value || '').trim() || 'Perso';
     const styleMode = editorStyle?.value || 'cyber';
-    const desc = `Thème personnalisé créé dans l'éditeur visuel (${styleMode}).`;
+    const layout = normalizeNavLayout(editorLayout?.value);
     const fontFamily = editorFont?.value || 'Inter';
     const playText = editorPlayText?.value || 'JOUER';
     let playIcon = (editorPlayIcon?.value || 'play').trim();
@@ -3010,70 +3305,136 @@ function initCustomThemeModal() {
     const bg = colBg?.value || '#0b1118';
     const play = colPlay?.value || p;
 
-    let themeId;
-    if (!forceNew && currentEditingThemeId && customThemes.some(t => t.id === currentEditingThemeId)) {
-      themeId = currentEditingThemeId;
-    } else {
-      const slug = name.toLowerCase().replace(/[^a-z0-9_-]/g, '-').slice(0, 20);
-      themeId = `custom-${slug}-${Date.now().toString(36)}`;
-    }
+    const ctx = getEditingContext();
+    const desc = ctx.kind === 'builtin'
+      ? `Thème par défaut personnalisé (${styleMode}).`
+      : `Thème personnalisé créé dans l'éditeur visuel (${styleMode}).`;
 
     const isPrimaryLight = isLightColor(p);
     const isPlayLight = isLightColor(play);
     const isBgLight = isLightColor(bg);
 
-    const themeObj = {
-      id: themeId,
-      name,
-      icon,
-      tag,
-      desc,
-      author: 'Moi',
-      styleMode,
-      fontFamily,
-      images: {
-        backgroundImage: bgImage,
-        backgroundBlur: bgBlur,
-        backgroundBrightness: bgBrightness,
-        playButtonText: playText,
-        playButtonIcon: playIcon
-      },
-      audio: {
-        soundProfile,
-        launchSoundProfile,
-        customClickSound: customAudioUploaded,
-        customLaunchSound: customAudioUploaded
-      },
-      colors: {
-        primary: p,
-        primaryHover: p,
-        primaryDark: s,
-        bevelTop: isPrimaryLight ? '#000000' : '#ffffff',
-        bevelBottom: '#000000',
-        accentRgb: hexToRgb(p),
-        accentRgb2: hexToRgb(s),
-        bgDark: bg,
-        bgDarkRgb: hexToRgb(bg),
-        panelBg: isBgLight ? `rgba(${hexToRgb(bg)}, 0.92)` : `rgba(${hexToRgb(bg)}, 0.85)`,
-        playGradientA: play,
-        playGradientB: s,
-        playGradientHoverA: play,
-        playGradientHoverB: s,
-        playText: isPlayLight ? '#090d14' : '#ffffff',
-        validateGradientA: p,
-        validateGradientB: s,
-        validateBorder: p,
-        validateText: isPrimaryLight ? '#090d14' : '#ffffff',
-        heroCardA: isBgLight ? `rgba(${hexToRgb(bg)}, 0.96)` : `rgba(${hexToRgb(bg)}, 0.95)`,
-        heroCardB: isBgLight ? `rgba(${hexToRgb(bg)}, 0.88)` : `rgba(${hexToRgb(bg)}, 0.85)`
-      }
-    };
+    const buildColors = () => ({
+      primary: p,
+      primaryHover: p,
+      primaryDark: s,
+      bevelTop: isPrimaryLight ? '#000000' : '#ffffff',
+      bevelBottom: '#000000',
+      accentRgb: hexToRgb(p),
+      accentRgb2: hexToRgb(s),
+      bgDark: bg,
+      bgDarkRgb: hexToRgb(bg),
+      panelBg: isBgLight ? `rgba(${hexToRgb(bg)}, 0.92)` : `rgba(${hexToRgb(bg)}, 0.85)`,
+      playGradientA: play,
+      playGradientB: s,
+      playGradientHoverA: play,
+      playGradientHoverB: s,
+      playText: isPlayLight ? '#090d14' : '#ffffff',
+      validateGradientA: p,
+      validateGradientB: s,
+      validateBorder: p,
+      validateText: isPrimaryLight ? '#090d14' : '#ffffff',
+      heroCardA: isBgLight ? `rgba(${hexToRgb(bg)}, 0.96)` : `rgba(${hexToRgb(bg)}, 0.95)`,
+      heroCardB: isBgLight ? `rgba(${hexToRgb(bg)}, 0.88)` : `rgba(${hexToRgb(bg)}, 0.85)`
+    });
 
+    const buildImagesAudio = () => ({
+      backgroundImage: bgImage,
+      backgroundBlur: bgBlur,
+      backgroundBrightness: bgBrightness,
+      playButtonText: playText,
+      playButtonIcon: playIcon
+    });
+
+    const buildAudio = () => ({
+      soundProfile,
+      launchSoundProfile,
+      customClickSound: customAudioUploaded,
+      customLaunchSound: customAudioUploaded
+    });
+
+    // --- Cas 1 : "Enregistrer sous…" -> nouveau thème avec le nom saisi ---
+    if (forceNew) {
+      const nameTaken = getAllThemes().some(t => t.name.trim().toLowerCase() === name.toLowerCase());
+      if (nameTaken) {
+        showToast(`Un thème s'appelle déjà "${name}". Choisissez un autre nom pour créer un nouveau thème.`, 'error', 3500);
+        if (editorName) editorName.focus();
+        return;
+      }
+      const slugBase = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 20) || 'theme';
+      const themeId = `custom-${slugBase}-${Date.now().toString(36)}`;
+      const themeObj = {
+        id: themeId, name, icon, tag, desc, author: 'Moi',
+        styleMode, layout, fontFamily,
+        images: buildImagesAudio(), audio: buildAudio(), colors: buildColors()
+      };
+      saveCustomTheme(themeObj, true);
+      currentEditingThemeId = themeId;
+      currentEditingBuiltinId = null;
+      refreshEditorSaveUI();
+      populateExistingThemesDropdown();
+      const sel = document.getElementById('editor-select-existing-theme');
+      if (sel) sel.value = themeId;
+      if (modal) modal.classList.add('hidden');
+      showToast(`Nouveau thème "${name}" créé et activé !`, 'info', 2500);
+      return;
+    }
+
+    // --- Cas 2 : mise à jour d'un custom existant ---
+    if (ctx.kind === 'custom') {
+      const themeId = ctx.id;
+      const themeObj = {
+        id: themeId, name, icon, tag, desc, author: 'Moi',
+        styleMode, layout, fontFamily,
+        images: buildImagesAudio(), audio: buildAudio(), colors: buildColors()
+      };
+      saveCustomTheme(themeObj, true);
+      refreshEditorSaveUI();
+      populateExistingThemesDropdown();
+      if (modal) modal.classList.add('hidden');
+      showToast(`Thème "${name}" mis à jour et activé avec succès !`, 'info', 2500);
+      return;
+    }
+
+    // --- Cas 3 : modification d'un thème par défaut (override, même id) ---
+    if (ctx.kind === 'builtin') {
+      const builtinId = ctx.id;
+      const themeObj = {
+        id: builtinId, name, icon, tag, desc, author: 'Moi (défaut modifié)',
+        styleMode, layout, fontFamily, builtin: true,
+        images: buildImagesAudio(), audio: buildAudio(), colors: buildColors()
+      };
+      saveBuiltinOverride(themeObj, true);
+      populateExistingThemesDropdown();
+      const sel = document.getElementById('editor-select-existing-theme');
+      if (sel) sel.value = builtinId;
+      if (modal) modal.classList.add('hidden');
+      showToast(`Thème par défaut "${name}" modifié et activé !`, 'info', 2500);
+      return;
+    }
+
+    // --- Cas 4 : création depuis zéro ---
+    if (getAllThemes().some(t => t.name.trim().toLowerCase() === name.toLowerCase())) {
+      showToast(`Un thème s'appelle déjà "${name}". Choisissez un autre nom.`, 'error', 3500);
+      if (editorName) editorName.focus();
+      return;
+    }
+    const slugBase = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 20) || 'theme';
+    const themeId = `custom-${slugBase}-${Date.now().toString(36)}`;
+    const themeObj = {
+      id: themeId, name, icon, tag, desc, author: 'Moi',
+      styleMode, layout, fontFamily,
+      images: buildImagesAudio(), audio: buildAudio(), colors: buildColors()
+    };
     saveCustomTheme(themeObj, true);
     currentEditingThemeId = themeId;
+    currentEditingBuiltinId = null;
+    refreshEditorSaveUI();
     populateExistingThemesDropdown();
+    const sel = document.getElementById('editor-select-existing-theme');
+    if (sel) sel.value = themeId;
     if (modal) modal.classList.add('hidden');
-    showToast(forceNew ? `Nouveau thème "${name}" créé et activé !` : `Thème "${name}" mis à jour et activé avec succès !`, 'info', 2500);
+    showToast(`Nouveau thème "${name}" créé et activé !`, 'info', 2500);
   }
 
   // Save / Update Visual Editor Theme Button
@@ -3107,18 +3468,884 @@ if (minimizeOnLaunchToggle) {
   });
 }
 
-// Open Custom Mods Folder Button
-const btnOpenCustomMods = document.getElementById('btn-open-custom-mods');
-if (btnOpenCustomMods) {
-  btnOpenCustomMods.addEventListener('click', () => {
-    window.launcher.openCustomMods();
+// ============================================================
+// YAPAPOUAIYE CLIENT PAGE CONTROLLER & HUD SIMULATOR
+// (Les toggles "Modules en Jeu" des paramètres ont été retirés :
+// tout se règle depuis la page Client ou le menu en jeu [Shift Droit].)
+// ============================================================
+const ycToggleFullBright = document.getElementById('yc-toggle-fullbright');
+const ycToggleNightVision = document.getElementById('yc-toggle-nightvision');
+const ycToggleNoFog = document.getElementById('yc-toggle-nofog');
+const ycToggleFpsBoost = document.getElementById('yc-toggle-fpsboost');
+const ycToggleZoom = document.getElementById('yc-toggle-zoom');
+const ycToggleKeystrokes = document.getElementById('yc-toggle-keystrokes');
+const ycToggleArmorHud = document.getElementById('yc-toggle-armorhud');
+const ycToggleSpeed = document.getElementById('yc-toggle-speed');
+const ycToggleFps = document.getElementById('yc-toggle-fps');
+const ycTogglePing = document.getElementById('yc-toggle-ping');
+
+const hudPreviewViewport = document.getElementById('hud-preview-viewport');
+const hudElemKeystrokes = document.getElementById('hud-elem-keystrokes');
+const hudElemArmor = document.getElementById('hud-elem-armor');
+const hudElemSpeed = document.getElementById('hud-elem-speed');
+const hudElemCoords = document.getElementById('hud-elem-coords');
+const hudElemFps = document.getElementById('hud-elem-fps');
+const hudSimFps = document.getElementById('hud-sim-fps');
+const hudSimPing = document.getElementById('hud-sim-ping');
+const hudFullbrightAmbient = document.getElementById('hud-fullbright-ambient');
+const hudBackdrop = document.getElementById('hud-backdrop');
+const btnToggleHudAmbient = document.getElementById('btn-toggle-hud-ambient');
+const btnResetHudPositions = document.getElementById('btn-reset-hud-positions');
+
+const DEFAULT_HUD_POSITIONS = {
+  coordsX: 492,
+  coordsY: 8,
+  cpsX: 520,
+  cpsY: 260,
+  armorX: 8,
+  armorY: 230,
+  speedX: 8,
+  speedY: 34,
+  fpsX: 8,
+  fpsY: 8,
+  pingX: 8,
+  pingY: 8,
+};
+
+let currentHudPositions = { ...DEFAULT_HUD_POSITIONS };
+
+function updateModuleBadge(badgeId, isActive) {
+  const el = document.getElementById(badgeId);
+  if (!el) return;
+  el.textContent = isActive ? 'Actif' : 'Désactivé';
+  el.classList.toggle('active', !!isActive);
+}
+
+// Colore les jauges de durabilité d'armure (vert / orange / rouge)
+// à partir des attributs data-cur / data-max de chaque pièce.
+function refreshArmorDurability() {
+  document.querySelectorAll('#hud-elem-armor .armor-slot').forEach((slot) => {
+    const cur = parseInt(slot.dataset.cur || '0', 10);
+    const max = parseInt(slot.dataset.max || '1', 10) || 1;
+    const pct = Math.max(0, Math.min(100, Math.round((cur / max) * 100)));
+    const fill = slot.querySelector('.dur-fill');
+    if (fill) {
+      fill.style.width = `${pct}%`;
+      fill.classList.remove('high', 'mid', 'low');
+      fill.classList.add(pct > 60 ? 'high' : pct > 30 ? 'mid' : 'low');
+    }
   });
 }
 
-// Launch Game Button
+function applyHudElementPosition(element, mcX, mcY) {
+  if (!element || !hudPreviewViewport) return;
+  const vW = hudPreviewViewport.clientWidth;
+  const vH = hudPreviewViewport.clientHeight;
+  if (!vW || !vH) return;
+  const scaleX = vW / 640;
+  const scaleY = vH / 360;
+  const maxLeft = Math.max(0, vW - element.offsetWidth);
+  const maxTop = Math.max(0, vH - element.offsetHeight);
+  const left = Math.min(maxLeft, Math.max(0, Math.round(mcX * scaleX)));
+  const top = Math.min(maxTop, Math.max(0, Math.round(mcY * scaleY)));
+  element.style.left = `${left}px`;
+  element.style.top = `${top}px`;
+  element.style.right = 'auto';
+  element.style.bottom = 'auto';
+}
+
+function applyAllHudPositions(positions) {
+  if (positions && typeof positions === 'object') {
+    currentHudPositions = { ...currentHudPositions, ...positions };
+  }
+  const p = currentHudPositions;
+  applyHudElementPosition(hudElemFps, p.fpsX ?? 8, p.fpsY ?? 8);
+  applyHudElementPosition(hudElemSpeed, p.speedX ?? 8, p.speedY ?? 34);
+  applyHudElementPosition(hudElemCoords, p.coordsX ?? 492, p.coordsY ?? 8);
+  applyHudElementPosition(hudElemArmor, p.armorX ?? 8, p.armorY ?? 230);
+  applyHudElementPosition(hudElemKeystrokes, p.cpsX ?? 520, p.cpsY ?? 260);
+}
+
+function makeHudElementDraggable(element, getKeys) {
+  if (!element || !hudPreviewViewport) return;
+
+  element.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+
+    element.classList.add('is-dragging');
+    element.setPointerCapture(e.pointerId);
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const origLeft = element.offsetLeft;
+    const origTop = element.offsetTop;
+    let hasMoved = false;
+
+    const onPointerMove = (moveEv) => {
+      hasMoved = true;
+      const dx = moveEv.clientX - startX;
+      const dy = moveEv.clientY - startY;
+
+      const vW = hudPreviewViewport.clientWidth;
+      const vH = hudPreviewViewport.clientHeight;
+      const maxLeft = Math.max(0, vW - element.offsetWidth);
+      const maxTop = Math.max(0, vH - element.offsetHeight);
+
+      const newLeft = Math.min(maxLeft, Math.max(0, origLeft + dx));
+      const newTop = Math.min(maxTop, Math.max(0, origTop + dy));
+
+      element.style.left = `${newLeft}px`;
+      element.style.top = `${newTop}px`;
+      element.style.right = 'auto';
+      element.style.bottom = 'auto';
+    };
+
+    const onPointerUp = async (upEv) => {
+      element.removeEventListener('pointermove', onPointerMove);
+      element.removeEventListener('pointerup', onPointerUp);
+      element.removeEventListener('pointercancel', onPointerUp);
+      try { element.releasePointerCapture(upEv.pointerId); } catch {}
+      element.classList.remove('is-dragging');
+
+      if (!hasMoved) return;
+
+      const vW = hudPreviewViewport.clientWidth || 640;
+      const vH = hudPreviewViewport.clientHeight || 220;
+      const scaleX = vW / 640;
+      const scaleY = vH / 360;
+
+      const curLeft = element.offsetLeft;
+      const curTop = element.offsetTop;
+      const mcX = Math.round(curLeft / scaleX);
+      const mcY = Math.round(curTop / scaleY);
+
+      const keys = getKeys();
+      const updatedPatch = {};
+      if (keys.x) updatedPatch[keys.x] = mcX;
+      if (keys.y) updatedPatch[keys.y] = mcY;
+      if (keys.extra) {
+        for (const [k, v] of Object.entries(keys.extra(mcX, mcY))) {
+          updatedPatch[k] = v;
+        }
+      }
+
+      currentHudPositions = { ...currentHudPositions, ...updatedPatch };
+
+      try {
+        if (window.launcher.saveClientMods) {
+          await window.launcher.saveClientMods({ hudPositions: updatedPatch });
+        }
+      } catch (err) {
+        console.error('[HUD] Erreur lors de la sauvegarde de la position HUD:', err);
+      }
+    };
+
+    element.addEventListener('pointermove', onPointerMove);
+    element.addEventListener('pointerup', onPointerUp);
+    element.addEventListener('pointercancel', onPointerUp);
+  });
+}
+
+// Initialise le glisser-déposer sur tous les widgets du simulateur HUD
+makeHudElementDraggable(hudElemCoords, () => ({ x: 'coordsX', y: 'coordsY' }));
+makeHudElementDraggable(hudElemFps, () => ({ x: 'fpsX', y: 'fpsY', extra: (x, y) => ({ pingX: x, pingY: y }) }));
+makeHudElementDraggable(hudElemSpeed, () => ({ x: 'speedX', y: 'speedY' }));
+makeHudElementDraggable(hudElemArmor, () => ({ x: 'armorX', y: 'armorY' }));
+makeHudElementDraggable(hudElemKeystrokes, () => ({ x: 'cpsX', y: 'cpsY' }));
+
+if (btnResetHudPositions) {
+  btnResetHudPositions.addEventListener('click', async () => {
+    currentHudPositions = { ...DEFAULT_HUD_POSITIONS };
+    applyAllHudPositions(currentHudPositions);
+    try {
+      if (window.launcher.saveClientMods) {
+        await window.launcher.saveClientMods({ hudPositions: DEFAULT_HUD_POSITIONS });
+      }
+      playMinecraftClickSound();
+      showToast('✦ Positions par défaut rétablies !', 'info', 2500);
+    } catch (err) {
+      console.error('[HUD] Erreur reset positions:', err);
+    }
+  });
+}
+
+window.addEventListener('resize', () => {
+  const pageClient = document.getElementById('page-client');
+  if (pageClient && pageClient.classList.contains('active')) {
+    applyAllHudPositions(currentHudPositions);
+  }
+});
+
+if (window.launcher && window.launcher.onClientModsUpdated) {
+  window.launcher.onClientModsUpdated((refreshedMods) => {
+    if (!refreshedMods) return;
+    if (refreshedMods.hudPositions) {
+      currentHudPositions = { ...currentHudPositions, ...refreshedMods.hudPositions };
+      applyAllHudPositions(currentHudPositions);
+    }
+    updateHudSimulator(refreshedMods);
+  });
+}
+
+function updateHudSimulator(mods) {
+  if (!mods) return;
+  const isFullBright = mods.fullBright !== undefined ? !!mods.fullBright.enabled : (!!mods.nightVision?.enabled);
+  const isNightVision = !!mods.nightVision?.enabled;
+  const isKeystrokes = mods.keystrokes ? !!mods.keystrokes.enabled : true;
+  const isArmorHud = mods.armorHud ? !!mods.armorHud.enabled : true;
+  const isSpeed = mods.speed ? !!mods.speed.enabled : true;
+  const isFps = mods.fps ? !!mods.fps.enabled : true;
+  const isPing = mods.ping ? !!mods.ping.enabled : true;
+  const isCoords = mods.coordinates !== undefined ? !!mods.coordinates.enabled : true;
+
+  if (hudFullbrightAmbient) {
+    hudFullbrightAmbient.classList.toggle('off', !isFullBright);
+  }
+  if (hudBackdrop) {
+    hudBackdrop.classList.toggle('fullbright', isFullBright);
+  }
+  if (hudElemKeystrokes) {
+    hudElemKeystrokes.style.display = isKeystrokes ? 'flex' : 'none';
+  }
+  if (hudElemArmor) {
+    hudElemArmor.style.display = isArmorHud ? 'flex' : 'none';
+  }
+  if (hudElemSpeed) {
+    hudElemSpeed.style.display = isSpeed ? 'flex' : 'none';
+  }
+  if (hudElemCoords) {
+    hudElemCoords.style.display = isCoords ? 'flex' : 'none';
+  }
+  if (hudSimFps) {
+    hudSimFps.style.display = isFps ? '' : 'none';
+  }
+  if (hudSimPing) {
+    hudSimPing.style.display = isPing ? '' : 'none';
+  }
+  if (hudElemFps) {
+    hudElemFps.style.display = (isFps || isPing) ? 'flex' : 'none';
+  }
+
+  const floatingToast = document.getElementById('hud-floating-toast');
+  if (floatingToast) {
+    const act = [];
+    if (isFullBright) act.push('FullBright');
+    if (isNightVision) act.push('Night Vision');
+    if (mods.noFog?.enabled) act.push('NoFog');
+    if (act.length > 0) {
+      const msgEl = floatingToast.querySelector('.toast-msg');
+      if (msgEl) msgEl.textContent = act.join(' & ') + ' [ ACTIVÉ ]';
+      floatingToast.style.display = 'flex';
+    } else {
+      const msgEl = floatingToast.querySelector('.toast-msg');
+      if (msgEl) msgEl.textContent = 'Modules par défaut [ PRÊT ]';
+    }
+  }
+
+  refreshArmorDurability();
+
+  if (mods.hudPositions) {
+    requestAnimationFrame(() => applyAllHudPositions(mods.hudPositions));
+  }
+}
+
+async function loadClientPageSettings() {
+  try {
+    const mods = window.launcher.getClientMods ? await window.launcher.getClientMods() : null;
+    if (!mods) return;
+
+    if (ycToggleFullBright) ycToggleFullBright.checked = mods.fullBright !== undefined ? !!mods.fullBright.enabled : true;
+    if (ycToggleNightVision) ycToggleNightVision.checked = !!mods.nightVision?.enabled;
+    if (ycToggleNoFog) ycToggleNoFog.checked = !!mods.noFog?.enabled;
+    if (ycToggleFpsBoost) ycToggleFpsBoost.checked = !!mods.fpsBoost?.enabled;
+    if (ycToggleZoom) ycToggleZoom.checked = (mods.zoom !== undefined) ? !!mods.zoom.enabled : true;
+    if (ycToggleKeystrokes) ycToggleKeystrokes.checked = mods.keystrokes ? !!mods.keystrokes.enabled : true;
+    if (ycToggleArmorHud) ycToggleArmorHud.checked = mods.armorHud ? !!mods.armorHud.enabled : true;
+    if (ycToggleSpeed) ycToggleSpeed.checked = mods.speed ? !!mods.speed.enabled : true;
+    if (ycToggleFps) ycToggleFps.checked = mods.fps ? !!mods.fps.enabled : true;
+    if (ycTogglePing) ycTogglePing.checked = mods.ping ? !!mods.ping.enabled : true;
+
+    updateModuleBadge('badge-status-fullbright', mods.fullBright !== undefined ? mods.fullBright.enabled : true);
+    updateModuleBadge('badge-status-nightvision', mods.nightVision?.enabled);
+    updateModuleBadge('badge-status-nofog', mods.noFog?.enabled);
+    updateModuleBadge('badge-status-fpsboost', mods.fpsBoost?.enabled);
+    updateModuleBadge('badge-status-zoom', mods.zoom !== undefined ? mods.zoom.enabled : true);
+    updateModuleBadge('badge-status-keystrokes', mods.keystrokes ? mods.keystrokes.enabled : true);
+    updateModuleBadge('badge-status-armorhud', mods.armorHud ? mods.armorHud.enabled : true);
+    updateModuleBadge('badge-status-speed', mods.speed ? mods.speed.enabled : true);
+    updateModuleBadge('badge-status-fps', mods.fps ? mods.fps.enabled : true);
+    updateModuleBadge('badge-status-ping', mods.ping ? mods.ping.enabled : true);
+
+    updateHudSimulator(mods);
+    if (mods.hudPositions) {
+      requestAnimationFrame(() => applyAllHudPositions(mods.hudPositions));
+    }
+  } catch (err) {
+    console.error('[Yapapouaiye Client] Error loading client page settings:', err);
+  }
+}
+
+async function updateYcModule(key, enabled, badgeId) {
+  try {
+    const current = window.launcher.getClientMods ? await window.launcher.getClientMods() : {};
+    const updated = {
+      ...current,
+      [key]: {
+        ...(current[key] || {}),
+        enabled: !!enabled
+      }
+    };
+    if (window.launcher.saveClientMods) await window.launcher.saveClientMods(updated);
+    if (window.launcher.applyClientMods) await window.launcher.applyClientMods(updated);
+
+    updateModuleBadge(badgeId, enabled);
+    updateHudSimulator(updated);
+
+    playMinecraftClickSound();
+    showToast(`✦ Yapapouaiye Client : ${enabled ? 'Activé' : 'Désactivé'} avec succès !`, 'success', 2500);
+  } catch (err) {
+    console.error('[Yapapouaiye Client] Error updating module:', err);
+    showToast('Erreur lors de la sauvegarde du module client', 'error');
+  }
+}
+
+if (ycToggleFullBright) ycToggleFullBright.addEventListener('change', (e) => updateYcModule('fullBright', e.target.checked, 'badge-status-fullbright'));
+if (ycToggleNightVision) ycToggleNightVision.addEventListener('change', (e) => updateYcModule('nightVision', e.target.checked, 'badge-status-nightvision'));
+if (ycToggleNoFog) ycToggleNoFog.addEventListener('change', (e) => updateYcModule('noFog', e.target.checked, 'badge-status-nofog'));
+if (ycToggleFpsBoost) ycToggleFpsBoost.addEventListener('change', (e) => updateYcModule('fpsBoost', e.target.checked, 'badge-status-fpsboost'));
+if (ycToggleZoom) ycToggleZoom.addEventListener('change', (e) => updateYcModule('zoom', e.target.checked, 'badge-status-zoom'));
+if (ycToggleKeystrokes) ycToggleKeystrokes.addEventListener('change', (e) => updateYcModule('keystrokes', e.target.checked, 'badge-status-keystrokes'));
+if (ycToggleArmorHud) ycToggleArmorHud.addEventListener('change', (e) => updateYcModule('armorHud', e.target.checked, 'badge-status-armorhud'));
+if (ycToggleSpeed) ycToggleSpeed.addEventListener('change', (e) => updateYcModule('speed', e.target.checked, 'badge-status-speed'));
+if (ycToggleFps) ycToggleFps.addEventListener('change', (e) => updateYcModule('fps', e.target.checked, 'badge-status-fps'));
+if (ycTogglePing) ycTogglePing.addEventListener('change', (e) => updateYcModule('ping', e.target.checked, 'badge-status-ping'));
+
+if (btnToggleHudAmbient) {
+  btnToggleHudAmbient.addEventListener('click', () => {
+    if (ycToggleFullBright) {
+      ycToggleFullBright.checked = !ycToggleFullBright.checked;
+      ycToggleFullBright.dispatchEvent(new Event('change'));
+    }
+  });
+}
+
+// Première peinture des chiffres/couleurs de durabilité d'armure
+try { refreshArmorDurability(); } catch {}
+
+const clientFilterPills = document.querySelectorAll('.filter-pill');
+clientFilterPills.forEach(pill => {
+  pill.addEventListener('click', () => {
+    clientFilterPills.forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    const cat = pill.dataset.category;
+    const cards = document.querySelectorAll('.client-module-card');
+    cards.forEach(card => {
+      if (cat === 'all' || card.dataset.category === cat) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+    playMinecraftClickSound();
+  });
+});
+
+const btnClientEnableAll = document.getElementById('btn-client-enable-all');
+if (btnClientEnableAll) {
+  btnClientEnableAll.addEventListener('click', async () => {
+    const updated = {
+      fullBright: { enabled: true, gammaLevel: 100 },
+      nightVision: { enabled: true, gammaLevel: 100 },
+      noFog: { enabled: true },
+      fpsBoost: { enabled: true, fastMath: true },
+      zoom: { enabled: true, smoothZoom: true, keybind: 'C' },
+      keystrokes: { enabled: true },
+      armorHud: { enabled: true },
+      speed: { enabled: true },
+      fps: { enabled: true },
+      ping: { enabled: true },
+      coordinates: { enabled: true },
+      cps: { enabled: true }
+    };
+    if (window.launcher.saveClientMods) await window.launcher.saveClientMods(updated);
+    if (window.launcher.applyClientMods) await window.launcher.applyClientMods(updated);
+    loadClientPageSettings();
+    playMinecraftClickSound();
+    showToast('✦ Tous les modules Yapapouaiye Client ont été activés !', 'success', 3000);
+  });
+}
+
+const btnClientResetDefaults = document.getElementById('btn-client-reset-defaults');
+if (btnClientResetDefaults) {
+  btnClientResetDefaults.addEventListener('click', async () => {
+    const updated = {
+      fullBright: { enabled: true, gammaLevel: 100 },
+      nightVision: { enabled: true, gammaLevel: 100 },
+      noFog: { enabled: false },
+      fpsBoost: { enabled: true, fastMath: true },
+      zoom: { enabled: true, smoothZoom: true, keybind: 'C' },
+      keystrokes: { enabled: true },
+      armorHud: { enabled: true },
+      speed: { enabled: true },
+      fps: { enabled: true },
+      ping: { enabled: true },
+      coordinates: { enabled: true },
+      cps: { enabled: true },
+      hudPositions: { ...DEFAULT_HUD_POSITIONS }
+    };
+    if (window.launcher.saveClientMods) await window.launcher.saveClientMods(updated);
+    if (window.launcher.applyClientMods) await window.launcher.applyClientMods(updated);
+    loadClientPageSettings();
+    playMinecraftClickSound();
+    showToast('✦ Configuration par défaut rétablie !', 'info', 3000);
+  });
+}
+
+const btnClientSyncNow = document.getElementById('btn-client-sync-now');
+if (btnClientSyncNow) {
+  btnClientSyncNow.addEventListener('click', async () => {
+    btnClientSyncNow.disabled = true;
+    try {
+      const current = window.launcher.getClientMods ? await window.launcher.getClientMods() : {};
+      if (window.launcher.applyClientMods) await window.launcher.applyClientMods(current);
+      playMinecraftClickSound();
+      showToast('✦ Options synchronisées avec le moteur Minecraft !', 'success', 3000);
+    } catch (err) {
+      showToast('Erreur lors de la synchronisation', 'error');
+    } finally {
+      btnClientSyncNow.disabled = false;
+    }
+  });
+}
+
+
+
+// Open Mods Folder Button — ouvre le VRAI dossier d'installation des mods
+// du serveur actif (là où la synchro télécharge), pas un dossier vide.
+const btnOpenCustomMods = document.getElementById('btn-open-custom-mods');
+if (btnOpenCustomMods) {
+  btnOpenCustomMods.title = 'Ouvrir le dossier des mods installés du serveur actif';
+  btnOpenCustomMods.addEventListener('click', async () => {
+    try {
+      if (window.launcher.openServerMods) {
+        await window.launcher.openServerMods(currentServerId);
+      } else {
+        window.launcher.openCustomMods();
+      }
+    } catch {
+      window.launcher.openCustomMods();
+    }
+  });
+}
+
+// ============================================================
+// Verrouillage lancement : mot de passe + "Retenir ce PC"
+// (empreinte carte mère côté main). Le bouton JOUER est bloqué
+// tant que le PC n'est ni retenu ni déverrouillé.
+// ============================================================
+let launchLockStatusCache = null;
+
+async function fetchLaunchLockStatus(force = false) {
+  if (launchLockStatusCache && !force) return launchLockStatusCache;
+  try {
+    if (!window.launcher.getLaunchLockStatus) return { enabled: false };
+    const st = await window.launcher.getLaunchLockStatus();
+    if (st && st.success !== false) launchLockStatusCache = st;
+    return st || { enabled: false };
+  } catch {
+    return { enabled: false };
+  }
+}
+
+function openLaunchLockModal(status) {
+  const modal = document.getElementById('modal-launch-lock');
+  const input = document.getElementById('launch-lock-password');
+  const err = document.getElementById('launch-lock-error');
+  const subtitle = document.getElementById('launch-lock-subtitle');
+  const newpc = document.getElementById('launch-lock-newpc');
+  const remember = document.getElementById('launch-lock-remember');
+  if (!modal) return;
+  const needsReauth = !!(status && status.needsReauth);
+  if (subtitle) {
+    subtitle.textContent = needsReauth
+      ? 'Ce PC (ou sa carte mère) a changé : entrez le mot de passe pour rejouer.'
+      : 'Entrez le mot de passe pour lancer le jeu.';
+  }
+  if (newpc) newpc.classList.toggle('hidden', !needsReauth);
+  if (err) { err.textContent = ''; err.classList.add('hidden'); }
+  if (input) { input.value = ''; input.disabled = false; }
+  if (remember) { remember.checked = true; remember.disabled = false; }
+  const submit = document.getElementById('btn-launch-lock-submit');
+  if (submit) { submit.disabled = false; submit.textContent = 'Déverrouiller & Jouer'; }
+  modal.classList.remove('hidden');
+  setTimeout(() => { try { input.focus(); } catch {} }, 60);
+}
+
+function closeLaunchLockModal() {
+  document.getElementById('modal-launch-lock')?.classList.add('hidden');
+}
+
+function setLaunchLockError(msg) {
+  const err = document.getElementById('launch-lock-error');
+  if (!err) return;
+  if (!msg) { err.textContent = ''; err.classList.add('hidden'); return; }
+  err.textContent = msg;
+  err.classList.remove('hidden');
+}
+
+async function handleLaunchLockSubmit() {
+  const input = document.getElementById('launch-lock-password');
+  const remember = document.getElementById('launch-lock-remember');
+  const submit = document.getElementById('btn-launch-lock-submit');
+  const password = (input?.value || '');
+  if (!password) { setLaunchLockError('Entrez le mot de passe.'); input?.focus(); return; }
+  if (submit) { submit.disabled = true; submit.textContent = 'Vérification...'; }
+  setLaunchLockError('');
+  try {
+    const res = await window.launcher.verifyLaunchPassword({ password, rememberPC: !!remember?.checked });
+    if (res && res.success) {
+      launchLockStatusCache = null;
+      closeLaunchLockModal();
+      if (res.trusted) showToast('Ce PC est retenu : plus de mot de passe sur cette carte mère.', 'success', 3500);
+      else showToast('Jeu déverrouillé, bon jeu !', 'success', 2500);
+      refreshLaunchLockSettings();
+      doLaunchGame();
+    } else {
+      setLaunchLockError((res && res.error) || 'Mot de passe incorrect.');
+      if (submit) { submit.disabled = false; submit.textContent = 'Déverrouiller & Jouer'; }
+      input?.select?.();
+    }
+  } catch (e) {
+    setLaunchLockError('Erreur de vérification.');
+    if (submit) { submit.disabled = false; submit.textContent = 'Déverrouiller & Jouer'; }
+  }
+}
+
+(function initLaunchLockModal() {
+  const cancel = document.getElementById('btn-launch-lock-cancel');
+  if (cancel) cancel.addEventListener('click', () => { playMinecraftClickSound(); closeLaunchLockModal(); });
+  const submit = document.getElementById('btn-launch-lock-submit');
+  if (submit) submit.addEventListener('click', () => { playMinecraftClickSound(); handleLaunchLockSubmit(); });
+  const input = document.getElementById('launch-lock-password');
+  if (input) input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleLaunchLockSubmit(); }
+    if (e.key === 'Escape') closeLaunchLockModal();
+  });
+  const modal = document.getElementById('modal-launch-lock');
+  if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeLaunchLockModal(); });
+})();
+
+(function initMaintenanceAndCodesModals() {
+  const btnCloseMaint = document.getElementById('btn-maintenance-close');
+  if (btnCloseMaint) btnCloseMaint.addEventListener('click', () => { playMinecraftClickSound(); closeMaintenanceModal(); });
+  const btnSettings = document.getElementById('btn-maintenance-settings');
+  if (btnSettings) btnSettings.addEventListener('click', () => {
+    playMinecraftClickSound();
+    closeMaintenanceModal();
+    const settingsTab = document.querySelector('.nav-item[data-page="settings"]');
+    if (settingsTab) settingsTab.click();
+  });
+  const modalMaint = document.getElementById('modal-maintenance');
+  if (modalMaint) modalMaint.addEventListener('click', (e) => { if (e.target === modalMaint) closeMaintenanceModal(); });
+
+  const btnCancelCodes = document.getElementById('btn-server-codes-cancel');
+  if (btnCancelCodes) btnCancelCodes.addEventListener('click', () => { playMinecraftClickSound(); closeServerCodesModal(); });
+  const btnSubmitCodes = document.getElementById('btn-server-codes-submit');
+  if (btnSubmitCodes) btnSubmitCodes.addEventListener('click', () => { playMinecraftClickSound(); submitServerCodes(); });
+  const modalCodes = document.getElementById('modal-server-codes');
+  if (modalCodes) modalCodes.addEventListener('click', (e) => { if (e.target === modalCodes) closeServerCodesModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (modalCodes && !modalCodes.classList.contains('hidden')) closeServerCodesModal();
+    else if (modalMaint && !modalMaint.classList.contains('hidden')) closeMaintenanceModal();
+  });
+})();
+
+// Paramètres : carte "Protection par mot de passe"
+function formatLockDate(iso) {
+  try {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch { return ''; }
+}
+
+async function refreshLaunchLockSettings() {
+  try {
+    const st = await fetchLaunchLockStatus(true);
+    const badge = document.getElementById('lock-status-badge');
+    const toggle = document.getElementById('settings-lock-enabled');
+    const curRow = document.getElementById('lock-current-row');
+    const saveLabel = document.getElementById('lock-save-label');
+    const btnSave = document.getElementById('btn-lock-save');
+    const btnDisable = document.getElementById('btn-lock-disable');
+    const trustedDesc = document.getElementById('lock-trusted-desc');
+    const enabled = !!(st && st.enabled);
+    if (badge) {
+      if (!enabled) { badge.textContent = 'Désactivée'; }
+      else if (st.isTrusted) { badge.textContent = 'Activée • PC retenu'; }
+      else if (st.needsReauth) { badge.textContent = 'Activée • Nouveau PC'; }
+      else { badge.textContent = 'Activée'; }
+    }
+    if (toggle) toggle.checked = enabled;
+    if (curRow) curRow.classList.toggle('hidden', !enabled);
+    if (saveLabel) saveLabel.textContent = enabled ? 'Changer le mot de passe' : 'Activer la protection';
+    if (btnSave) btnSave.textContent = enabled ? 'Changer' : 'Activer';
+    if (btnDisable) btnDisable.classList.toggle('hidden', !enabled);
+    if (trustedDesc) {
+      if (!enabled) trustedDesc.textContent = 'Protection désactivée : aucun mot de passe demandé.';
+      else if (st.isTrusted) trustedDesc.textContent = `Ce PC est retenu${st.trustedDeviceName ? ` (${st.trustedDeviceName})` : ''}${st.trustedAt ? ` depuis le ${formatLockDate(st.trustedAt)}` : ''} — le jeu se lance sans mot de passe ici.`;
+      else if (st.needsReauth) trustedDesc.textContent = 'Carte mère différente détectée : le mot de passe sera redemandé, puis recochez « Retenir ce PC » pour enregistrer ce PC.';
+      else trustedDesc.textContent = 'Aucun PC retenu : le mot de passe sera demandé à chaque lancement.';
+    }
+  } catch (e) {
+    console.warn('[LaunchLock] refresh settings failed:', e);
+  }
+}
+
+function clearLockInputs() {
+  for (const id of ['lock-current-password', 'lock-new-password', 'lock-confirm-password']) {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  }
+}
+
+(function initLaunchLockSettings() {
+  const btnSave = document.getElementById('btn-lock-save');
+  if (btnSave) btnSave.addEventListener('click', async () => {
+    playMinecraftClickSound();
+    const st = await fetchLaunchLockStatus();
+    const cur = (document.getElementById('lock-current-password')?.value || '');
+    const nw = (document.getElementById('lock-new-password')?.value || '');
+    const cf = (document.getElementById('lock-confirm-password')?.value || '');
+    if (nw.length < 4) { showToast('Le mot de passe doit contenir au moins 4 caractères.', 'error'); return; }
+    if (nw !== cf) { showToast('La confirmation ne correspond pas.', 'error'); return; }
+    btnSave.disabled = true;
+    try {
+      const payload = st && st.enabled ? { password: nw, currentPassword: cur } : { password: nw };
+      const res = await window.launcher.setLaunchPassword(payload);
+      if (res && res.success) {
+        showToast(st && st.enabled ? 'Mot de passe mis à jour.' : 'Protection activée : mot de passe exigé pour jouer.', 'success');
+        clearLockInputs();
+      } else {
+        showToast((res && res.error) || 'Impossible d’enregistrer le mot de passe.', 'error');
+      }
+    } catch { showToast('Erreur inattendue.', 'error'); }
+    finally { btnSave.disabled = false; refreshLaunchLockSettings(); }
+  });
+
+  const btnDisable = document.getElementById('btn-lock-disable');
+  if (btnDisable) btnDisable.addEventListener('click', async () => {
+    playMinecraftClickSound();
+    const cur = (document.getElementById('lock-current-password')?.value || '');
+    if (!cur) { showToast('Entrez le mot de passe actuel pour désactiver.', 'error'); return; }
+    const res = await window.launcher.disableLaunchLock({ password: cur });
+    if (res && res.success) { showToast('Protection désactivée.', 'info'); clearLockInputs(); }
+    else showToast((res && res.error) || 'Mot de passe incorrect.', 'error');
+    refreshLaunchLockSettings();
+  });
+
+  const btnForget = document.getElementById('btn-lock-forget');
+  if (btnForget) btnForget.addEventListener('click', async () => {
+    playMinecraftClickSound();
+    const st = await fetchLaunchLockStatus();
+    const cur = (document.getElementById('lock-current-password')?.value || '');
+    const res = await window.launcher.forgetTrustedPc(st && st.enabled ? { password: cur } : {});
+    if (res && res.success) { showToast('Ce PC a été oublié : mot de passe redemandé au prochain lancement.', 'info'); clearLockInputs(); }
+    else showToast((res && res.error) || 'Impossible d’oublier ce PC.', 'error');
+    refreshLaunchLockSettings();
+  });
+
+  const toggle = document.getElementById('settings-lock-enabled');
+  if (toggle) toggle.addEventListener('change', async () => {
+    const st = await fetchLaunchLockStatus();
+    if (toggle.checked && !(st && st.enabled)) {
+      // L'activation passe par la définition d'un mot de passe.
+      toggle.checked = false;
+      document.getElementById('lock-new-password')?.focus();
+      showToast('Définissez un mot de passe puis cliquez « Activer ».', 'info');
+    } else if (!toggle.checked && st && st.enabled) {
+      const cur = (document.getElementById('lock-current-password')?.value || '');
+      if (!cur) {
+        toggle.checked = true;
+        document.getElementById('lock-current-row')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('lock-current-password')?.focus();
+        showToast('Entrez le mot de passe actuel puis redécochez (ou cliquez Désactiver).', 'info');
+        return;
+      }
+      const res = await window.launcher.disableLaunchLock({ password: cur });
+      if (res && res.success) { showToast('Protection désactivée.', 'info'); clearLockInputs(); }
+      else { showToast((res && res.error) || 'Mot de passe incorrect.', 'error'); toggle.checked = true; }
+      refreshLaunchLockSettings();
+    }
+  });
+
+  refreshLaunchLockSettings();
+})();
+
+// ============================================================
+// Maintenance distante + Codes d'accès serveur (espace admin du site)
+// - Maintenance active : JOUER et Mods bloqués (message admin),
+//   Paramètres toujours accessibles.
+// - Serveur à codes : saisie des codes DANS L'ORDRE avant lancement.
+// ============================================================
+let maintenanceState = { maintenance: false, message: '' };
+let pendingCodesServer = null;
+
+function applyMaintenanceState(state) {
+  maintenanceState = {
+    maintenance: Boolean(state?.maintenance),
+    message: String(state?.message || ''),
+  };
+  const banner = document.getElementById('maintenance-banner');
+  const bannerMsg = document.getElementById('maintenance-banner-text');
+  if (banner) banner.classList.toggle('hidden', !maintenanceState.maintenance);
+  if (bannerMsg) bannerMsg.textContent = maintenanceState.message || 'Launcher en maintenance.';
+  const modsNav = document.querySelector('.nav-item[data-page="mods"]');
+  if (modsNav) {
+    modsNav.classList.toggle('nav-disabled', maintenanceState.maintenance);
+    modsNav.title = maintenanceState.maintenance ? 'Indisponible pendant la maintenance' : 'Mods du serveur';
+  }
+}
+
+async function refreshMaintenanceState() {
+  try {
+    const cfg = await window.launcher.getLauncherConfig();
+    if (cfg) applyMaintenanceState(cfg);
+  } catch {}
+  return maintenanceState;
+}
+
+function openMaintenanceModal(customMessage) {
+  const modal = document.getElementById('modal-maintenance');
+  const msgEl = document.getElementById('maintenance-modal-message');
+  if (msgEl) msgEl.textContent = customMessage || maintenanceState.message || 'Launcher en maintenance.';
+  if (modal) modal.classList.remove('hidden');
+  try { playMinecraftClickSound(); } catch {}
+}
+
+function closeMaintenanceModal() {
+  document.getElementById('modal-maintenance')?.classList.add('hidden');
+}
+
+function openServerCodesModal(access) {
+  pendingCodesServer = {
+    serverId: access?.serverId || currentServerId,
+    serverName: access?.serverName || currentServerId,
+    codesCount: Math.max(1, Number(access?.codesCount) || 1),
+  };
+  const modal = document.getElementById('modal-server-codes');
+  const titleEl = document.getElementById('server-codes-title');
+  const inputsEl = document.getElementById('server-codes-inputs');
+  const errEl = document.getElementById('server-codes-error');
+  if (titleEl) titleEl.textContent = `Codes d'accès — ${pendingCodesServer.serverName}`;
+  if (errEl) { errEl.textContent = ''; errEl.classList.add('hidden'); }
+  if (inputsEl) {
+    inputsEl.innerHTML = '';
+    for (let i = 0; i < pendingCodesServer.codesCount; i++) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'mc-input-text server-code-input';
+      input.placeholder = `Code ${i + 1}`;
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+      input.maxLength = 64;
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const all = [...inputsEl.querySelectorAll('input')];
+          const idx = all.indexOf(input);
+          if (idx < all.length - 1) all[idx + 1].focus();
+          else submitServerCodes();
+        }
+      });
+      inputsEl.appendChild(input);
+    }
+    const first = inputsEl.querySelector('input');
+    if (first) setTimeout(() => { try { first.focus(); } catch {} }, 60);
+  }
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeServerCodesModal() {
+  document.getElementById('modal-server-codes')?.classList.add('hidden');
+  pendingCodesServer = null;
+}
+
+async function submitServerCodes() {
+  const inputsEl = document.getElementById('server-codes-inputs');
+  const errEl = document.getElementById('server-codes-error');
+  const btnSubmit = document.getElementById('btn-server-codes-submit');
+  const inputs = inputsEl ? [...inputsEl.querySelectorAll('input')] : [];
+  const codes = inputs.map((i) => i.value.trim());
+  if (!pendingCodesServer) return;
+  if (codes.some((c) => !c)) {
+    if (errEl) {
+      errEl.textContent = 'Tapez tous les codes, dans l\u2019ordre.';
+      errEl.classList.remove('hidden');
+    }
+    return;
+  }
+  if (btnSubmit) btnSubmit.disabled = true;
+  try {
+    const res = await window.launcher.verifyServerCodes({ serverId: pendingCodesServer.serverId, codes });
+    if (res && res.valid) {
+      const goLaunch = pendingCodesServer.serverId;
+      closeServerCodesModal();
+      showToast('Codes acceptés, lancement du jeu !', 'success');
+      try { currentServerId = goLaunch; } catch {}
+      doLaunchGame();
+    } else {
+      if (errEl) {
+        errEl.textContent = res?.error || 'Codes incorrects : vérifiez l\u2019ordre et réessayez.';
+        errEl.classList.remove('hidden');
+      }
+      playMinecraftClickSound();
+    }
+  } catch {
+    if (errEl) {
+      errEl.textContent = 'Vérification impossible (réseau ?). Réessayez.';
+      errEl.classList.remove('hidden');
+    }
+  } finally {
+    if (btnSubmit) btnSubmit.disabled = false;
+  }
+}
+
+// Launch Game Button (protégé par le verrou si actif)
 const btnPlay = document.getElementById('btn-play');
 if (btnPlay) {
   btnPlay.addEventListener('click', async () => {
+    // Si un verrou est actif et que ce PC n'est pas retenu, on demande
+    // le mot de passe AVANT toute synchro / lancement.
+    try {
+      const st = await fetchLaunchLockStatus();
+      if (st && st.enabled && !st.isTrusted) {
+        playMinecraftClickSound();
+        openLaunchLockModal(st);
+        return;
+      }
+    } catch {}
+    // Maintenance admin (état frais) : JOUER bloqué avec le message.
+    try { await refreshMaintenanceState(); } catch {}
+    if (maintenanceState.maintenance) {
+      playMinecraftClickSound();
+      openMaintenanceModal();
+      return;
+    }
+    // Codes d'accès serveur (définis dans l'espace admin) : à taper dans l'ordre.
+    try {
+      const access = await window.launcher.checkServerAccess(currentServerId);
+      if (access && access.codesRequired && !access.verified) {
+        playMinecraftClickSound();
+        openServerCodesModal(access);
+        return;
+      }
+    } catch {}
+    doLaunchGame();
+  });
+}
+
+async function doLaunchGame() {
     playGameLaunchSound();
     const ram = parseInt(ramSlider ? ramSlider.value : 4);
     const progressSection = document.getElementById('progress-section');
@@ -3132,7 +4359,11 @@ if (btnPlay) {
     if (progressText) progressText.textContent = 'Mise à jour des mods...';
 
     const syncResult = await window.launcher.syncMods(currentServerId);
-    if (!syncResult.success) showToast('Erreur de synchro mods : ' + syncResult.error, 'error');
+    if (!syncResult.success) {
+      showToast('Synchro mods impossible (' + (syncResult.error || 'hors-ligne') + ') — lancement avec les mods locaux.', 'error');
+    } else if ((syncResult.downloaded || 0) > 0 || (syncResult.removed || 0) > 0) {
+      showToast(`Mods à jour : +${syncResult.downloaded || 0} / -${syncResult.removed || 0}`, 'success');
+    }
 
     if (progressText) progressText.textContent = 'Lancement de Minecraft...';
     loadMods();
@@ -3145,16 +4376,47 @@ if (btnPlay) {
     });
 
     if (!result.success) {
+      // Garde-fou : le main refuse sans mot de passe (ex. PC dérétenu
+      // entre le clic et le lancement) -> rouvre la saisie.
+      if (result.code === 'LAUNCH_LOCKED') {
+        resetPlayBtn();
+        try {
+          const st = await fetchLaunchLockStatus(true);
+          openLaunchLockModal(st);
+        } catch {}
+        return;
+      }
+      // Maintenance activée par l'admin entre le clic et le lancement.
+      if (result.code === 'LAUNCH_MAINTENANCE') {
+        resetPlayBtn();
+        try { await refreshMaintenanceState(); } catch {}
+        openMaintenanceModal(result.error);
+        return;
+      }
+      // Codes d'accès exigés par le serveur (jamais validés cette session).
+      if (result.code === 'SERVER_CODES_REQUIRED') {
+        resetPlayBtn();
+        openServerCodesModal({
+          serverId: result.serverId || currentServerId,
+          serverName: result.serverName || currentServerId,
+          codesCount: result.codesCount || 0,
+        });
+        return;
+      }
       showToast('Erreur de lancement : ' + result.error, 'error');
       resetPlayBtn();
     } else {
+      if ((result.modsFailed || 0) > 0) {
+        showToast(`${result.modsFailed} mod(s) non installés (fichiers verrouillés ?) — fermez le jeu déjà ouvert puis relancez.`, 'error', 6000);
+      } else if ((result.modsStaged || 0) === 0) {
+        showToast('Jeu lancé SANS mods — synchronisez depuis l\'onglet Mods.', 'error', 6000);
+      }
       if (progressText) progressText.textContent = 'Minecraft est en cours d\'exécution (ouverture dans quelques secondes)...';
       if (btnPlay) {
         btnPlay.disabled = true;
         btnPlay.innerHTML = '<span class="play-text">EN JEU...</span>';
       }
     }
-  });
 }
 
 function resetPlayBtn() {
@@ -3346,9 +4608,12 @@ if (btnSyncMods) {
 
     const result = await window.launcher.syncMods(currentServerId);
     if (result.success) {
-      showToast(`Mods synchronisés (${result.count} mods)`, 'success');
+      const dl = result.downloaded || 0;
+      const rm = result.removed || 0;
+      const detail = (dl > 0 || rm > 0) ? ` (+${dl} / -${rm})` : '';
+      showToast(`Mods synchronisés (${result.count} mods)${detail}`, 'success');
     } else {
-      showToast('Erreur : ' + (result.error || 'Inconnue'), 'error');
+      showToast('Échec synchro : ' + (result.error || 'serveur de mods injoignable'), 'error');
     }
 
     resetPlayBtn();
@@ -3808,6 +5073,11 @@ async function loadSettings() {
     if (config) {
       if (config.customThemes && Array.isArray(config.customThemes)) {
         customThemes = config.customThemes;
+      }
+      if (config.themeOverrides && typeof config.themeOverrides === 'object' && !Array.isArray(config.themeOverrides)) {
+        themeOverrides = config.themeOverrides;
+      }
+      if (config.customThemes || config.themeOverrides) {
         updateDynamicThemeStyles();
       }
       if (config.ram && settingsRam) {
@@ -3834,12 +5104,20 @@ async function loadSettings() {
       if (config.minimizeOnLaunch !== undefined && minimizeOnLaunchToggle) {
         minimizeOnLaunchToggle.checked = config.minimizeOnLaunch;
       }
+      if (typeof initBetaTesterFromConfig === 'function') {
+        try { initBetaTesterFromConfig(config); } catch {}
+      }
       if (config.theme && themeSelect) {
         themeSelect.value = config.theme;
         applyTheme(config.theme);
       }
+      const keyboardLayoutEl = document.getElementById('settings-keyboard-layout');
+      if (keyboardLayoutEl && config.keyboardLayout) {
+        keyboardLayoutEl.value = config.keyboardLayout;
+      }
       renderThemeGrid();
     }
+    try { if (typeof refreshLaunchLockSettings === 'function') refreshLaunchLockSettings(); } catch {}
   } catch (e) {
     console.error('[Settings] Error loading settings:', e);
   }
@@ -3970,6 +5248,8 @@ if (btnCheckUpdate) {
         setUpdateProgressVisible(false);
         resetUpdateCheckButton();
       }
+      // Synchronise le panneau Beta Tester avec le meme resultat (canal, cibles).
+      try { paintBetaChannelState(result); } catch {}
     } catch (err) {
       setUpdateStatus('is-error', 'Erreur de vérification.');
       showToast('Erreur de vérification', 'error');
@@ -3978,15 +5258,720 @@ if (btnCheckUpdate) {
   });
 }
 
-// Initializer
+// ============================================================
+// Canal Beta Tester — option "-beta" / "-alpha" + retour stable
+// - Toggle settings-beta-tester (persiste via setBetaTester)
+// - "Vérifier les bêtas" lit les releases GitHub SANS télécharger
+// - Si une beta/alpha plus récente existe -> modale de proposition,
+//   installation UNIQUEMENT si l'utilisateur accepte
+// - "Retour version stable" visible quand on est sur une beta/alpha :
+//   réinstalle la derniere stable officielle (downgrade autorisé)
+// ============================================================
+let betaChannelState = null;
+let pendingBetaVersion = null;
+let pendingStableVersion = null;
+let isCheckingBeta = false;
+
+function getBetaChannelOf(version) {
+  const s = String(version || '').toLowerCase();
+  if (s.includes('alpha')) return 'alpha';
+  if (s.includes('beta')) return 'beta';
+  return 'stable';
+}
+
+function setBetaStatus(message, icon) {
+  const text = document.getElementById('beta-status-text');
+  const ico = document.getElementById('beta-status-icon');
+  const banner = document.getElementById('beta-status');
+  if (text) text.textContent = message;
+  if (ico && icon) ico.textContent = icon;
+  if (banner) {
+    banner.classList.remove('is-checking', 'is-available', 'is-progress', 'is-downloaded', 'is-error');
+  }
+}
+
+function paintBetaChannelState(state) {
+  if (!state) return;
+  betaChannelState = state;
+  const badge = document.getElementById('beta-channel-badge');
+  const desc = document.getElementById('beta-versions-desc');
+  const toggle = document.getElementById('settings-beta-tester');
+  const btnInstall = document.getElementById('btn-install-beta');
+  const btnStable = document.getElementById('btn-return-stable');
+
+  const channel = state.currentChannel || getBetaChannelOf(state.current);
+  if (toggle && typeof state.betaEnabled === 'boolean') toggle.checked = state.betaEnabled;
+  if (badge) {
+    badge.textContent = channel === 'stable' ? 'Stable' : (channel === 'alpha' ? 'Alpha' : 'Bêta');
+  }
+  const cur = state.current ? `v${state.current}` : '?';
+  const stable = state.latestStable?.version ? `v${state.latestStable.version}` : '—';
+  const beta = state.latestBeta?.version ? `v${state.latestBeta.version}` : '—';
+  if (desc) desc.textContent = `Version actuelle : ${cur} (${channel}) • Stable : ${stable} • Bêta/Alpha : ${beta}`;
+
+  pendingBetaVersion = (state.betaEnabled && state.betaAvailable && state.latestBeta)
+    ? state.latestBeta.version : null;
+  pendingStableVersion = state.canReturnToStable && state.latestStable
+    ? state.latestStable.version : null;
+
+  if (btnInstall) btnInstall.classList.toggle('hidden', !pendingBetaVersion);
+  if (btnStable) btnStable.classList.toggle('hidden', !pendingStableVersion);
+
+  if (!state.betaEnabled) {
+    if (pendingStableVersion) {
+      setBetaStatus(`Vous êtes sur ${cur} (pré-release). La stable ${stable} est disponible — utilisez "Retour version stable".`, '↑');
+    } else {
+      setBetaStatus('Canal stable : vous recevez uniquement les versions officielles.', '✓');
+    }
+  } else if (pendingBetaVersion) {
+    setBetaStatus(`Bêta disponible : v${pendingBetaVersion} (vous avez ${cur}). Cliquez "Installer la bêta" ou acceptez la proposition.`, '↑');
+  } else if (state.latestBeta) {
+    setBetaStatus(`Canal bêta activé : vous êtes à jour (${cur}). Dernière bêta : v${state.latestBeta.version}.`, '✓');
+  } else {
+    setBetaStatus(`Canal bêta activé : aucune bêta publiée pour le moment (${cur}).`, '✓');
+  }
+}
+
+function openBetaModal({ title, message, notes, confirmLabel, onConfirm }) {
+  const modal = document.getElementById('modal-beta-update');
+  const titleEl = document.getElementById('beta-modal-title');
+  const msgEl = document.getElementById('beta-modal-message');
+  const notesEl = document.getElementById('beta-modal-notes');
+  const btnLater = document.getElementById('btn-beta-modal-later');
+  const btnInstall = document.getElementById('btn-beta-modal-install');
+  if (!modal || !btnInstall || !btnLater) {
+    if (confirm(String(message || '').replace(/<[^>]*>/g, ''))) onConfirm();
+    return;
+  }
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+  if (notesEl) {
+    if (notes) {
+      notesEl.style.display = '';
+      notesEl.innerHTML = formatNewsDescription(String(notes).slice(0, 2000));
+    } else {
+      notesEl.style.display = 'none';
+      notesEl.innerHTML = '';
+    }
+  }
+  if (confirmLabel) btnInstall.textContent = confirmLabel;
+  modal.classList.remove('hidden');
+  const cleanup = () => {
+    modal.classList.add('hidden');
+    btnInstall.removeEventListener('click', onGo);
+    btnLater.removeEventListener('click', onLater);
+    modal.removeEventListener('click', onBackdrop);
+  };
+  const onGo = () => { cleanup(); onConfirm(); };
+  const onLater = () => { cleanup(); };
+  const onBackdrop = (e) => { if (e.target === modal) cleanup(); };
+  btnInstall.addEventListener('click', onGo);
+  btnLater.addEventListener('click', onLater);
+  modal.addEventListener('click', onBackdrop);
+}
+
+async function refreshBetaChannel(silent) {
+  if (isCheckingBeta) return;
+  const api = window.launcher.getUpdateChannel || window.launcher.checkBetaUpdate;
+  if (!api) return;
+  isCheckingBeta = true;
+  if (!silent) setBetaStatus('Vérification des versions beta / alpha...', '…');
+  try {
+    const state = await (window.launcher.getUpdateChannel
+      ? window.launcher.getUpdateChannel()
+      : window.launcher.checkBetaUpdate());
+    if (state?.success === false && state?.error) {
+      setBetaStatus('Impossible de contacter GitHub pour les bêtas.', '!');
+      showToast('Canal bêta : ' + state.error, 'error');
+      return state;
+    }
+    paintBetaChannelState(state);
+    return state;
+  } catch {
+    if (!silent) setBetaStatus('Erreur de vérification du canal bêta.', '!');
+    return null;
+  } finally {
+    isCheckingBeta = false;
+  }
+}
+
+async function installTargetVersion(version, label) {
+  if (!version) return;
+  try {
+    setBetaStatus(`Téléchargement de ${label} v${version}...`, '↓');
+    showToast(`Installation de ${label} v${version}...`, 'info');
+    if (window.launcher.installUpdateVersion) {
+      const result = await window.launcher.installUpdateVersion(version);
+      if (!result?.success) throw new Error(result?.error || 'Le téléchargement n’a pas démarré. Réessayez.');
+    } else {
+      throw new Error('Cette version du launcher ne permet pas l’installation ciblée. Installez la dernière version du launcher.');
+    }
+    // La suite (progression + redémarrage auto) passe par les events
+    // onUpdateAvailable / onUpdateProgress / onUpdateDownloaded existants.
+  } catch (err) {
+    setBetaStatus('Échec du téléchargement : ' + (err?.message || err), '!');
+    showToast('Échec installation : ' + (err?.message || err), 'error');
+  }
+}
+
+function proposeBetaInstall(state) {
+  const beta = state?.latestBeta;
+  if (!beta) {
+    showToast('Aucune version bêta / alpha disponible.', 'info');
+    return;
+  }
+  openBetaModal({
+    title: `Installer la version ${getBetaChannelOf(beta.version) === 'alpha' ? 'alpha' : 'bêta'} v${beta.version} ?`,
+    message: `Une version "${beta.version}" (canal ${getBetaChannelOf(beta.version)}) est disponible. Version actuelle : v${state.current}. Les bêtas peuvent être instables. L'installer maintenant ?`,
+    notes: beta.body || '',
+    confirmLabel: 'Installer la bêta',
+    onConfirm: () => installTargetVersion(beta.version, 'bêta'),
+  });
+}
+
+function proposeStableReturn(state) {
+  const stable = state?.latestStable;
+  if (!stable) {
+    showToast('Aucune version stable trouvée.', 'error');
+    return;
+  }
+  openBetaModal({
+    title: `Revenir à la version stable v${stable.version} ?`,
+    message: `Vous êtes sur v${state.current} (${state.currentChannel}). Le launcher va réinstaller la version officielle stable v${stable.version} puis redémarrer. Continuer ?`,
+    notes: stable.body || '',
+    confirmLabel: 'Retour stable',
+    onConfirm: async () => {
+      // Desactive le canal beta pour que les prochains checks restent stables,
+      // puis installe explicitement la stable (downgrade autorisé côté main).
+      try {
+        if (window.launcher.setBetaTester) await window.launcher.setBetaTester(false);
+      } catch {}
+      installTargetVersion(stable.version, 'stable');
+    },
+  });
+}
+
+function initBetaTesterFromConfig(config) {
+  const toggle = document.getElementById('settings-beta-tester');
+  if (toggle && config && typeof config.betaTester === 'boolean') {
+    toggle.checked = config.betaTester;
+  }
+}
+
+(function initBetaTesterUI() {
+  const toggle = document.getElementById('settings-beta-tester');
+  const btnCheck = document.getElementById('btn-check-beta');
+  const btnInstall = document.getElementById('btn-install-beta');
+  const btnStable = document.getElementById('btn-return-stable');
+  if (!toggle && !btnCheck) return;
+
+  if (toggle) {
+    toggle.addEventListener('change', async () => {
+      const enabled = toggle.checked;
+      try {
+        const res = window.launcher.setBetaTester
+          ? await window.launcher.setBetaTester(enabled)
+          : await window.launcher.saveConfig({ betaTester: enabled });
+        const state = res && (res.current || res.betaEnabled !== undefined) ? res : await refreshBetaChannel(true);
+        paintBetaChannelState(state);
+        showToast(enabled ? 'Canal Beta / Alpha activé — vérification des bêtas...' : 'Canal stable activé — retour aux versions officielles.', 'info');
+        if (enabled) {
+          const fresh = state?.latestBeta ? state : await refreshBetaChannel(true);
+          if (fresh?.betaAvailable) proposeBetaInstall(fresh);
+          else if (fresh) showToast('Aucune bêta plus récente pour le moment.', 'info');
+        } else if (state?.canReturnToStable) {
+          proposeStableReturn(state);
+        }
+      } catch (err) {
+        showToast('Erreur canal bêta : ' + (err?.message || err), 'error');
+      }
+      try { playMinecraftClickSound(); } catch {}
+    });
+  }
+
+  if (btnCheck) {
+    btnCheck.addEventListener('click', async () => {
+      const state = await refreshBetaChannel(false);
+      if (!state) return;
+      if (state.betaAvailable && state.betaEnabled) proposeBetaInstall(state);
+      else if (!state.betaEnabled && state.canReturnToStable) proposeStableReturn(state);
+      else if (!state.betaEnabled) showToast('Aucune mise à jour stable. Activez le canal bêta pour voir les pré-releases.', 'info');
+      else showToast('Aucune bêta plus récente pour le moment.', 'info');
+      try { playMinecraftClickSound(); } catch {}
+    });
+  }
+
+  if (btnInstall) {
+    btnInstall.addEventListener('click', () => {
+      if (betaChannelState) proposeBetaInstall(betaChannelState);
+      else refreshBetaChannel(false).then((s) => { if (s?.betaAvailable) proposeBetaInstall(s); });
+    });
+  }
+
+  if (btnStable) {
+    btnStable.addEventListener('click', () => {
+      const state = betaChannelState;
+      if (state?.latestStable) proposeStableReturn(state);
+      else refreshBetaChannel(false).then((s) => { if (s?.canReturnToStable) proposeStableReturn(s); });
+    });
+  }
+
+  // Etat initial silencieux (peint des que le renderer demarre).
+  setTimeout(() => { refreshBetaChannel(true).catch(() => {}); }, 4000);
+})();
+
+function initOnboardingWizard() {
+  const modal = document.getElementById('modal-onboarding');
+  if (!modal) return null;
+
+  const btnPrev = document.getElementById('btn-onboarding-prev');
+  const btnNext = document.getElementById('btn-onboarding-next');
+  const btnFinish = document.getElementById('btn-onboarding-finish');
+  const btnRelaunch = document.getElementById('btn-relaunch-onboarding');
+  const dots = document.querySelectorAll('#onboarding-dots .dot');
+  const indicators = document.querySelectorAll('.onboarding-step-indicator');
+  const panes = document.querySelectorAll('.onboarding-step-pane');
+  const invitationInput = document.getElementById('onboarding-invitation-code');
+  const invitationStatus = document.getElementById('onboarding-invitation-status');
+  let invitationAccepted = false;
+  let invitationPending = false;
+  let invitationRetryAt = 0;
+  let invitationTimer = null;
+  let invitationError = '';
+
+  function refreshInvitationControls() {
+    const seconds = Math.max(0, Math.ceil((invitationRetryAt - Date.now()) / 1000));
+    if (currentStep === 0) {
+      btnNext.disabled = invitationPending || seconds > 0;
+      btnNext.textContent = invitationPending ? 'Validation...' : seconds > 0 ? `Réessayer dans ${seconds} s` : 'Valider le code →';
+      invitationInput.disabled = invitationPending || seconds > 0;
+      if (seconds > 0) {
+        const message = `${invitationError ? invitationError + ' ' : ''}Veuillez patienter ${seconds} secondes avant de réessayer.`;
+        if (invitationStatus.textContent !== message) invitationStatus.textContent = message;
+      }
+    }
+    if (seconds === 0 && invitationTimer) {
+      clearInterval(invitationTimer);
+      invitationTimer = null;
+      if (currentStep === 0) {
+        invitationStatus.textContent = 'Vous pouvez réessayer votre code d’invitation.';
+        invitationInput.focus();
+      }
+    }
+  }
+
+  function startInvitationCooldown(seconds) {
+    invitationRetryAt = Date.now() + seconds * 1000;
+    if (invitationTimer) clearInterval(invitationTimer);
+    invitationTimer = setInterval(refreshInvitationControls, 250);
+    refreshInvitationControls();
+    modal.querySelector('.onboarding-dialog')?.focus();
+  }
+
+  async function openWizard() {
+    refreshAccountTypeBlocks();
+    modal.classList.remove('hidden');
+    goToStep(invitationAccepted ? 1 : 0);
+    try {
+      const status = await window.launcher.getInvitationStatus();
+      invitationAccepted = status?.accepted === true;
+      goToStep(invitationAccepted ? 1 : 0);
+      if (!invitationAccepted && status?.retryAfter > 0) startInvitationCooldown(status.retryAfter);
+      else if (status?.error) invitationStatus.textContent = status.error;
+    } catch {
+      invitationStatus.textContent = 'Validation des invitations indisponible. Réessayez.';
+    }
+    if (!invitationAccepted) invitationInput.focus();
+  }
+
+  // Step 1 Elements — type de compte (Crack / Microsoft)
+  const inputUsername = document.getElementById('onboarding-username-input');
+  const avatarImg = document.getElementById('onboarding-avatar-img');
+  const accountTypeCards = document.querySelectorAll('#onboarding-account-types .onboarding-server-card');
+  const offlineBlock = document.getElementById('onboarding-offline-block');
+  const microsoftBlock = document.getElementById('onboarding-microsoft-block');
+  const btnOnboardingMicrosoft = document.getElementById('btn-onboarding-microsoft');
+  const msStatus = document.getElementById('onboarding-ms-status');
+
+  function getOnboardingAccountType() {
+    return document.querySelector('#onboarding-account-types .onboarding-server-card.active')?.dataset.accountType || 'offline';
+  }
+
+  // Step 2 Elements
+  const ramCards = document.querySelectorAll('.onboarding-ram-card');
+  const ramSliderEl = document.getElementById('onboarding-ram-slider');
+  const ramDisplay = document.getElementById('onboarding-ram-val-display');
+  const systemRamTag = document.getElementById('onboarding-system-ram-tag');
+
+  // Step 3 Elements (choix du serveur)
+  const serverCards = document.querySelectorAll('#onboarding-server-grid .onboarding-server-card');
+
+  let currentStep = 0;
+  const TOTAL_STEPS = 3;
+
+  // Set detected system RAM on step 2
+  if (systemRamTag && window.launcher.getSystemRam) {
+    window.launcher.getSystemRam().then(totalGB => {
+      if (totalGB && totalGB > 0) {
+        systemRamTag.textContent = `RAM système détectée : ${totalGB} Go`;
+        if (ramSliderEl) {
+          ramSliderEl.max = Math.min(32, Math.max(8, totalGB));
+        }
+      }
+    }).catch(() => {});
+  }
+
+  // Pre-fill username if already logged in
+  const currentLoggedIn = document.getElementById('account-name')?.textContent;
+  if (currentLoggedIn && currentLoggedIn !== 'Non connecté' && inputUsername) {
+    inputUsername.value = currentLoggedIn;
+    if (avatarImg) avatarImg.src = `https://mc-heads.net/avatar/${encodeURIComponent(currentLoggedIn)}/96`;
+  }
+
+  // Sélection du type de compte (Crack / Microsoft)
+  function refreshAccountTypeBlocks() {
+    const type = getOnboardingAccountType();
+    if (offlineBlock) offlineBlock.classList.toggle('hidden', type !== 'offline');
+    if (microsoftBlock) microsoftBlock.classList.toggle('hidden', type !== 'microsoft');
+  }
+  accountTypeCards.forEach(card => {
+    card.addEventListener('click', () => {
+      accountTypeCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      refreshAccountTypeBlocks();
+      playMinecraftClickSound();
+    });
+  });
+  refreshAccountTypeBlocks();
+
+  // Connexion Microsoft depuis l'onboarding
+  if (btnOnboardingMicrosoft) {
+    btnOnboardingMicrosoft.addEventListener('click', async () => {
+      btnOnboardingMicrosoft.disabled = true;
+      const label = btnOnboardingMicrosoft.querySelector('span');
+      if (label) label.textContent = 'Connexion en cours...';
+      try {
+        const res = await window.launcher.authMicrosoft();
+        if (res?.success) {
+          setLoggedIn(res.username, res.uuid);
+          if (msStatus) msStatus.textContent = `Connecté : ${res.username}`;
+          showToast(`Compte Microsoft connecté : ${res.username}`, 'success');
+        } else if (res?.error && !/annul/i.test(res.error)) {
+          showToast('Erreur Microsoft : ' + res.error, 'error');
+        }
+      } catch {
+        showToast('Erreur de connexion Microsoft.', 'error');
+      } finally {
+        btnOnboardingMicrosoft.disabled = false;
+        if (label) label.textContent = 'Se connecter avec Microsoft';
+      }
+    });
+  }
+
+  // Real-time avatar update
+  let avatarTimeout = null;
+  if (inputUsername && avatarImg) {
+    inputUsername.addEventListener('input', () => {
+      clearTimeout(avatarTimeout);
+      const name = inputUsername.value.trim() || 'Steve';
+      avatarTimeout = setTimeout(() => {
+        avatarImg.src = `https://mc-heads.net/avatar/${encodeURIComponent(name)}/96`;
+      }, 300);
+    });
+  }
+
+  // RAM cards & slider sync
+  ramCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const ramVal = parseInt(card.dataset.ram, 10);
+      if (ramSliderEl) ramSliderEl.value = ramVal;
+      if (ramDisplay) ramDisplay.textContent = `${ramVal} Go`;
+      ramCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+    });
+  });
+
+  if (ramSliderEl) {
+    ramSliderEl.addEventListener('input', () => {
+      const val = parseInt(ramSliderEl.value, 10);
+      if (ramDisplay) ramDisplay.textContent = `${val} Go`;
+      ramCards.forEach(card => {
+        card.classList.toggle('active', parseInt(card.dataset.ram, 10) === val);
+      });
+    });
+  }
+
+  // Server cards selection
+  serverCards.forEach(card => {
+    card.addEventListener('click', () => {
+      serverCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+    });
+  });
+
+  function goToStep(step) {
+    currentStep = invitationAccepted ? Math.max(1, Math.min(TOTAL_STEPS, step)) : 0;
+
+    // Update panes
+    panes.forEach(pane => {
+      const paneId = `onboarding-pane-${currentStep}`;
+      pane.classList.toggle('active', pane.id === paneId);
+    });
+
+    // Update stepper
+    indicators.forEach(ind => {
+      const s = parseInt(ind.dataset.step, 10);
+      ind.classList.toggle('active', s === currentStep);
+      ind.classList.toggle('completed', s < currentStep);
+    });
+
+    // Update dots
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle('active', idx === currentStep);
+    });
+
+    // Update buttons
+    if (btnPrev) {
+      btnPrev.style.visibility = currentStep > 1 ? 'visible' : 'hidden';
+    }
+    if (btnNext && btnFinish) {
+      btnNext.disabled = false;
+      btnNext.textContent = 'Continuer →';
+      if (currentStep === TOTAL_STEPS) {
+        btnNext.classList.add('hidden');
+        btnFinish.classList.remove('hidden');
+      } else {
+        btnNext.classList.remove('hidden');
+        btnFinish.classList.add('hidden');
+      }
+    }
+    refreshInvitationControls();
+  }
+
+  if (btnPrev) {
+    btnPrev.addEventListener('click', () => {
+      goToStep(currentStep - 1);
+      playMinecraftClickSound();
+    });
+  }
+
+  if (btnNext) {
+    invitationInput?.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); btnNext.click(); }
+    });
+    btnNext.addEventListener('click', async () => {
+      if (currentStep === 0) {
+        if (invitationPending || Date.now() < invitationRetryAt) return;
+        const code = invitationInput.value.trim();
+        if (!code) {
+          invitationStatus.textContent = 'Le code d’invitation est obligatoire.';
+          invitationInput.focus();
+          return;
+        }
+        invitationPending = true;
+        refreshInvitationControls();
+        modal.querySelector('.onboarding-dialog')?.focus();
+        try {
+          const result = await window.launcher.verifyInvitation(code);
+          if (result?.success === true) {
+            invitationAccepted = true;
+            invitationInput.value = '';
+            goToStep(1);
+            inputUsername?.focus();
+          } else {
+            invitationError = result?.error || 'Code d’invitation refusé.';
+            invitationStatus.textContent = invitationError;
+            if (result?.retryAfter > 0) startInvitationCooldown(result.retryAfter);
+          }
+        } catch {
+          invitationStatus.textContent = 'Impossible de vérifier le code. Réessayez.';
+        } finally {
+          invitationPending = false;
+          refreshInvitationControls();
+        }
+        return;
+      }
+      if (currentStep === 1 && getOnboardingAccountType() === 'offline') {
+        const username = inputUsername?.value.trim();
+        if (username && typeof window.launcher.authOffline === 'function') {
+          const curr = document.getElementById('account-name')?.textContent;
+          if (!curr || curr === 'Non connecté') {
+            window.launcher.authOffline(username).then(res => {
+              if (res?.success) setLoggedIn(res.username, res.uuid);
+            }).catch(() => {});
+          }
+        }
+      }
+      goToStep(currentStep + 1);
+      playMinecraftClickSound();
+    });
+  }
+
+  if (btnFinish) {
+    btnFinish.addEventListener('click', async () => {
+      if (!invitationAccepted) { goToStep(0); return; }
+      btnFinish.disabled = true;
+      btnFinish.innerHTML = '<span>Enregistrement...</span>';
+
+      try {
+        const accountType = getOnboardingAccountType();
+        const curr = document.getElementById('account-name')?.textContent;
+        const isLoggedOut = !curr || curr === 'Non connecté';
+
+        // 1. Compte : Crack (pseudo) ou Microsoft selon le choix
+        if (accountType === 'microsoft') {
+          if (isLoggedOut) {
+            if (msStatus) msStatus.textContent = 'Connexion Microsoft en cours...';
+            const msRes = await window.launcher.authMicrosoft();
+            if (msRes?.success) {
+              setLoggedIn(msRes.username, msRes.uuid);
+              if (msStatus) msStatus.textContent = `Connecté : ${msRes.username}`;
+            } else {
+              showToast('Connexion Microsoft requise pour terminer (ou choisissez Compte Crack).', 'error', 4000);
+              btnFinish.disabled = false;
+              btnFinish.innerHTML = '<span>Terminer & Jouer 🎮</span>';
+              return;
+            }
+          }
+        } else {
+          const username = inputUsername?.value.trim();
+          if (!username) {
+            showToast('Entrez un pseudo pour le compte Crack.', 'error');
+            goToStep(1);
+            btnFinish.disabled = false;
+            btnFinish.innerHTML = '<span>Terminer & Jouer 🎮</span>';
+            return;
+          }
+          if (isLoggedOut && window.launcher.authOffline) {
+            const authRes = await window.launcher.authOffline(username);
+            if (authRes?.success) setLoggedIn(authRes.username, authRes.uuid);
+          }
+        }
+
+        // 2. RAM
+        const chosenRam = parseInt(ramSliderEl?.value || '6', 10);
+        if (ramSlider) ramSlider.value = chosenRam;
+        if (ramValue) ramValue.textContent = `${chosenRam} Go`;
+        if (settingsRam) settingsRam.value = chosenRam;
+        if (settingsRamValue) settingsRamValue.textContent = `${chosenRam} Go`;
+
+        // 3. Serveur
+        const chosenServerId = document.querySelector('#onboarding-server-grid .onboarding-server-card.active')?.dataset.server || 'adoserv2';
+        if (window.launcher.setActiveServer) {
+          const sRes = await window.launcher.setActiveServer(chosenServerId);
+          if (sRes?.activeServer) {
+            currentServerId = sRes.activeServer.id;
+            applyServerUI(sRes.activeServer);
+            updateLiveServerBadge();
+            loadMods();
+          }
+        }
+
+        // 4. Mark onboarding completed in config
+        if (window.launcher.saveConfig) {
+          const saved = await window.launcher.saveConfig({
+            ram: chosenRam,
+            activeServerId: chosenServerId,
+            onboardingCompleted: true
+          });
+          if (!saved?.success) throw new Error(saved?.error || 'Échec de l’enregistrement.');
+        }
+
+        modal.classList.add('hidden');
+        showToast('Configuration initiale enregistrée ! Bon jeu sur Yapapouaiye.', 'success', 4000);
+        playMinecraftClickSound();
+
+        const playTab = document.querySelector('.nav-item[data-page="home"]');
+        if (playTab) playTab.click();
+      } catch (err) {
+        console.error('[Onboarding] Error finishing setup:', err);
+        showToast(err?.message || 'Impossible de terminer la configuration. Réessayez.', 'error');
+      } finally {
+        btnFinish.disabled = false;
+        btnFinish.innerHTML = '<span>Terminer & Jouer 🎮</span>';
+      }
+    });
+  }
+
+  if (btnRelaunch) {
+    btnRelaunch.addEventListener('click', () => {
+      openWizard();
+      playMinecraftClickSound();
+    });
+  }
+
+  modal.addEventListener('keydown', event => {
+    if (event.key !== 'Tab') return;
+    const controls = [...modal.querySelectorAll('button, input, select, [tabindex="0"]')]
+      .filter(element => !element.disabled && getComputedStyle(element).visibility !== 'hidden' && element.getClientRects().length > 0);
+    if (!controls.length) { event.preventDefault(); return; }
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) {
+      event.preventDefault(); first.focus();
+    }
+  });
+
+  return {
+    open: openWizard,
+    close: () => {
+      modal.classList.add('hidden');
+    }
+  };
+}
+
+// Peint le badge serveur à partir de l'état pré-chargé (sans réseau).
+function paintServerBadgeFromBoot(online, serverName) {
+  const topbarBadge = document.getElementById('topbar-server-badge');
+  const homeBadge = document.getElementById('home-server-badge');
+  const label = `${serverName || 'SERVEUR'} ${online ? 'EN LIGNE' : 'HORS LIGNE'}`;
+  if (topbarBadge) {
+    const dot = topbarBadge.querySelector('.status-dot');
+    const text = topbarBadge.querySelector('.server-text');
+    if (dot) dot.className = online ? 'status-dot online' : 'status-dot offline';
+    if (text) text.textContent = label;
+  }
+  if (homeBadge) {
+    homeBadge.className = online ? 'mc-tag tag-status online' : 'mc-tag tag-status offline';
+    homeBadge.innerHTML = online
+      ? '<span class="status-dot online"></span> EN LIGNE'
+      : '<span class="status-dot offline"></span> HORS LIGNE';
+  }
+}
+
+// Initializer — peint l'état pré-chargé pendant le splash dès la 1ère frame
+// (auth + serveur + mods, sans flash "Non connecté"), puis rafraîchit
+// en tâche de fond les appels réseau lents (release notes, badge live).
 (async () => {
+  const finishBoot = () => {
+    try { document.body.classList.remove('is-booting'); } catch {}
+    const b = document.getElementById('boot-overlay');
+    if (b) b.classList.add('hidden');
+  };
   try {
     await initRamLimits();
     initCustomThemeModal();
+    const onboarding = initOnboardingWizard();
 
-    const config = await window.launcher.getConfig();
+    // 1. État pré-chargé par le main pendant le logo (instantané)
+    let boot = null;
+    try {
+      if (window.launcher.getInitialState) boot = await window.launcher.getInitialState();
+    } catch { boot = null; }
+
+    let config = (boot && boot.config) || null;
+    if (!config) {
+      try { config = await window.launcher.getConfig(); } catch { config = null; }
+    }
     if (config && config.customThemes && Array.isArray(config.customThemes)) {
       customThemes = config.customThemes;
+    }
+    if (config && config.themeOverrides && typeof config.themeOverrides === 'object' && !Array.isArray(config.themeOverrides)) {
+      themeOverrides = config.themeOverrides;
+    }
+    if (config && (config.customThemes || config.themeOverrides)) {
       updateDynamicThemeStyles();
     }
     if (config && config.theme) applyTheme(config.theme);
@@ -3997,17 +5982,73 @@ if (btnCheckUpdate) {
       if (settingsRam) settingsRam.value = clampedRam;
       if (settingsRamValue) settingsRamValue.textContent = `${clampedRam} Go`;
     }
+    // 1b. Modules client des la 1ere frame : le main les inclut desormais
+    // dans get-initial-state (boot.clientMods). Peinture immediate du
+    // simulateur HUD, avec repli getClientMods si le boot n'en a pas.
+    try {
+      const bootMods = (boot && boot.clientMods) || (config && config.clientMods) || null;
+      if (bootMods && typeof updateHudSimulator === 'function') {
+        updateHudSimulator(bootMods);
+      }
+      if (typeof loadClientPageSettings === 'function') {
+        if (bootMods) {
+          // Aligne les toggles sans attendre le reseau.
+          loadClientPageSettings();
+        } else {
+          loadClientPageSettings();
+        }
+      }
+    } catch {}
 
-    const login = await window.launcher.autoLogin();
-    if (login && login.success) {
-      setLoggedIn(login.username, login.uuid);
+    // 2. Auth instantanée (le refresh Microsoft a déjà eu lieu pendant le splash)
+    let loggedIn = false;
+    if (boot && boot.login && boot.login.success) {
+      setLoggedIn(boot.login.username, boot.login.uuid);
+      loggedIn = true;
+    } else {
+      try {
+        const login = await window.launcher.autoLogin();
+        if (login && login.success) {
+          setLoggedIn(login.username, login.uuid);
+          loggedIn = true;
+        }
+      } catch {}
+    }
+
+    // 3. Serveur + mods instantanés (disque local, aucun réseau)
+    if (boot && boot.servers && boot.servers.activeServer) {
+      currentServerId = boot.servers.activeServerId || 'adoserv2';
+      try { applyServerUI(boot.servers.activeServer); } catch {}
+    }
+    // Maintenance distante (espace admin) connue dès le boot : peint le bandeau
+    // avant même l'affichage (l'état frais est re-vérifié au clic JOUER).
+    try {
+      if (boot && boot.servers && boot.servers.launcherConfig) {
+        applyMaintenanceState(boot.servers.launcherConfig);
+      }
+    } catch {}
+    if (boot && Array.isArray(boot.mods)) {
+      cachedServerMods = boot.mods;
+      try { renderFilteredMods(); } catch {}
+    }
+    if (boot && boot.appVersion) {
+      const el = document.getElementById('app-version');
+      if (el) el.textContent = `v${boot.appVersion}`;
+    }
+    if (boot && typeof boot.serverOnline === 'boolean') {
+      try { paintServerBadgeFromBoot(boot.serverOnline, boot.servers?.activeServer?.name); } catch {}
     }
 
     await initServerSelector();
+    // 4. Révèle l'UI avec le bon état AVANT les appels réseau lents
+    finishBoot();
+
+    // 5. Fond : rafraîchit mods, settings, thèmes, release notes, badge live
     loadMods();
     loadSettings();
     renderThemeGrid();
     loadLatestReleaseInfo();
+    updateLiveServerBadge();
 
     if (window.launcher.getAppVersion) {
       window.launcher.getAppVersion().then((v) => {
@@ -4016,8 +6057,12 @@ if (btnCheckUpdate) {
       }).catch(() => {});
     }
 
-    // First launch after an update: open the Actualités tab with posts and the separate patch section
-    if (window.launcher.checkFirstLaunchAfterUpdate) {
+    // Check first launch ever (Onboarding personalisé)
+    const invitation = await window.launcher.getInvitationStatus().catch(() => ({ accepted: false }));
+    if (!invitation.accepted || !config || config.onboardingCompleted !== true) {
+      if (onboarding) onboarding.open();
+    } else if (window.launcher.checkFirstLaunchAfterUpdate) {
+      // First launch after an update: open the Actualités tab with posts and the separate patch section
       try {
         const res = await window.launcher.checkFirstLaunchAfterUpdate();
         if (res?.isFirstLaunchAfterUpdate) {
@@ -4031,5 +6076,6 @@ if (btnCheckUpdate) {
     }
   } catch (err) {
     console.error('[Renderer] Initialization error:', err);
+    try { finishBoot(); } catch {}
   }
 })();
