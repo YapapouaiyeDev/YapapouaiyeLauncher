@@ -1,0 +1,42 @@
+name: Build ChromeOS (Linux x64)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'codex/chromeos-*']
+    paths:
+      - '.github/workflows/chromeos.yml'
+      - 'src/**'
+      - 'assets/**'
+      - 'mods/**'
+      - 'scripts/**'
+      - 'package*.json'
+      - 'version.json'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:chromeos
+      - run: npm run build:chromeos
+      - name: Inspect Debian package
+        run: |
+          dpkg-deb --info dist/*.deb
+          sha256sum dist/*.deb > dist/SHA256SUMS-chromeos.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Yapapouaiye-ChromeOS-x64
+          if-no-files-found: error
+          path: |
+            dist/*.deb
+            dist/*-linux.yml
+            dist/SHA256SUMS-chromeos.txt

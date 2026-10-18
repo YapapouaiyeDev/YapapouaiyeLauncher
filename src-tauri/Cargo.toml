@@ -1,0 +1,46 @@
+[package]
+name = "yapapouaiye-launcher"
+version = "1.6.1-4-beta.1"
+description = "Launcher Minecraft moddé - Yapapouaiye"
+authors = ["Yapapouaiye"]
+license = "MIT"
+edition = "2021"
+default-run = "yapapouaiye-launcher"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-single-instance = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
+sha2 = "0.10"
+hmac = "0.12"
+hex = "0.4"
+md-5 = "0.10"
+dirs = "6"
+sysinfo = "0.35"
+thiserror = "2"
+base64 = "0.22"
+url = "2"
+futures-util = "0.3"
+zip = "2"
+which = "7"
+dotenvy = "0.15"
+open = "5"
+rfd = "0.15"
+anyhow = "1"
+percent-encoding = "2"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+uuid = { version = "1", features = ["v4", "v5"] }
+urlencoding = "2"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true

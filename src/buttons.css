@@ -1,0 +1,158 @@
+/* Shared controls. Theme-specific selectors keep their colors and silhouettes. */
+button {
+  font-family: inherit;
+  -webkit-app-region: no-drag;
+  touch-action: manipulation;
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform, scale !important;
+  transition-duration: 150ms !important;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+body :is(.btn-primary, .btn-mc-primary, .btn-secondary, .btn-mc-action,
+  .btn-theme-action, .btn-subtle, .btn-preview-toggle-test, .btn-picker-apply,
+  .btn-switch, .btn-remove, .custom-manage-btn, .footer-validate-btn,
+  .preview-btn-play, .preview-btn-action) {
+  min-height: 38px;
+  padding: 9px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-md);
+  border-style: solid;
+  border-width: 1px;
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 600;
+  text-decoration: none;
+  text-shadow: none;
+  cursor: pointer;
+}
+
+body :is(.btn-primary, .btn-mc-primary, .footer-validate-btn, .preview-btn-play) {
+  background: linear-gradient(180deg, var(--validate-gradient-a), var(--validate-gradient-b));
+  border-color: var(--validate-border);
+  color: var(--validate-text);
+  box-shadow: inset 0 1px 0 #ffffff30, 0 3px 10px #00000026;
+  font-weight: 700;
+}
+
+body :is(.btn-primary, .btn-mc-primary, .footer-validate-btn, .preview-btn-play):hover:enabled {
+  background: linear-gradient(180deg, var(--validate-gradient-hover-a), var(--validate-gradient-hover-b));
+  box-shadow: inset 0 1px 0 #ffffff40, 0 4px 14px rgba(var(--accent-rgb), .2);
+}
+
+body :is(.btn-secondary, .btn-mc-action, .btn-theme-action, .btn-subtle,
+  .btn-preview-toggle-test, .btn-picker-apply, .btn-switch, .preview-btn-action) {
+  background: rgba(255, 255, 255, .055);
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, .16);
+  box-shadow: inset 0 1px 0 #ffffff08, 0 2px 5px #0000001a;
+}
+
+body :is(.btn-secondary, .btn-mc-action, .btn-theme-action, .btn-subtle,
+  .btn-preview-toggle-test, .btn-picker-apply, .btn-switch, .preview-btn-action):hover:enabled {
+  background: rgba(var(--accent-rgb), .12);
+  border-color: rgba(var(--accent-rgb), .55);
+  color: var(--text-main);
+}
+
+body .btn-theme-action.primary {
+  background: rgba(var(--accent-rgb), .15);
+  border-color: rgba(var(--accent-rgb), .45);
+  color: var(--text-main);
+}
+
+body :is(.btn-remove, .custom-manage-btn.delete) {
+  color: #fecaca;
+  background: #ef44441a;
+  border-color: #ef44444d;
+}
+
+body :is(.btn-remove, .custom-manage-btn.delete):hover:enabled {
+  color: #ffffff;
+  background: #b91c1c;
+  border-color: #f87171;
+}
+
+body :is(.nav-item, .server-tab, .filter-pill, .modal-tab-btn, .preset-chip) {
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+body :is(.filter-pill, .modal-tab-btn, .preset-chip) {
+  min-height: 36px;
+}
+
+body :is(.nav-item, .server-tab, .filter-pill) {
+  border-radius: var(--radius-md);
+}
+
+body :is(.nav-item, .server-tab, .filter-pill).active {
+  background: rgba(var(--accent-rgb), .14);
+  border-color: rgba(var(--accent-rgb), .5);
+  color: var(--text-main);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), .12);
+}
+
+body :is(.btn-close-sm, .btn-icon-clear, .btn-picker-pop-close,
+  .btn-logout-mini, .topbar-theme-btn, .btn-picker-eyedropper, .theme-mini-btn) {
+  min-width: 32px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+
+body .btn-mc-play-huge {
+  border-width: 1px;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 #ffffff40, 0 4px 16px rgba(var(--accent-rgb), .22);
+  letter-spacing: .8px;
+  text-shadow: none;
+}
+
+/* Stable border widths prevent the content jumping when a button is pressed. */
+body :is(.btn-primary, .btn-mc-primary, .btn-mc-play-huge):active:enabled {
+  border-bottom-width: 1px;
+}
+
+body button:active:enabled {
+  scale: .96;
+}
+
+body button:focus-visible {
+  outline: 2px solid var(--text-main);
+  outline-offset: 3px;
+}
+
+/* Keep the focus ring inside the clipped cyber silhouettes. */
+body[data-theme="cyber"] button:focus-visible {
+  outline-offset: -3px;
+}
+
+body button:disabled,
+body button[aria-disabled="true"] {
+  opacity: .45;
+  cursor: not-allowed;
+  filter: grayscale(.65);
+  transform: none !important;
+  scale: 1 !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body button,
+  body button::before,
+  body button::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  body button:active:enabled,
+  body button:hover:enabled {
+    transform: none !important;
+    scale: 1 !important;
+  }
+}

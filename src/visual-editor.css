@@ -1,0 +1,144 @@
+/* Theme workshop: scoped chrome keeps the editable preview independent. */
+#modal-custom-theme {
+  --workshop-bg: #101614;
+  --workshop-card: color-mix(in srgb, var(--workshop-bg) 92%, white);
+  --workshop-field: color-mix(in srgb, var(--workshop-bg) 85%, black);
+  --workshop-line: rgba(255, 255, 255, .10);
+  --workshop-muted: #a4b2ad;
+  color: #edf3ef;
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 20px;
+}
+#modal-custom-theme .custom-modal-dialog {
+  width: 1160px;
+  max-width: 100%;
+  height: min(880px, calc(100dvh - 40px));
+  max-height: none;
+  background: var(--workshop-bg);
+  border: 1px solid var(--workshop-line);
+  border-radius: 20px;
+  box-shadow: 0 32px 100px #000b, 0 1px 0 #ffffff0d inset;
+}
+#modal-custom-theme .modal-header { padding: 22px 28px; background: transparent; border-color: var(--workshop-line); }
+#modal-custom-theme .modal-title-group { gap: 14px; min-width: 0; }
+#modal-custom-theme .modal-icon-svg { box-sizing: content-box; padding: 11px; border-radius: 14px; background: rgba(var(--accent-rgb), .10); }
+#modal-custom-theme .modal-title-group h3 { font-size: 21px; letter-spacing: -.6px; font-weight: 700; }
+#modal-custom-theme .modal-subtitle { font-size: 12px; margin-top: 5px; line-height: 1.5; color: var(--workshop-muted); }
+#modal-custom-theme .btn-close-sm { flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; }
+#modal-custom-theme .modal-tabs-nav { padding: 10px 28px; gap: 8px; background: transparent; border-color: var(--workshop-line); }
+#modal-custom-theme .modal-tab-btn { padding: 10px 16px; font-size: 12px; font-weight: 600; border: 1px solid transparent; border-radius: 9px; color: var(--workshop-muted); }
+#modal-custom-theme .modal-tab-btn.active { background: rgba(var(--accent-rgb), .12); color: var(--mc-green-primary); border-color: rgba(var(--accent-rgb), .22); }
+#modal-custom-theme .modal-tab-btn:hover { background: #ffffff08; color: #fff; }
+#modal-custom-theme .modal-body { padding: 24px 28px 0; overscroll-behavior: contain; scroll-padding-block: 20px 100px; scrollbar-gutter: stable; }
+#tab-visual-editor { line-height: 1.5; }
+#tab-visual-editor .editor-intro { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+#tab-visual-editor .editor-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 1.8px; color: var(--mc-green-primary); }
+#tab-visual-editor h4 { font-size: 23px; letter-spacing: -.6px; margin-block: 4px; }
+#tab-visual-editor .editor-intro p { color: var(--workshop-muted); font-size: 13px; }
+#tab-visual-editor .editor-live-badge { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--workshop-line); border-radius: 20px; padding: 6px 12px; font-size: 11px; white-space: nowrap; color: var(--workshop-muted); }
+#tab-visual-editor .editor-live-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--mc-green-primary); }
+#tab-visual-editor .editor-preset-bar { flex-wrap: wrap; gap: 14px; padding: 14px 16px; border: 1px solid var(--workshop-line); border-radius: 12px; margin-bottom: 24px; background: transparent; }
+#tab-visual-editor .preset-bar-select-group { flex: 1 1 300px; min-width: 0; flex-wrap: wrap; }
+#tab-visual-editor .preset-bar-chips-group { flex-wrap: wrap; overflow: visible; gap: 8px; }
+#tab-visual-editor .preset-bar-label { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 600; }
+#tab-visual-editor .preset-chips-container { flex-wrap: wrap; gap: 6px; }
+#tab-visual-editor .preset-chip, #tab-visual-editor .color-palette-btn { min-height: 32px; padding: 5px 10px; font-size: 12px; gap: 6px; box-shadow: none; }
+#tab-visual-editor .editor-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; }
+#tab-visual-editor .editor-col { min-width: 0; gap: 20px; }
+#tab-visual-editor .editor-col-preview { top: 12px; gap: 16px; }
+#tab-visual-editor .editor-col-preview .editor-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 16px; gap: 14px 10px; }
+#tab-visual-editor .editor-col-preview .editor-section-title { padding: 0; border: 0; }
+#tab-visual-editor .editor-col-preview .color-quick-palettes { margin: 0; }
+#tab-visual-editor .editor-col-preview .color-pickers-grid { grid-column: 1 / -1; }
+#tab-visual-editor .editor-card { padding: 20px; gap: 16px; border: 0; border-radius: 16px; background: var(--workshop-card); box-shadow: 0 0 0 1px #ffffff0a, 0 4px 14px #00000012; contain: none; }
+#tab-visual-editor .editor-section-title { padding: 0 0 14px; border: 0; border-bottom: 1px solid var(--workshop-line); color: #edf3ef; font-size: 14px; font-weight: 650; letter-spacing: -.2px; text-transform: none; gap: 10px; }
+#tab-visual-editor .editor-section-title svg { width: 17px; height: 17px; color: var(--mc-green-primary); }
+#tab-visual-editor .form-row-group { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+#tab-visual-editor .form-row { min-width: 0; gap: 6px; }
+#tab-visual-editor .form-label, #tab-visual-editor .color-picker-item label { font-size: 12px; font-weight: 500; color: var(--workshop-muted); text-transform: none; letter-spacing: 0; white-space: normal; overflow: visible; }
+#tab-visual-editor .mc-input-text, #tab-visual-editor .mc-select { min-width: 0; width: 100%; height: 40px; padding: 9px 12px; font-size: 12px; font-weight: 400; border-radius: 8px; background: var(--workshop-field); border: 1px solid var(--workshop-line); color: #edf3ef; }
+#tab-visual-editor .mc-select { padding-right: 28px; text-overflow: ellipsis; }
+#tab-visual-editor .select-compact-theme { flex-basis: 180px; }
+#tab-visual-editor input { user-select: text; }
+#tab-visual-editor .audio-control-row { gap: 8px; }
+#tab-visual-editor .audio-setting + .audio-setting { padding-top: 16px; border-top: 1px solid var(--workshop-line); }
+#tab-visual-editor .audio-file-row { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+#tab-visual-editor .audio-file-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--workshop-muted); }
+#tab-visual-editor .audio-file-row button { flex-shrink: 0; }
+#tab-visual-editor .audio-library-note { font-size: 11px; color: var(--workshop-muted); margin: 0; }
+#tab-visual-editor .audio-library-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+#tab-visual-editor .editor-card .btn-mc-action, #tab-visual-editor .editor-card .btn-secondary { height: auto; min-height: 38px; padding: 8px 10px; font-size: 12px; white-space: normal; }
+#tab-visual-editor .btn-icon-clear { width: 32px; height: 32px; }
+#tab-visual-editor .theme-live-preview-box { padding: 16px; gap: 14px; border: 0; border-radius: 24px; background: var(--workshop-card); box-shadow: 0 0 0 1px #ffffff0a, 0 12px 24px #0002; }
+#tab-visual-editor .preview-header-bar { align-items: start; flex-wrap: wrap; gap: 10px; }
+#tab-visual-editor .preview-label { font-size: 14px; letter-spacing: -.2px; text-transform: none; color: #edf3ef; }
+#tab-visual-editor .preview-hint { font-size: 11px; color: var(--workshop-muted); margin-top: 4px; }
+#tab-visual-editor .preview-status-pill { font-size: 11px; padding: 3px 8px; background: var(--bg-dark); color: var(--text-main); border-color: var(--panel-border); }
+#tab-visual-editor .launcher-preview-stage { min-height: 200px; border-radius: 8px; }
+#tab-visual-editor .preview-mockup-content { min-height: 200px; padding: 16px; gap: 12px; }
+#tab-visual-editor .preview-mockup-top { gap: 8px; flex-wrap: wrap; }
+#tab-visual-editor .preview-badge-chip, #tab-visual-editor .preview-status-indicator { font-size: 10px; }
+#tab-visual-editor .preview-scene-copy { align-self: flex-start; background: #0b1118d9; color: #f1f5f9; padding: 10px 12px; border-radius: 8px; max-width: 100%; }
+#tab-visual-editor .preview-scene-copy span { font-size: 9px; letter-spacing: 1.2px; color: #94a3b8; }
+#tab-visual-editor .preview-scene-copy strong { display: block; font-size: 24px; line-height: 1.3; letter-spacing: -.7px; overflow-wrap: anywhere; }
+#tab-visual-editor .preview-scene-copy p { font-size: 12px; color: #cbd5e1; margin-top: 4px; }
+#tab-visual-editor .preview-buttons-row { flex-wrap: wrap; gap: 10px; }
+#tab-visual-editor .preview-btn-play { min-height: 42px; padding: 10px 22px; font-size: 14px; }
+#tab-visual-editor .preview-btn-action { min-height: 38px; font-size: 12px; }
+#tab-visual-editor .color-quick-palettes { gap: 6px; }
+#tab-visual-editor .color-palette-btn { color: var(--text-main); }
+#tab-visual-editor .color-dot { width: 10px; height: 10px; }
+#tab-visual-editor .color-pickers-grid { gap: 10px; }
+#tab-visual-editor .color-picker-item { min-width: 0; padding: 0; border: 0; background: transparent; gap: 7px; }
+#tab-visual-editor .color-input-wrapper { display: flex; align-items: center; gap: 8px; padding: 4px; border: 1px solid var(--workshop-line); border-radius: 9px; background: var(--workshop-field); }
+#tab-visual-editor .color-swatch-btn { width: 28px; height: 28px; border-radius: 5px; box-shadow: none; }
+#tab-visual-editor .color-swatch-btn:hover { transform: none; border-color: #fff; }
+#tab-visual-editor .color-swatch-btn:active { transform: scale(.96); }
+#tab-visual-editor .color-hex-text-input { min-width: 0; height: 30px; padding: 0 4px; font-size: 12px; font-weight: 500; background: transparent; border: 0; color: #edf3ef; }
+#tab-visual-editor .editor-builtin-notice { font-size: 12px; padding: 12px 14px; margin-bottom: 16px; }
+#tab-visual-editor .editor-footer-bar { bottom: 0; margin: 24px -28px 0; padding: 16px 28px; border: 0; border-top: 1px solid var(--workshop-line); border-radius: 0; background: var(--workshop-bg); box-shadow: 0 -10px 24px #0002; backdrop-filter: none; gap: 12px; }
+#tab-visual-editor .editor-footer-bar button { width: auto; min-height: 40px; height: auto; padding: 10px 14px; white-space: normal; font-size: 12px; }
+#tab-visual-editor .editor-footer-actions { margin-inline-start: auto; }
+#tab-visual-editor .editor-footer-bar button { border-radius: 9px; font-weight: 600; box-shadow: none; text-shadow: none; }
+#tab-visual-editor #btn-editor-save-as-new { border-style: solid; }
+#tab-visual-editor .editor-background-source { align-items: center; gap: 8px; }
+#tab-visual-editor .editor-background-source > .mc-input-text { flex: 1; width: 0; }
+#tab-visual-editor .editor-background-source > button { flex-shrink: 0; }
+#tab-visual-editor .background-file-summary { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }
+#tab-visual-editor .background-file-summary img { width: 44px; height: 44px; object-fit: cover; border-radius: 7px; outline: 1px solid #ffffff1a; outline-offset: -1px; }
+#tab-visual-editor .background-file-summary strong { display: block; font-size: 12px; font-weight: 600; }
+#tab-visual-editor .background-file-summary small { display: block; font-size: 10px; color: var(--workshop-muted); margin-top: 3px; }
+#modal-custom-theme :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--text-main); outline-offset: 3px; }
+#modal-custom-theme button { transition-property: background-color, border-color, color, box-shadow, transform; transition-duration: 150ms; transition-timing-function: ease-out; }
+#tab-visual-editor button:active { transform: scale(.96); }
+@media (max-width: 900px) {
+  #tab-visual-editor .editor-grid { grid-template-columns: minmax(0, 1fr); }
+  #tab-visual-editor .editor-col-preview { position: static; }
+}
+@media (max-height: 830px) {
+  #tab-visual-editor .editor-col-preview { position: static; }
+}
+@media (max-width: 540px) {
+  #modal-custom-theme { padding: 8px; }
+  #modal-custom-theme .custom-modal-dialog { height: calc(100dvh - 16px); max-height: none; }
+  #modal-custom-theme .modal-header { padding: 14px; }
+  #modal-custom-theme .modal-tabs-nav { padding-inline: 6px; gap: 0; }
+  #modal-custom-theme .modal-tab-btn { flex: 1; justify-content: center; padding: 12px 6px; font-size: 12px; }
+  #modal-custom-theme .modal-tab-btn svg { display: none; }
+  #modal-custom-theme .modal-body { padding: 14px 14px 0; }
+  #tab-visual-editor .editor-intro { flex-wrap: wrap; }
+  #tab-visual-editor h4 { font-size: 21px; }
+  #tab-visual-editor .form-row-group { grid-template-columns: minmax(0, 1fr); }
+  #tab-visual-editor .editor-card { padding: 14px; }
+  #tab-visual-editor .editor-footer-bar { position: static; }
+  #tab-visual-editor .editor-footer-bar { margin-inline: -14px; padding-inline: 14px; }
+  #tab-visual-editor .editor-footer-actions { width: 100%; }
+  #tab-visual-editor .editor-footer-actions button { flex: 1; }
+  #tab-visual-editor .mc-select, #tab-visual-editor .mc-input-text { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #modal-custom-theme, #modal-custom-theme *, #modal-custom-theme *::before, #modal-custom-theme *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+@media (forced-colors: active) {
+  #modal-custom-theme :focus-visible { outline-color: Highlight; }
+}

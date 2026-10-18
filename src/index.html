@@ -3,13 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; frame-src 'self' https: http:; child-src 'self' https: http:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: http:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; frame-src 'self' https: http:; child-src 'self' https: http:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: http:; media-src 'self' data: https: http:;">
   <title>Yapapouaiye Launcher</title>
   <link rel="icon" type="image/png" href="../assets/logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="visual-editor.css">
+  <link rel="stylesheet" href="buttons.css">
 </head>
-<body>
+<body class="is-booting">
+  <!-- Écran de pré-chargement : masque le flash "Non connecté" le temps
+       que l'état pré-chargé pendant le splash soit peint (instantané). -->
+  <div class="boot-overlay" id="boot-overlay" aria-hidden="true">
+    <img class="boot-logo" src="../assets/logo.png" alt="" draggable="false" />
+    <div class="boot-shimmer"></div>
+    <p class="boot-text">Chargement de votre session...</p>
+  </div>
   <!-- Background Image with Ambient Overlay -->
   <div class="background-image"></div>
   <div class="background-overlay"></div>
@@ -100,6 +109,11 @@
 
     <!-- Main Views Area -->
     <main class="main-content">
+      <!-- Maintenance distante (espace admin du site) -->
+      <div class="maintenance-banner hidden" id="maintenance-banner">
+        <span class="maintenance-dot"></span>
+        <span><strong>Maintenance :</strong> <span id="maintenance-banner-text">Launcher en maintenance.</span></span>
+      </div>
       <!-- HOME PAGE -->
       <section class="page active" id="page-home">
         <!-- Auth View (Shown when logged out) -->
@@ -153,39 +167,40 @@
 
         <!-- Play View (Shown when logged in) -->
         <div class="view hidden" id="play-section">
-          <div class="play-hero-container">
+          <div class="play-server-layout">
+            <aside class="server-selector-card" aria-label="Choix du serveur">
+              <div class="server-selector-header">
+                <span class="server-select-title">CHOIX DU SERVEUR</span>
+                <span class="server-scroll-hint">Défilez pour parcourir</span>
+              </div>
+              <div class="server-tabs" id="server-tabs-group" role="group" aria-label="Serveurs ouverts">
+                <button class="server-tab active" data-server-id="adoserv2" title="Nouveau serveur AdoServ II (Gizmo API)">
+                  <span class="server-tab-main">
+                    <span class="server-tab-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span>
+                    <span class="server-tab-name">AdoServ II</span>
+                  </span>
+                  <span class="server-tab-meta"><span class="server-tab-badge">GIZMO</span><span class="server-open-state"><span class="status-dot online"></span>OUVERT</span></span>
+                </button>
+                <button class="server-tab" data-server-id="adoserv1" title="Serveur original YapapouaiyeSMP (FalixNodes)">
+                  <span class="server-tab-main">
+                    <span class="server-tab-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span>
+                    <span class="server-tab-name">YapapouaiyeSMP</span>
+                  </span>
+                  <span class="server-tab-meta"><span class="server-tab-badge">FALIX</span><span class="server-open-state"><span class="status-dot online"></span>OUVERT</span></span>
+                </button>
+                <button class="server-tab" data-server-id="adoserv67" title="Nouveau serveur AdoServ67 (FalixNodes)">
+                  <span class="server-tab-main">
+                    <span class="server-tab-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span>
+                    <span class="server-tab-name">AdoServ67</span>
+                  </span>
+                  <span class="server-tab-meta"><span class="server-tab-badge">FALIX</span><span class="server-open-state"><span class="status-dot online"></span>OUVERT</span></span>
+                </button>
+              </div>
+            </aside>
+
+            <div class="play-hero-container">
             <div class="play-hero-card mc-box">
               <div class="play-hero-content">
-                <!-- Server Switcher Row -->
-                <div class="server-selector-card">
-                  <div class="server-selector-header">
-                    <span class="server-select-title">CHOIX DU SERVEUR</span>
-                    <div class="server-tabs" id="server-tabs-group">
-                      <button class="server-tab active" data-server-id="adoserv2" title="Nouveau serveur AdoServ II (Gizmo API)">
-                        <span class="server-tab-icon">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                        </span>
-                        <span class="server-tab-name">AdoServ II</span>
-                        <span class="server-tab-badge">GIZMO</span>
-                      </button>
-                      <button class="server-tab" data-server-id="adoserv1" title="Serveur original YapapouaiyeSMP (FalixNodes)">
-                        <span class="server-tab-icon">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                        </span>
-                        <span class="server-tab-name">YapapouaiyeSMP</span>
-                        <span class="server-tab-badge">FALIX</span>
-                      </button>
-                      <button class="server-tab" data-server-id="adoserv67" title="Nouveau serveur AdoServ67 (FalixNodes)">
-                        <span class="server-tab-icon">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                        </span>
-                        <span class="server-tab-name">AdoServ67</span>
-                        <span class="server-tab-badge">FALIX</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
                 <div class="mc-tag-row">
                   <span class="mc-tag tag-neoforge" id="server-badge-tag">GIZMONODES • 1.21.1</span>
                   <span class="mc-tag tag-status" id="home-server-badge"><span class="status-dot online"></span> EN LIGNE</span>
@@ -206,6 +221,395 @@
 
             <!-- News & Highlights Cards (Dynamically populated from Database) -->
             <div class="news-cards-grid" id="home-news-cards" style="display:none;"></div>
+          </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- YAPAPOUAIYE CLIENT PAGE -->
+      <section class="page" id="page-client">
+        <!-- Header -->
+        <div class="page-header client-page-header">
+          <div class="page-title-group">
+            <div class="client-badge-row">
+              <span class="client-brand-chip">✦ YAPAPOUAIYE CLIENT v2.0 ✦</span>
+              <span class="client-status-chip"><span class="pulse-dot"></span> Connecté au Moteur Minecraft</span>
+            </div>
+            <h1 class="page-title">Panneau de Contrôle & Modules Client</h1>
+            <p class="page-subtitle">Modules de visibilité, optimisations de rendu et interface tête haute (HUD) en jeu</p>
+          </div>
+          <div class="header-actions">
+            <div class="client-quick-shortcut-box" title="Raccourci par défaut en jeu pour ouvrir l'interface client">
+              <span class="shortcut-label">Menu en jeu :</span>
+              <kbd class="shortcut-key">Shift Droit</kbd>
+            </div>
+            <button class="btn-mc-action" id="btn-client-azerty-now" title="Configurer immédiatement les contrôles de déplacement en AZERTY (ZQSD)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"></path>
+              </svg>
+              <span>Touches ZQSD</span>
+            </button>
+            <button class="btn-mc-action" id="btn-client-sync-now" title="Synchroniser immédiatement avec le jeu">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+              </svg>
+              <span>Synchroniser</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live In-Game HUD Simulator Preview -->
+        <div class="client-hud-preview-card mc-box">
+          <div class="hud-preview-topbar">
+            <div class="preview-title-group">
+              <span class="preview-dot-indicator"></span>
+              <span class="preview-title">Aperçu Visuel en Direct (Simulateur HUD en Jeu)</span>
+              <span class="hud-drag-hint">💡 Glissez-déposez les widgets pour ajuster leur place</span>
+            </div>
+            <div class="preview-controls">
+              <span class="preview-res-badge">1080p • 165Hz</span>
+              <button type="button" class="btn-preview-toggle-test" id="btn-reset-hud-positions" title="Réinitialiser l'emplacement des modules HUD">
+                🔄 Réinitialiser positions
+              </button>
+              <button type="button" class="btn-preview-toggle-test" id="btn-toggle-hud-ambient" title="Tester le rendu sombre / FullBright">
+                💡 Tester FullBright
+              </button>
+            </div>
+          </div>
+
+          <div class="hud-preview-viewport" id="hud-preview-viewport">
+            <!-- Simulated Minecraft Sky/Cave Backdrop with dynamic ambient -->
+            <div class="hud-backdrop" id="hud-backdrop"></div>
+
+            <!-- Top Left: FPS & Latency -->
+            <div class="hud-element hud-fps" id="hud-elem-fps">
+              <span id="hud-sim-fps"><span class="hud-fps-num">165 FPS</span><span class="hud-sep">/</span></span>
+              <span class="hud-ping-num" id="hud-sim-ping">18 ms</span>
+            </div>
+
+            <!-- Speed (under FPS box) -->
+            <div class="hud-element hud-speed" id="hud-elem-speed">
+              <span class="hud-speed-num">4.3 m/s</span>
+            </div>
+
+            <!-- Top Right: Coords -->
+            <div class="hud-element hud-coords" id="hud-elem-coords">
+              <span>XYZ: 124 64 -382</span>
+              <span class="hud-biome-tag">Biome: Plains</span>
+            </div>
+
+            <!-- Center Crosshair & FullBright Glow -->
+            <div class="hud-crosshair">+</div>
+            <div class="hud-fullbright-ambient" id="hud-fullbright-ambient"></div>
+
+            <!-- Bottom Left: Armor Status HUD (durabilité chiffrée par pièce) -->
+            <div class="hud-element hud-armor-status" id="hud-elem-armor">
+              <div class="armor-hud-title"><span class="armor-title-dot"></span>ARMURE</div>
+              <div class="armor-slot" data-cur="312" data-max="363" title="Casque en diamant : 312 / 363">
+                <span class="armor-piece-icon" title="Casque">
+                  <svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 8a5 5 0 0 1 10 0v4H3V8z" fill="#53d8e8" stroke="#1e7d8c" stroke-width="1.2"/><rect x="4.5" y="8.5" width="7" height="1.6" fill="#0e3a42"/><rect x="5" y="5" width="2" height="2" fill="#bff3fa" opacity="0.8"/></svg>
+                </span>
+                <div class="armor-info">
+                  <div class="armor-top-row"><span class="armor-name">Casque</span><span class="dur-num">312<span class="dur-max">/363</span></span></div>
+                  <div class="dur-bar"><div class="dur-fill" style="width: 86%;"></div></div>
+                </div>
+              </div>
+              <div class="armor-slot" data-cur="489" data-max="528" title="Plastron en diamant : 489 / 528">
+                <span class="armor-piece-icon" title="Plastron">
+                  <svg width="16" height="16" viewBox="0 0 16 16"><path d="M5 1.5h6l2.5 3.5-2 1.5V14.5h-7V6.5l-2-1.5L5 1.5z" fill="#53d8e8" stroke="#1e7d8c" stroke-width="1.2"/><rect x="7" y="3" width="2" height="9" fill="#1e7d8c" opacity="0.45"/><rect x="5.8" y="2.4" width="1.6" height="1.6" fill="#bff3fa" opacity="0.8"/></svg>
+                </span>
+                <div class="armor-info">
+                  <div class="armor-top-row"><span class="armor-name">Plastron</span><span class="dur-num">489<span class="dur-max">/528</span></span></div>
+                  <div class="dur-bar"><div class="dur-fill" style="width: 93%;"></div></div>
+                </div>
+              </div>
+              <div class="armor-slot" data-cur="201" data-max="495" title="Jambières en diamant : 201 / 495">
+                <span class="armor-piece-icon" title="Jambières">
+                  <svg width="16" height="16" viewBox="0 0 16 16"><path d="M5 1.5h6v6h-1.5v7h-3v-7H5v-6z" fill="#53d8e8" stroke="#1e7d8c" stroke-width="1.2"/><rect x="7.2" y="2.5" width="1.6" height="4" fill="#1e7d8c" opacity="0.45"/><rect x="5.8" y="2.4" width="1.4" height="1.4" fill="#bff3fa" opacity="0.8"/></svg>
+                </span>
+                <div class="armor-info">
+                  <div class="armor-top-row"><span class="armor-name">Jambières</span><span class="dur-num">201<span class="dur-max">/495</span></span></div>
+                  <div class="dur-bar"><div class="dur-fill" style="width: 41%;"></div></div>
+                </div>
+              </div>
+              <div class="armor-slot" data-cur="96" data-max="429" title="Bottes en diamant : 96 / 429">
+                <span class="armor-piece-icon" title="Bottes">
+                  <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 2h3.5v6l3 1.5v4h-6v-3H3V2h1zm7 0H14v11.5h-5v-3h2V2z" fill="#53d8e8" stroke="#1e7d8c" stroke-width="1.1"/><rect x="4.8" y="2.8" width="1.4" height="1.4" fill="#bff3fa" opacity="0.8"/></svg>
+                </span>
+                <div class="armor-info">
+                  <div class="armor-top-row"><span class="armor-name">Bottes</span><span class="dur-num">96<span class="dur-max">/429</span></span></div>
+                  <div class="dur-bar"><div class="dur-fill" style="width: 22%;"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Right: Keystrokes & CPS -->
+            <div class="hud-element hud-keystrokes" id="hud-elem-keystrokes">
+              <div class="keys-row"><span class="k-box active">Z</span></div>
+              <div class="keys-row">
+                <span class="k-box">Q</span>
+                <span class="k-box">S</span>
+                <span class="k-box">D</span>
+              </div>
+              <div class="keys-row mouse">
+                <span class="k-box m-box">LMB <i>8.4</i></span>
+                <span class="k-box m-box">RMB <i>12.1</i></span>
+              </div>
+            </div>
+
+            <!-- Floating In-game toast simulation -->
+            <div class="hud-floating-toast" id="hud-floating-toast">
+              <span class="toast-brand">✦ Yapapouaiye Client ✦</span>
+              <span class="toast-msg">Vision Nocturne & Anti-Brouillard [ ACTIVÉ ]</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Pills Bar -->
+        <div class="client-filters-bar">
+          <div class="filter-pills-group">
+            <button type="button" class="filter-pill active" data-category="all">Tous les Modules (10)</button>
+            <button type="button" class="filter-pill" data-category="visual">Visuel & Éclairage (4)</button>
+            <button type="button" class="filter-pill" data-category="performance">Performance & FPS (1)</button>
+            <button type="button" class="filter-pill" data-category="hud">HUD & PvP (5)</button>
+          </div>
+          <div class="filter-quick-actions">
+            <button type="button" class="btn-subtle" id="btn-client-enable-all">Tout Activer</button>
+            <button type="button" class="btn-subtle" id="btn-client-reset-defaults">Par Défaut</button>
+          </div>
+        </div>
+
+        <!-- Modules Cards Grid -->
+        <div class="client-modules-grid">
+          <!-- Module 1: FullBright -->
+          <div class="client-module-card mc-box" data-category="visual">
+            <div class="module-card-top">
+              <div class="module-icon-wrap visual">💡</div>
+              <div class="module-meta">
+                <div class="module-tag-row">
+                  <span class="module-tag tag-visual">Visuel</span>
+                  <span class="module-tag tag-rec">Populaire</span>
+                </div>
+                <h3 class="module-title">FullBright (Luminosité Gamma)</h3>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="yc-toggle-fullbright" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="module-desc">Luminosité maximale continue via le Gamma du moteur de rendu. Illumine les grottes et les profondeurs sans aucun effet de potion ni particules.</p>
+            <div class="module-card-footer">
+              <span class="footer-info">Type : <strong>Gamma Max (sans potion)</strong></span>
+              <span class="status-indicator active" id="badge-status-fullbright">Actif</span>
+            </div>
+          </div>
+
+          <!-- Module 2: Night Vision -->
+          <div class="client-module-card mc-box" data-category="visual">
+            <div class="module-card-top">
+              <div class="module-icon-wrap visual">🌙</div>
+              <div class="module-meta">
+                <div class="module-tag-row">
+                  <span class="module-tag tag-visual">Visuel</span>
+                  <span class="module-tag tag-util">Confort</span>
+                </div>
+                <h3 class="module-title">Vision Nocturne (Night Vision)</h3>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="yc-toggle-nightvision" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="module-desc">Vision nocturne continue optimisée sans icône parasite dans l'inventaire ni clignotement désagréable. S'arrête instantanément dès la désactivation.</p>
+            <div class="module-card-footer">
+              <span class="footer-info">Raccourci : <strong>[Shift Droit]</strong> ou menu</span>
+              <span class="status-indicator" id="badge-status-nightvision">Désactivé</span>
+            </div>
+          </div>
+
+          <!-- Module 3: NoFog -->
+          <div class="client-module-card mc-box" data-category="visual">
+            <div class="module-card-top">
+              <div class="module-icon-wrap visual">🌫️</div>
+              <div class="module-meta">
+                <div class="module-tag-row">
+                  <span class="module-tag tag-visual">Visuel</span>
+                  <span class="module-tag tag-perf">Toutes Dimensions</span>
+                </div>
+                <h3 class="module-title">Anti-Brouillard (NoFog)</h3>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="yc-toggle-nofog" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="module-desc">Supprime intégralement le brouillard dans toutes les dimensions : Nether épais, Overworld, End, lacs de lave et eau profonde pour une vision limpide à 360°.</p>
+            <div class="module-card-footer">
+              <span class="footer-info">Nether & Lave : <strong>Brouillard annulé</strong></span>
+              <span class="status-indicator active" id="badge-status-nofog">Actif</span>
+            </div>
+          </div>
+
+          <!-- Module 3: FPS Boost -->
+          <div class="client-module-card mc-box" data-category="performance">
+            <div class="module-card-top">
+              <div class="module-icon-wrap perf">⚡</div>
+              <div class="module-meta">
+                <div class="module-tag-row">
+                  <span class="module-tag tag-perf">Performance</span>
+                  <span class="module-tag tag-rec">Recommandé</span>
+                </div>
+                <h3 class="module-title">Optimisation FPS Boost & GC</h3>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="yc-toggle-fpsboost" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="module-desc">Accélération des calculs géométriques, allègement du pipeline de rendu et purge automatique de la mémoire résiduelle (Garbage Collector) évitant les chutes de framerate.</p>
+            <div class="module-card-footer">
+              <span class="footer-info">Moteur : <strong>Faible latence</strong></span>
+              <span class="status-indicator" id="badge-status-fpsboost">Désactivé</span>
+            </div>
+          </div>
+
+          <!-- Module 4: Zoom Rapide -->
+          <div class="client-module-card mc-box" data-category="visual">
+            <div class="module-card-top">
+              <div class="module-icon-wrap visual">🔍</div>
+              <div class="module-meta">
+                <div class="module-tag-row">
+                  <span class="module-tag tag-visual">Visuel</span>
+                  <span class="module-tag tag-util">Confort</span>
+                </div>
+                <h3 class="module-title">Zoom Rapide (Touche C)</h3>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="yc-toggle-zoom" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="module-desc">Zoom optique fluide et progressif de type lunette cinématique sur pression de la touche [C], idéal pour inspecter les bases adverses ou les coordonnées distantes.</p>
+            <div class="module-card-footer">
+              <span class="footer-info">Touche par défaut : <strong>[C]</strong></span>
+              <span class="status-indicator active" id="badge-status-zoom">Actif</span>
+            </div>
+          </div>
+
+          <!-- Module 5: Keystrokes & CPS -->
+          <div class="client-module-card mc-box" data-category="hud">
+            <div class="module-card-top">
+              <div class="module-icon-wrap hud">⌨️</div>
+              <div class="module-meta">
+                <div class="module-tag-row">
+                  <span class="module-tag tag-hud">HUD</span>
+                  <span class="module-tag tag-pvp">PvP</span>
+                </div>
+                <h3 class="module-title">Keystrokes & Compteur CPS</h3>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="yc-toggle-keystrokes" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="module-desc">Affiche en direct un widget compact en surimpression montrant vos frappes de touches (ZQSD/WASD) et votre fréquence de clics (CPS gauche et droite).</p>
+            <div class="module-card-footer">
+              <span class="footer-info">Position : <strong>Bas Droite</strong></span>
+              <span class="status-indicator active" id="badge-status-keystrokes">Actif</span>
+            </div>
+          </div>
+
+          <!-- Module 6: Armor Status -->
+          <div class="client-module-card mc-box" data-category="hud">
+            <div class="module-card-top">
+              <div class="module-icon-wrap hud">🛡️</div>
+              <div class="module-meta">
+                <div class="module-tag-row">
+                  <span class="module-tag tag-hud">HUD</span>
+                  <span class="module-tag tag-pvp">Survie & PvP</span>
+                </div>
+                <h3 class="module-title">Statut d'Armure & Équipement</h3>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="yc-toggle-armorhud" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="module-desc">Affiche la durabilité résiduelle chiffrée et une jauge d'usure en temps réel de votre casque, plastron, pantalon et bottes sans devoir ouvrir l'inventaire.</p>
+            <div class="module-card-footer">
+              <span class="footer-info">Position : <strong>Bas Gauche</strong></span>
+              <span class="status-indicator active" id="badge-status-armorhud">Actif</span>
+            </div>
+          </div>
+
+          <!-- Module 7: Speed -->
+          <div class="client-module-card mc-box" data-category="hud">
+            <div class="module-card-top">
+              <div class="module-icon-wrap hud">💨</div>
+              <div class="module-meta">
+                <div class="module-tag-row">
+                  <span class="module-tag tag-hud">HUD</span>
+                  <span class="module-tag tag-pvp">PvP</span>
+                </div>
+                <h3 class="module-title">Vitesse (m/s)</h3>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="yc-toggle-speed" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="module-desc">Affiche votre vitesse de déplacement en mètres par seconde — suit aussi votre véhicule (bateau, wagonnet, cheval...) quand vous êtes dedans.</p>
+            <div class="module-card-footer">
+              <span class="footer-info">Position : <strong>Haut Gauche</strong></span>
+              <span class="status-indicator active" id="badge-status-speed">Actif</span>
+            </div>
+          </div>
+
+          <!-- Module 8: FPS -->
+          <div class="client-module-card mc-box" data-category="hud">
+            <div class="module-card-top">
+              <div class="module-icon-wrap hud">🎥</div>
+              <div class="module-meta">
+                <div class="module-tag-row">
+                  <span class="module-tag tag-hud">HUD</span>
+                  <span class="module-tag tag-util">Info</span>
+                </div>
+                <h3 class="module-title">FPS (Images/seconde)</h3>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="yc-toggle-fps" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="module-desc">Affiche en temps réel le nombre d'images par seconde rendues par votre jeu.</p>
+            <div class="module-card-footer">
+              <span class="footer-info">Position : <strong>Haut Gauche</strong></span>
+              <span class="status-indicator active" id="badge-status-fps">Actif</span>
+            </div>
+          </div>
+
+          <!-- Module 9: Ping -->
+          <div class="client-module-card mc-box" data-category="hud">
+            <div class="module-card-top">
+              <div class="module-icon-wrap hud">📶</div>
+              <div class="module-meta">
+                <div class="module-tag-row">
+                  <span class="module-tag tag-hud">HUD</span>
+                  <span class="module-tag tag-pvp">Réseau</span>
+                </div>
+                <h3 class="module-title">Ping (Latence)</h3>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="yc-toggle-ping" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="module-desc">Affiche votre latence vers le serveur en millisecondes, mise à jour en direct.</p>
+            <div class="module-card-footer">
+              <span class="footer-info">Position : <strong>Haut Gauche</strong></span>
+              <span class="status-indicator active" id="badge-status-ping">Actif</span>
+            </div>
           </div>
         </div>
       </section>
@@ -509,7 +913,7 @@
                 <h3>Thème & Personnalisation</h3>
                 <span class="card-header-sub">Sélectionnez un style visuel ou créez des thèmes personnalisés générés par IA</span>
               </div>
-              <div class="theme-active-pill" id="current-theme-pill">Émeraude</div>
+              <div class="theme-active-pill" id="current-theme-pill">Classic</div>
             </div>
 
             <!-- Custom Theme Quick Actions Bar -->
@@ -541,16 +945,7 @@
                 </div>
                 <div class="setting-control">
                   <select class="mc-select" id="settings-theme">
-                    <option value="emerald" selected>Émeraude (Défaut)</option>
-                    <option value="diamond">Diamant</option>
-                    <option value="nether">Nether</option>
-                    <option value="ender">Ender</option>
-                    <option value="obsidian">Obsidienne</option>
-                    <option value="copper">Cuivre (1.21)</option>
-                    <option value="sculk">Sculk (Deep Dark)</option>
-                    <option value="amethyst">Améthyste</option>
-                    <option value="cyber">Néo-Redstone (Cyber Tech)</option>
-                    <option value="netherite">Netherite Royale (Forgée)</option>
+                    <option value="classic" selected>Classic (Défaut)</option>
                   </select>
                 </div>
               </div>
@@ -582,6 +977,23 @@
 
             <div class="setting-row">
               <div class="setting-info">
+                <label class="setting-label">Disposition du Clavier (Minecraft)</label>
+                <span class="setting-desc">Touches par défaut dans Minecraft : ZQSD (Français) ou WASD (International)</span>
+              </div>
+              <div class="setting-control" style="display: flex; gap: 8px; align-items: center;">
+                <select class="mc-select" id="settings-keyboard-layout" style="min-width: 190px;">
+                  <option value="azerty" selected>AZERTY (ZQSD - Français)</option>
+                  <option value="qwerty">QWERTY (WASD - International)</option>
+                </select>
+                <button type="button" class="btn-secondary" id="btn-apply-keyboard-layout" style="height: 36px; padding: 0 14px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;" title="Appliquer immédiatement à options.txt">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Appliquer</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
                 <label class="setting-label">Minimiser au lancement du jeu</label>
                 <span class="setting-desc">Réduit le launcher dans la barre des tâches quand Minecraft démarre</span>
               </div>
@@ -590,6 +1002,19 @@
                   <input type="checkbox" id="settings-minimize-on-launch" />
                   <span class="toggle-slider"></span>
                 </label>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Assistant de configuration initiale</label>
+                <span class="setting-desc">Relancer l'assistant de premier démarrage pour réajuster vos préférences</span>
+              </div>
+              <div class="setting-control">
+                <button type="button" class="btn-secondary" id="btn-relaunch-onboarding" style="height: 36px; padding: 0 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  <span>Relancer l'assistant</span>
+                </button>
               </div>
             </div>
 
@@ -604,6 +1029,57 @@
                   <span class="toggle-slider"></span>
                 </label>
               </div>
+            </div>
+          </div>
+
+          <!-- Beta Tester Card : canal stable / beta / alpha + retour stable -->
+          <div class="settings-card mc-box" id="beta-tester-card">
+            <div class="card-header">
+              <svg class="card-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <div class="card-header-title-group">
+                <h3>Beta Tester — Canal de mise à jour</h3>
+                <span class="card-header-sub">Recevez les versions "-beta" / "-alpha" en avant-première, ou revenez à la version stable officielle</span>
+              </div>
+              <div class="theme-active-pill" id="beta-channel-badge">Stable</div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Activer le canal Beta / Alpha</label>
+                <span class="setting-desc">Si activé, le launcher détecte les versions se terminant par "-beta" ou "-alpha" et propose de les installer. Sinon, seule la version stable officielle est proposée.</span>
+              </div>
+              <div class="setting-control">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settings-beta-tester" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">État des versions</label>
+                <span class="setting-desc" id="beta-versions-desc">Version actuelle : ...</span>
+              </div>
+              <div class="setting-control" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+                <button type="button" class="btn-mc-action" id="btn-check-beta" title="Vérifier les versions beta / alpha disponibles">
+                  <span>Vérifier les bêtas</span>
+                </button>
+                <button type="button" class="btn-mc-primary hidden" id="btn-install-beta" title="Installer la version beta / alpha proposée">
+                  <span>Installer la bêta</span>
+                </button>
+                <button type="button" class="btn-secondary hidden" id="btn-return-stable" title="Quitter la beta et réinstaller la version stable officielle">
+                  <span>Retour version stable</span>
+                </button>
+              </div>
+            </div>
+            <div class="update-status-banner" id="beta-status" style="margin-top: 10px;">
+              <span class="status-icon" id="beta-status-icon">✓</span>
+              <span id="beta-status-text">Canal stable : vous recevez uniquement les versions officielles.</span>
             </div>
           </div>
 
@@ -639,7 +1115,7 @@
               <img class="about-logo" src="../assets/logo.png" alt="Yapapouaiye Logo" />
               <div class="about-info">
                 <h4 class="about-name">Yapapouaiye Launcher</h4>
-                <span class="about-version" id="app-version">v1.5.9-1</span>
+                <span class="about-version" id="app-version">v1.6.1-4-beta.1</span>
                 <span class="about-mc">Minecraft 1.21.1 • NeoForge</span>
               </div>
             </div>
@@ -672,7 +1148,7 @@
       <div class="footer-center-action">
         <div class="version-selector-chip">
           <span class="chip-dot"></span>
-          <span class="version-title">NeoForge 1.21.1</span>
+          <span class="version-title" id="launch-version-title">Chargement...</span>
         </div>
 
         <div class="play-button-box">
@@ -732,6 +1208,67 @@
     </div>
   </div>
 
+  <!-- Modal: Verrouillage lancement (mot de passe + Retenir ce PC) -->
+  <div class="custom-modal-overlay hidden" id="modal-launch-lock" style="z-index: 2200;">
+    <div class="confirm-modal-box mc-box launch-lock-box" style="max-width: 430px; width: 92%; padding: 24px; text-align: center; display: flex; flex-direction: column; gap: 14px; animation: modalPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);">
+      <div class="launch-lock-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      </div>
+      <h3 id="launch-lock-title" style="font-size: 17px; font-weight: 800; color: #ffffff; margin: 0;">Lancement protégé</h3>
+      <p id="launch-lock-subtitle" style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5;">Entrez le mot de passe pour lancer le jeu.</p>
+      <div class="launch-lock-newpc hidden" id="launch-lock-newpc">
+        <span class="newpc-dot"></span>
+        <span>Nouveau PC / carte mère détecté : l'autorisation précédente ne s'applique plus. Validez le mot de passe puis recochez « Retenir ce PC » pour enregistrer ce PC.</span>
+      </div>
+      <input type="password" class="mc-input-text launch-lock-input" id="launch-lock-password" placeholder="Mot de passe" autocomplete="current-password" />
+      <p class="launch-lock-error hidden" id="launch-lock-error"></p>
+      <label class="launch-lock-remember" for="launch-lock-remember">
+        <input type="checkbox" id="launch-lock-remember" checked />
+        <span class="remember-box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+        <span class="remember-text">
+          <strong>Retenir ce PC</strong>
+          <small>Lie l'autorisation à la carte mère — plus de mot de passe sur ce PC uniquement.</small>
+        </span>
+      </label>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 2px;">
+        <button type="button" class="btn-secondary" id="btn-launch-lock-cancel" style="flex: 1; height: 38px; font-weight: 700;">Annuler</button>
+        <button type="button" class="btn-mc-primary" id="btn-launch-lock-submit" style="flex: 1; height: 38px; font-weight: 800;">Déverrouiller &amp; Jouer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Maintenance distante (espace admin du site) -->
+  <div class="custom-modal-overlay hidden" id="modal-maintenance" style="z-index: 2200;">
+    <div class="confirm-modal-box mc-box maintenance-box" style="max-width: 430px; width: 92%; padding: 24px; text-align: center; display: flex; flex-direction: column; gap: 14px; animation: modalPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);">
+      <div class="maintenance-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </div>
+      <h3 style="font-size: 17px; font-weight: 800; color: #ffffff; margin: 0;">Launcher en maintenance</h3>
+      <p id="maintenance-modal-message" style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5;">Le lancement du jeu est temporairement désactivé.</p>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 2px;">
+        <button type="button" class="btn-secondary" id="btn-maintenance-close" style="flex: 1; height: 38px; font-weight: 700;">Fermer</button>
+        <button type="button" class="btn-mc-primary" id="btn-maintenance-settings" style="flex: 1; height: 38px; font-weight: 800;">Ouvrir les Paramètres</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Codes d'accès serveur (définis dans l'espace admin) -->
+  <div class="custom-modal-overlay hidden" id="modal-server-codes" style="z-index: 2200;">
+    <div class="confirm-modal-box mc-box server-codes-box" style="max-width: 430px; width: 92%; padding: 24px; text-align: center; display: flex; flex-direction: column; gap: 14px; animation: modalPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);">
+      <div class="server-codes-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+      </div>
+      <h3 id="server-codes-title" style="font-size: 17px; font-weight: 800; color: #ffffff; margin: 0;">Codes d'accès</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5;">Tapez les codes <strong>dans l'ordre</strong> pour lancer le jeu sur ce serveur.</p>
+      <div id="server-codes-inputs" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      <p class="server-codes-error hidden" id="server-codes-error"></p>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 2px;">
+        <button type="button" class="btn-secondary" id="btn-server-codes-cancel" style="flex: 1; height: 38px; font-weight: 700;">Annuler</button>
+        <button type="button" class="btn-mc-primary" id="btn-server-codes-submit" style="flex: 1; height: 38px; font-weight: 800;">Valider &amp; Jouer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- In-App Confirmation Modal (Instant 0ms, Non-blocking) -->
   <div class="custom-modal-overlay hidden" id="modal-confirm-dialog" style="z-index: 2000;">
     <div class="confirm-modal-box mc-box" style="max-width: 420px; width: 90%; padding: 22px; text-align: center; display: flex; flex-direction: column; gap: 14px; animation: modalPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);">
@@ -747,6 +1284,238 @@
     </div>
   </div>
 
+  <!-- Modal: Proposition Beta / Alpha + Retour stable (z-index 2100) -->
+  <div class="custom-modal-overlay hidden" id="modal-beta-update" style="z-index: 2100;">
+    <div class="confirm-modal-box mc-box" style="max-width: 460px; width: 92%; padding: 22px; text-align: center; display: flex; flex-direction: column; gap: 14px; animation: modalPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);">
+      <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: 0 auto; border-radius: 50%; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </div>
+      <h3 id="beta-modal-title" style="font-size: 16px; font-weight: 800; color: #ffffff; margin: 0;">Version bêta disponible</h3>
+      <p id="beta-modal-message" style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5;">Une version "-beta" a été détectée.</p>
+      <div id="beta-modal-notes" style="font-size: 12px; color: var(--text-main); background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px 12px; max-height: 140px; overflow-y: auto; text-align: left; display: none;"></div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 6px;">
+        <button type="button" class="btn-secondary" id="btn-beta-modal-later" style="flex: 1; height: 36px; font-weight: 700;">Plus tard</button>
+        <button type="button" class="btn-mc-primary" id="btn-beta-modal-install" style="flex: 1; height: 36px; font-weight: 800;">Installer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: First Launch Personalization Wizard (Assistant de premier démarrage) -->
+  <div class="custom-modal-overlay hidden" id="modal-onboarding" style="z-index: 2500;">
+    <div class="onboarding-dialog mc-box" role="dialog" aria-modal="true" aria-label="Configuration initiale du launcher" tabindex="-1">
+      <!-- Wizard Header with Stepper -->
+      <div class="onboarding-header">
+        <div class="onboarding-brand">
+          <img src="../assets/logo.png" alt="Logo" class="onboarding-logo" />
+          <div class="onboarding-brand-text">
+            <h2>Bienvenue sur Yapapouaiye !</h2>
+            <p>Assistant de personnalisation initiale</p>
+          </div>
+        </div>
+        
+        <div class="onboarding-stepper">
+          <div class="onboarding-step-indicator active" data-step="0">
+            <div class="step-num">1</div>
+            <span>Invitation</span>
+          </div>
+          <div class="step-divider"></div>
+          <div class="onboarding-step-indicator" data-step="1">
+            <div class="step-num">2</div>
+            <span>Profil</span>
+          </div>
+          <div class="step-divider"></div>
+          <div class="onboarding-step-indicator" data-step="2">
+            <div class="step-num">3</div>
+            <span>RAM</span>
+          </div>
+          <div class="step-divider"></div>
+          <div class="onboarding-step-indicator" data-step="3">
+            <div class="step-num">4</div>
+            <span>Serveur</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wizard Body with Step Panes -->
+      <div class="onboarding-body">
+        <div class="onboarding-step-pane active" id="onboarding-pane-0">
+          <div class="step-header">
+            <h3>Votre code d’invitation</h3>
+            <p>Un code attribué par l’administrateur est obligatoire pour accéder au launcher.</p>
+          </div>
+          <label class="form-label" for="onboarding-invitation-code">Code d’invitation</label>
+          <input type="text" class="mc-input-text" id="onboarding-invitation-code" placeholder="Entrez le code reçu" maxlength="128" autocomplete="off" spellcheck="false" required aria-describedby="onboarding-invitation-status" />
+          <p class="input-hint" id="onboarding-invitation-status" role="status" aria-live="polite">Saisissez votre code, puis cliquez sur Valider le code.</p>
+        </div>
+        <!-- Step 1: Type de compte (Microsoft ou Crack) -->
+        <div class="onboarding-step-pane" id="onboarding-pane-1">
+          <div class="step-header">
+            <h3>Choisissez votre type de compte</h3>
+            <p>Compte Microsoft officiel ou pseudo libre (crack / hors-ligne).</p>
+          </div>
+          <div class="onboarding-servers-grid" id="onboarding-account-types">
+            <div class="onboarding-server-card active" data-account-type="offline">
+              <div class="server-card-radio"></div>
+              <div class="server-card-content">
+                <div class="server-badge-flex">
+                  <span class="server-chip fabric">Sans compte</span>
+                </div>
+                <h4 class="server-name-title">Compte Crack</h4>
+                <p class="server-desc-text">Pseudo libre, prêt immédiatement, sans connexion Microsoft.</p>
+              </div>
+            </div>
+
+            <div class="onboarding-server-card" data-account-type="microsoft">
+              <div class="server-card-radio"></div>
+              <div class="server-card-content">
+                <div class="server-badge-flex">
+                  <span class="server-chip neoforge">Officiel</span>
+                </div>
+                <h4 class="server-name-title">Compte Microsoft</h4>
+                <p class="server-desc-text">Compte Minecraft officiel avec skin et serveurs en ligne.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloc pseudo (crack / hors-ligne) -->
+          <div class="onboarding-profile-card" id="onboarding-offline-block">
+            <div class="onboarding-avatar-preview">
+              <img id="onboarding-avatar-img" src="https://mc-heads.net/avatar/Steve/96" alt="Avatar" />
+            </div>
+            <div class="onboarding-profile-inputs">
+              <label class="form-label" for="onboarding-username-input">Votre Pseudo Minecraft :</label>
+              <div class="input-with-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <input type="text" class="mc-input-text" id="onboarding-username-input" placeholder="Ex: Alex, Steve, VotrePseudo" maxlength="16" />
+              </div>
+              <span class="input-hint">Compte local prêt immédiatement.</span>
+            </div>
+          </div>
+
+          <!-- Bloc connexion Microsoft -->
+          <div class="onboarding-profile-card hidden" id="onboarding-microsoft-block">
+            <div class="onboarding-avatar-preview">
+              <svg width="48" height="48" viewBox="0 0 16 16"><rect x="0" y="0" width="7.5" height="7.5" fill="#f25022"/><rect x="8.5" y="0" width="7.5" height="7.5" fill="#7fba00"/><rect x="0" y="8.5" width="7.5" height="7.5" fill="#00a4ef"/><rect x="8.5" y="8.5" width="7.5" height="7.5" fill="#ffb900"/></svg>
+            </div>
+            <div class="onboarding-profile-inputs">
+              <label class="form-label">Connexion Microsoft :</label>
+              <button type="button" class="btn-mc-primary" id="btn-onboarding-microsoft" style="width: 100%;">
+                <span>Se connecter avec Microsoft</span>
+              </button>
+              <span class="input-hint" id="onboarding-ms-status">Non connecté — cliquez pour vous authentifier.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: RAM & Performance -->
+        <div class="onboarding-step-pane" id="onboarding-pane-2">
+          <div class="step-header">
+            <h3>Allocation Mémoire (RAM)</h3>
+            <p>Ajustez la mémoire allouée au jeu selon la puissance de votre PC.</p>
+          </div>
+          <div class="onboarding-ram-system-info">
+            <span class="system-ram-tag" id="onboarding-system-ram-tag">RAM système détectée : 16 Go</span>
+          </div>
+          <div class="onboarding-ram-cards-grid">
+            <div class="onboarding-ram-card" data-ram="4">
+              <div class="ram-card-top">
+                <span class="ram-amount">4 Go</span>
+                <span class="ram-badge">Standard</span>
+              </div>
+              <p class="ram-card-desc">Idéal pour PC légers ou configurations 8 Go RAM.</p>
+            </div>
+            <div class="onboarding-ram-card active" data-ram="6">
+              <div class="ram-card-top">
+                <span class="ram-amount">6 Go</span>
+                <span class="ram-badge recommend">Recommandé</span>
+              </div>
+              <p class="ram-card-desc">Fluide et optimal pour les modpacks 1.21.1 NeoForge.</p>
+            </div>
+            <div class="onboarding-ram-card" data-ram="8">
+              <div class="ram-card-top">
+                <span class="ram-amount">8 Go</span>
+                <span class="ram-badge">Performance</span>
+              </div>
+              <p class="ram-card-desc">Pour un maximum de FPS et distance d'affichage élevée.</p>
+            </div>
+          </div>
+          <div class="onboarding-slider-section">
+            <div class="slider-header-flex">
+              <label>Réglage fin personnalisé :</label>
+              <span class="onboarding-slider-val" id="onboarding-ram-val-display">6 Go</span>
+            </div>
+            <input type="range" class="mc-slider" id="onboarding-ram-slider" min="2" max="16" value="6" />
+          </div>
+        </div>
+
+        <!-- Step 3: Choix du Serveur -->
+        <div class="onboarding-step-pane" id="onboarding-pane-3">
+          <div class="step-header">
+            <h3>Choisissez votre Serveur par Défaut</h3>
+            <p>Vous pourrez changer de serveur à tout moment depuis la page Jouer.</p>
+          </div>
+          <div class="onboarding-servers-grid" id="onboarding-server-grid">
+            <div class="onboarding-server-card active" data-server="adoserv2">
+              <div class="server-card-radio"></div>
+              <div class="server-card-content">
+                <div class="server-badge-flex">
+                  <span class="server-chip neoforge">NeoForge 1.21.1</span>
+                  <span class="server-chip-gizmo">GIZMONODES</span>
+                </div>
+                <h4 class="server-name-title">AdoServ II</h4>
+                <p class="server-desc-text">Nouveau serveur principal avec pack de mods complet et Gizmo API.</p>
+              </div>
+            </div>
+
+            <div class="onboarding-server-card" data-server="adoserv1">
+              <div class="server-card-radio"></div>
+              <div class="server-card-content">
+                <div class="server-badge-flex">
+                  <span class="server-chip fabric">Fabric 1.21.1</span>
+                  <span class="server-chip-falix">FalixNodes</span>
+                </div>
+                <h4 class="server-name-title">YapapouaiyeSMP</h4>
+                <p class="server-desc-text">Serveur historique survie avec mods légers et proxy Falix.</p>
+              </div>
+            </div>
+
+            <div class="onboarding-server-card" data-server="adoserv67">
+              <div class="server-card-radio"></div>
+              <div class="server-card-content">
+                <div class="server-badge-flex">
+                  <span class="server-chip neoforge">NeoForge 1.21.1</span>
+                </div>
+                <h4 class="server-name-title">AdoServ67</h4>
+                <p class="server-desc-text">Serveur AdoServ67 alternatif avec synchronisation B2.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wizard Footer with Controls -->
+      <div class="onboarding-footer">
+        <button type="button" class="btn-secondary" id="btn-onboarding-prev" style="visibility: hidden;">
+          ← Précédent
+        </button>
+        <div class="footer-dots-indicator" id="onboarding-dots">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+        <div class="onboarding-footer-actions">
+          <button type="button" class="btn-mc-primary" id="btn-onboarding-next">
+            <span>Continuer →</span>
+          </button>
+          <button type="button" class="btn-mc-primary hidden" id="btn-onboarding-finish">
+            <span>Terminer & Jouer 🎮</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Custom Theme Creator & AI Importer -->
   <div class="custom-modal-overlay hidden" id="modal-custom-theme">
     <div class="custom-modal-dialog mc-box">
@@ -754,8 +1523,8 @@
         <div class="modal-title-group">
           <svg class="modal-icon-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--mc-green-primary)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
           <div>
-            <h3>Créateur de Thème Personnalisé (IA)</h3>
-            <span class="modal-subtitle">Générez un thème avec n'importe quelle IA et importez-le en 1 clic</span>
+            <h3>Atelier de thèmes</h3>
+            <span class="modal-subtitle">Personnalisez votre launcher, du premier pixel au son de lancement.</span>
           </div>
         </div>
         <button class="btn-close-sm" id="btn-close-custom-theme-modal" title="Fermer">✕</button>
@@ -832,6 +1601,7 @@
 
         <!-- TAB 2: Visual / Manual Editor -->
         <div class="modal-tab-pane" id="tab-visual-editor">
+          <div class="editor-intro"><div><span class="editor-eyebrow">PERSONNALISATION</span><h4>Un launcher à votre image</h4><p>Ajustez les détails et testez le résultat dans l’aperçu.</p></div><span class="editor-live-badge">Aperçu interactif</span></div>
           <!-- Quick Preset Inspirations & Existing Theme Selector Bar -->
           <div class="editor-preset-bar">
             <div class="preset-bar-select-group">
@@ -846,36 +1616,18 @@
             <div class="preset-bar-chips-group">
               <span class="preset-bar-label">Inspirations :</span>
               <div class="preset-chips-container" id="preset-chips-group">
-                <button type="button" class="preset-chip" data-preset-id="dragon">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d946ef" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5" fill="#d946ef"/></svg>
-                  <span>Dragon End</span>
-                </button>
-                <button type="button" class="preset-chip" data-preset-id="glacier">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9" fill="#38bdf8"/></svg>
-                  <span>Glacier Arctique</span>
-                </button>
-                <button type="button" class="preset-chip" data-preset-id="forge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" fill="#f97316"/></svg>
-                  <span>Forge Lave</span>
-                </button>
-                <button type="button" class="preset-chip" data-preset-id="pixel">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#22c55e"/></svg>
-                  <span>8-Bit Arcade</span>
-                </button>
-                <button type="button" class="preset-chip" data-preset-id="amethyst">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#c084fc"/></svg>
-                  <span>Améthyste</span>
-                </button>
-                <button type="button" class="preset-chip" data-preset-id="cyberpunk">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#ff0055"/></svg>
-                  <span>Cyberpunk</span>
-                </button>
-                <button type="button" class="preset-chip" data-preset-id="emerald">
+                <button type="button" class="preset-chip active" data-preset-id="classic">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38cc56" stroke-width="2"><path d="M6 3h12l4 7-10 11L2 10l4-7z" fill="#38cc56"/></svg>
-                  <span>Émeraude Pure</span>
+                  <span>Classic</span>
                 </button>
               </div>
             </div>
+          </div>
+
+          <!-- Notice édition d'un thème par défaut -->
+          <div class="editor-builtin-notice hidden" id="editor-builtin-notice">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <span>Vous modifiez le thème par défaut <strong id="editor-builtin-notice-name">—</strong>. « Mettre à jour » écrase ce thème. Pour garder l'original, changez le <strong>Nom du thème</strong> puis cliquez « Enregistrer sous… ».</span>
           </div>
 
           <div class="editor-grid">
@@ -885,21 +1637,21 @@
               <div class="editor-card">
                 <div class="editor-section-title">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a7 7 0 0 0 7 7c0 2-2 3-2 3"></path></svg>
-                  <span>1. Design & Typographie</span>
+                  <span>Identité & typographie</span>
                 </div>
                 <div class="form-row-group">
                   <div class="form-row">
-                    <label class="form-label">Nom du Thème</label>
+                    <label class="form-label" for="editor-theme-name">Nom du thème</label>
                     <input type="text" class="mc-input-text" id="editor-theme-name" placeholder="Ex: Souffle Glacial" />
                   </div>
                   <div class="form-row">
-                    <label class="form-label">Tag / Style</label>
+                    <label class="form-label" for="editor-theme-tag">Étiquette</label>
                     <input type="text" class="mc-input-text" id="editor-theme-tag" placeholder="Ex: Glacial" />
                   </div>
                 </div>
                 <div class="form-row-group">
                   <div class="form-row">
-                    <label class="form-label">Icône Favicon</label>
+                    <label class="form-label" for="editor-theme-icon">Icône du thème</label>
                     <select class="mc-select" id="editor-theme-icon">
                       <option value="gem" selected>Gemme / Émeraude</option>
                       <option value="diamond">Diamant</option>
@@ -915,7 +1667,7 @@
                     </select>
                   </div>
                   <div class="form-row">
-                    <label class="form-label">Police de Texte</label>
+                    <label class="form-label" for="editor-font-family">Police de texte</label>
                     <select class="mc-select" id="editor-font-family">
                       <option value="Inter" selected>Inter (Standard)</option>
                       <option value="Orbitron">Orbitron (Sci-Fi / Néon)</option>
@@ -928,7 +1680,7 @@
                   </div>
                 </div>
                 <div class="form-row">
-                  <label class="form-label">Style des Boutons & Biseaux</label>
+                  <label class="form-label" for="editor-theme-style-mode">Style des boutons</label>
                   <select class="mc-select" id="editor-theme-style-mode">
                     <option value="classic">Classic Minecraft (Carré biseauté)</option>
                     <option value="cyber" selected>Cyber Tech (Biseauté polygon sci-fi néon)</option>
@@ -937,18 +1689,30 @@
                     <option value="glass">Glassmorphism (Translucide givré)</option>
                   </select>
                 </div>
+                <div class="form-row">
+                  <label class="form-label" for="editor-theme-layout">Disposition de la navigation</label>
+                  <select class="mc-select" id="editor-theme-layout">
+                    <option value="top" selected>En haut (classique)</option>
+                    <option value="right">À droite (barre verticale)</option>
+                    <option value="bottom">En bas (dock horizontal)</option>
+                  </select>
+                </div>
               </div>
 
               <!-- Card 2: Wallpaper & Background -->
               <div class="editor-card">
                 <div class="editor-section-title">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                  <span>2. Fond d'Écran & Ambiance</span>
+                  <span>Arrière-plan & ambiance</span>
                 </div>
                 <div class="form-row">
-                  <label class="form-label">Image de Fond (Wallpaper)</label>
-                  <div class="path-group">
+                  <label class="form-label" for="editor-bg-image">Image de fond</label>
+                  <div class="path-group editor-background-source">
                     <input type="text" class="mc-input-text" id="editor-bg-image" placeholder="URL web ou fichier local..." />
+                    <div class="background-file-summary hidden" id="editor-bg-summary" role="status">
+                      <img id="editor-bg-thumbnail" alt="" />
+                      <span><strong>Image importée</strong><small>Enregistrée avec votre thème</small></span>
+                    </div>
                     <button type="button" class="btn-mc-action" id="btn-browse-bg-image" title="Parcourir une image locale">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                       <span>Parcourir</span>
@@ -958,7 +1722,7 @@
                 </div>
                 <div class="form-row-group">
                   <div class="form-row">
-                    <label class="form-label">Flou du Fond</label>
+                    <label class="form-label" for="editor-bg-blur">Flou du fond</label>
                     <select class="mc-select" id="editor-bg-blur">
                       <option value="0px">Net (0px)</option>
                       <option value="4px">Léger (4px)</option>
@@ -967,7 +1731,7 @@
                     </select>
                   </div>
                   <div class="form-row">
-                    <label class="form-label">Luminosité</label>
+                    <label class="form-label" for="editor-bg-brightness">Luminosité</label>
                     <select class="mc-select" id="editor-bg-brightness">
                       <option value="0.25">Sombre (25%)</option>
                       <option value="0.45" selected>Normal (45%)</option>
@@ -982,15 +1746,15 @@
               <div class="editor-card">
                 <div class="editor-section-title">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                  <span>3. Sons & Bouton Jouer</span>
+                  <span>Bouton Jouer & sons</span>
                 </div>
                 <div class="form-row-group">
                   <div class="form-row">
-                    <label class="form-label">Texte Bouton Jouer</label>
+                    <label class="form-label" for="editor-play-text">Texte du bouton Jouer</label>
                     <input type="text" class="mc-input-text" id="editor-play-text" value="JOUER" maxlength="15" />
                   </div>
                   <div class="form-row">
-                    <label class="form-label">Icône du Bouton</label>
+                    <label class="form-label" for="editor-play-icon">Icône du bouton</label>
                     <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
                       <select class="mc-select" id="editor-play-icon" style="flex: 1;">
                         <option value="play" selected>▶ Triangle Play</option>
@@ -1014,55 +1778,56 @@
                         <option value="potion">🧪 Potion Magique</option>
                         <option value="custom">✨ Émoji / Texte personnalisé...</option>
                       </select>
-                      <input type="text" class="mc-input-text hidden" id="editor-play-custom-icon" placeholder="Émoji (ex: 🐉, 🏆)" maxlength="10" style="width: 110px;" />
+                      <input type="text" class="mc-input-text hidden" id="editor-play-custom-icon" aria-label="Émoji du bouton Jouer" placeholder="Émoji (ex: 🐉, 🏆)" maxlength="10" style="width: 110px;" />
                     </div>
                   </div>
                 </div>
-                <div class="form-row">
-                  <label class="form-label">Son des Clics d'Interface</label>
+                <div class="form-row audio-setting">
+                  <label class="form-label" for="editor-sound-profile">Son des clics</label>
                   <div class="audio-control-row">
                     <select class="mc-select" id="editor-sound-profile">
-                      <option value="minecraft_stone">Minecraft (Clic Pierre classique)</option>
-                      <option value="minecraft_wood">Minecraft (Clic Bois doux)</option>
-                      <option value="cyber_beep">Cyber Beep (Sci-Fi mecha)</option>
-                      <option value="laser_click" selected>Laser Click (Néon futuriste)</option>
-                      <option value="magic_chime">Magic Chime (Améthyste / Cristal)</option>
-                      <option value="anvil_heavy">Enclume Lourde (Forge métallique)</option>
-                      <option value="bubble_pop">Bubble Pop (Sculk / Eau)</option>
-                      <option value="retro_8bit">8-Bit Retro (Arcade blip)</option>
-                      <option value="custom">Son personnalisé (Audio importé)</option>
+                      <option value="minecraft_stone">Pierre · impact sec</option>
+                      <option value="minecraft_wood">Bois · percussion douce</option>
+                      <option value="cyber_beep">Interface · bip électronique</option>
+                      <option value="laser_click">Laser · impulsion</option>
+                      <option value="magic_chime">Verre · tintement</option>
+                      <option value="anvil_heavy">Métal · clic mécanique</option>
+                      <option value="bubble_pop">Bulle · goutte d’eau</option>
+                      <option value="retro_8bit">Arcade · trois notes</option>
+                      <option value="custom">Mon fichier audio</option>
+                      <option value="none">Aucun son</option>
                     </select>
-                    <button type="button" class="btn-mc-action btn-audio-test" id="btn-test-click-sound" title="Tester le son de clic">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                      <span>Tester</span>
-                    </button>
+                    <button type="button" class="btn-mc-action btn-audio-test" id="btn-test-click-sound" title="Écouter le son des clics">▶ Écouter</button>
+                  </div>
+                  <div class="audio-file-row">
+                    <span class="audio-file-label" id="label-custom-audio">MP3, WAV ou OGG · 5 Mo max.</span>
+                    <button type="button" class="btn-secondary" id="btn-browse-custom-audio" title="Importer un fichier pour le son des clics">Importer</button>
+                    <button type="button" class="btn-icon-clear hidden" id="btn-clear-custom-audio" title="Retirer le fichier du son des clics">✕</button>
                   </div>
                 </div>
-                <div class="form-row">
-                  <label class="form-label">Son au Lancement ("JOUER")</label>
+                <div class="form-row audio-setting">
+                  <label class="form-label" for="editor-launch-profile">Son de lancement</label>
                   <div class="audio-control-row">
                     <select class="mc-select" id="editor-launch-profile">
-                      <option value="minecraft_levelup">Minecraft (Level Up / Exp)</option>
-                      <option value="portal_warp">Portail Nether / Warp</option>
-                      <option value="cyber_charge" selected>Chargeur Laser Cyber</option>
-                      <option value="forge_impact">Impact de Forge Titane</option>
-                      <option value="dragon_roar">Rugissement du Dragon</option>
-                      <option value="custom">Son personnalisé (Audio importé)</option>
+                      <option value="minecraft_levelup">Succès · carillon</option>
+                      <option value="portal_warp">Portail · saut spatial</option>
+                      <option value="cyber_charge">Énergie · montée en puissance</option>
+                      <option value="forge_impact">Forge · impact métallique</option>
+                      <option value="dragon_roar">Cloche · résonance grave</option>
+                      <option value="custom">Mon fichier audio</option>
+                      <option value="none">Aucun son</option>
                     </select>
-                    <button type="button" class="btn-mc-action btn-audio-test" id="btn-test-launch-sound" title="Tester le son de lancement">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                      <span>Tester</span>
-                    </button>
+                    <button type="button" class="btn-mc-action btn-audio-test" id="btn-test-launch-sound" title="Écouter le son de lancement">▶ Écouter</button>
+                  </div>
+                  <div class="audio-file-row">
+                    <span class="audio-file-label" id="label-custom-audio-launch">MP3, WAV ou OGG · 5 Mo max.</span>
+                    <button type="button" class="btn-secondary" id="btn-browse-custom-audio-launch" title="Importer un fichier pour le son de lancement">Importer</button>
+                    <button type="button" class="btn-icon-clear hidden" id="btn-clear-custom-audio-launch" title="Retirer le fichier du son de lancement">✕</button>
                   </div>
                 </div>
-                <div class="form-row">
-                  <div class="audio-custom-wrapper">
-                    <button type="button" class="btn-secondary btn-full-w" id="btn-browse-custom-audio">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-                      <span id="label-custom-audio">Importer un fichier Audio (.mp3 / .wav / .ogg)</span>
-                    </button>
-                    <button type="button" class="btn-icon-clear hidden" id="btn-clear-custom-audio" title="Supprimer l'audio importé">✕</button>
-                  </div>
+                <div class="audio-library-row">
+                  <p class="audio-library-note">13 bruitages intégrés · hors ligne</p>
+                  <button type="button" class="btn-mc-action btn-audio-test" id="btn-stop-audio-preview" title="Arrêter l’aperçu audio">■ Arrêter l’écoute</button>
                 </div>
               </div>
             </div>
@@ -1073,10 +1838,10 @@
               <div class="theme-live-preview-box">
                 <div class="preview-header-bar">
                   <div class="preview-title-wrap">
-                    <span class="preview-label">Aperçu en Direct du Launcher</span>
-                    <span class="preview-hint">Cliquez pour tester les sons !</span>
+                    <span class="preview-label">Aperçu du launcher</span>
+                    <span class="preview-hint">Les boutons permettent de tester les sons.</span>
                   </div>
-                  <span class="preview-status-pill" id="preview-font-pill">Font: Inter</span>
+                  <span class="preview-status-pill" id="preview-font-pill">Police : Inter</span>
                 </div>
                 <div class="launcher-preview-stage" id="editor-preview-stage">
                   <div class="preview-wallpaper-overlay" id="preview-stage-wallpaper"></div>
@@ -1088,6 +1853,7 @@
                         <span>EN LIGNE</span>
                       </div>
                     </div>
+                    <div class="preview-scene-copy"><span>VOTRE PROCHAINE AVENTURE</span><strong>Yapapouaiye</strong><p>Un univers qui vous ressemble.</p></div>
                     <div class="preview-buttons-row">
                       <button type="button" class="preview-btn-play" id="editor-preview-play" title="Cliquer pour tester l'animation et le son de lancement !">
                         <span class="preview-play-icon" id="preview-play-icon">
@@ -1096,7 +1862,7 @@
                         <span id="preview-play-text">JOUER</span>
                       </button>
                       <button type="button" class="preview-btn-action" id="editor-preview-action" title="Cliquer pour tester le clic d'interface !">
-                        Bouton Action
+                        Tester un clic
                       </button>
                     </div>
                   </div>
@@ -1107,74 +1873,66 @@
               <div class="editor-card">
                 <div class="editor-section-title">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
-                  <span>Harmonies & Couleurs</span>
+                  <span>Palette de couleurs</span>
                 </div>
                 
                 <!-- Quick Palette Chips -->
                 <div class="color-quick-palettes" id="color-palettes-group">
-                  <button type="button" class="color-palette-btn" data-palette="emerald" title="Palette Émeraude">
+                  <button type="button" class="color-palette-btn" data-palette="classic" title="Palette Classic">
                     <span class="color-dot" style="background:#38cc56;"></span>
-                    <span>Émeraude</span>
-                  </button>
-                  <button type="button" class="color-palette-btn" data-palette="diamond" title="Palette Diamant">
-                    <span class="color-dot" style="background:#2db7ff;"></span>
-                    <span>Diamant</span>
-                  </button>
-                  <button type="button" class="color-palette-btn" data-palette="cyber" title="Palette Cyber Néon">
-                    <span class="color-dot" style="background:#ff0055;"></span>
-                    <span>Cyber</span>
-                  </button>
-                  <button type="button" class="color-palette-btn" data-palette="nether" title="Palette Flamme Nether">
-                    <span class="color-dot" style="background:#ff5c4d;"></span>
-                    <span>Nether</span>
-                  </button>
-                  <button type="button" class="color-palette-btn" data-palette="ender" title="Palette Ender Void">
-                    <span class="color-dot" style="background:#b45cff;"></span>
-                    <span>Ender</span>
-                  </button>
-                  <button type="button" class="color-palette-btn" data-palette="gold" title="Palette Or Royal">
-                    <span class="color-dot" style="background:#f59e0b;"></span>
-                    <span>Or Royal</span>
-                  </button>
-                  <button type="button" class="color-palette-btn" data-palette="sculk" title="Palette Sculk Abyss">
-                    <span class="color-dot" style="background:#00dfc4;"></span>
-                    <span>Sculk</span>
+                    <span>Classic</span>
                   </button>
                 </div>
 
                 <div class="color-pickers-grid">
                   <div class="color-picker-item" data-color-target="primary">
-                    <label>Couleur Principale</label>
+                    <label for="editor-color-primary">Couleur principale</label>
                     <div class="color-input-wrapper">
-                      <button type="button" class="color-swatch-btn" id="swatch-color-primary" style="background-color:#38bdf8;" title="Cliquer pour ouvrir le nuancier sombre"></button>
+                      <button type="button" class="color-swatch-btn" id="swatch-color-primary" aria-label="Choisir : Couleur principale" style="background-color:#38bdf8;" title="Cliquer pour ouvrir le nuancier sombre"></button>
                       <input type="text" class="color-hex-text-input" id="editor-color-primary" value="#38bdf8" maxlength="7" spellcheck="false" />
                     </div>
                   </div>
                   <div class="color-picker-item" data-color-target="secondary">
-                    <label>Lueur & Secondaire</label>
+                    <label for="editor-color-secondary">Accent secondaire</label>
                     <div class="color-input-wrapper">
-                      <button type="button" class="color-swatch-btn" id="swatch-color-secondary" style="background-color:#0284c7;" title="Cliquer pour ouvrir le nuancier sombre"></button>
+                      <button type="button" class="color-swatch-btn" id="swatch-color-secondary" aria-label="Choisir : Couleur secondaire" style="background-color:#0284c7;" title="Cliquer pour ouvrir le nuancier sombre"></button>
                       <input type="text" class="color-hex-text-input" id="editor-color-secondary" value="#0284c7" maxlength="7" spellcheck="false" />
                     </div>
                   </div>
                   <div class="color-picker-item" data-color-target="bg">
-                    <label>Fond d'Arrière-Plan</label>
+                    <label for="editor-color-bg">Fond du launcher</label>
                     <div class="color-input-wrapper">
-                      <button type="button" class="color-swatch-btn" id="swatch-color-bg" style="background-color:#0b1118;" title="Cliquer pour ouvrir le nuancier sombre"></button>
+                      <button type="button" class="color-swatch-btn" id="swatch-color-bg" aria-label="Choisir : Couleur de fond" style="background-color:#0b1118;" title="Cliquer pour ouvrir le nuancier sombre"></button>
                       <input type="text" class="color-hex-text-input" id="editor-color-bg" value="#0b1118" maxlength="7" spellcheck="false" />
                     </div>
                   </div>
                   <div class="color-picker-item" data-color-target="play">
-                    <label>Dégradé Bouton</label>
+                    <label for="editor-color-play">Bouton Jouer</label>
                     <div class="color-input-wrapper">
-                      <button type="button" class="color-swatch-btn" id="swatch-color-play" style="background-color:#38bdf8;" title="Cliquer pour ouvrir le nuancier sombre"></button>
+                      <button type="button" class="color-swatch-btn" id="swatch-color-play" aria-label="Choisir : Couleur du bouton Jouer" style="background-color:#38bdf8;" title="Cliquer pour ouvrir le nuancier sombre"></button>
                       <input type="text" class="color-hex-text-input" id="editor-color-play" value="#38bdf8" maxlength="7" spellcheck="false" />
                     </div>
                   </div>
                 </div>
-
-                </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Barre d'actions : modifier le défaut / créer un autre thème -->
+          <div class="editor-footer-bar">
+            <button type="button" class="btn-secondary" id="btn-editor-reset-defaults" title="Vider l'éditeur pour créer un nouveau thème">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+              <span>Nouveau thème</span>
+            </button>
+            <div class="editor-footer-actions">
+              <button type="button" class="btn-mc-action hidden" id="btn-editor-save-as-new" title="Créer un autre thème avec le nom saisi (laisse l'original intact)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                <span>Enregistrer sous…</span>
+              </button>
+              <button type="button" class="btn-mc-primary" id="btn-save-editor-theme" title="Appliquer les modifications">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span id="label-save-editor-theme">Créer &amp; Activer le thème</span>
+              </button>
             </div>
           </div>
 
@@ -1243,6 +2001,8 @@
     </div>
   </div>
 
+  <script src="tauri-bridge.js"></script>
+  <script src="sounds.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
