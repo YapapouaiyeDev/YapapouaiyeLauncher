@@ -2,16 +2,6 @@ name: Build ChromeOS (Linux x64)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main, 'codex/chromeos-*']
-    paths:
-      - '.github/workflows/chromeos.yml'
-      - 'src/**'
-      - 'assets/**'
-      - 'mods/**'
-      - 'scripts/**'
-      - 'package*.json'
-      - 'version.json'
 
 permissions:
   contents: read

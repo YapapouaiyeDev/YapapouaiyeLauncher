@@ -13,3 +13,6 @@
 /news.json
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=60
+
+/downloads.json
+  Cache-Control: public, max-age=0, must-revalidate

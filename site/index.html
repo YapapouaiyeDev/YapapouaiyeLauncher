@@ -65,18 +65,59 @@
         </p>
 
         <div class="hero-cta-group" id="download">
-          <a href="https://github.com/YapapouaiyeDev/YapapouaiyeLauncher/releases/latest" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+          <a id="download-button" href="https://github.com/YapapouaiyeDev/YapapouaiyeLauncher/releases" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            <span>Télécharger l'installeur (Windows)</span>
+            <span id="download-label">Voir les téléchargements</span>
+          </a>
+
+          <a href="#chromeos" class="btn btn-secondary">
+            <span>ChromeOS (Linux)</span>
           </a>
 
           <a href="https://github.com/YapapouaiyeDev/YapapouaiyeLauncher/releases" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
             <span>Version Portable & Autres Releases</span>
           </a>
+        </div>
+        <div class="download-options">
+          <p id="download-note" role="status">Choisissez votre système pour télécharger le launcher.</p>
+          <label for="download-platform">Votre plateforme</label>
+          <select id="download-platform">
+            <option value="">Choisir un système</option>
+            <option value="windows">Windows 64 bits</option>
+            <option value="chromeos">ChromeOS — Intel / AMD 64 bits</option>
+            <option value="linux">Linux — Intel / AMD 64 bits (.deb)</option>
+            <option value="android">Android</option>
+            <option value="macos">macOS</option>
+            <option value="ios">iOS</option>
+          </select>
+          <noscript><p>JavaScript est désactivé. Le bouton ouvre les versions GitHub ; choisissez le fichier correspondant à votre système.</p></noscript>
+        </div>
+      </div>
+    </section>
+
+    <section class="chromeos-section" id="chromeos" aria-labelledby="chromeos-title">
+      <div class="container">
+        <div class="feature-card chromeos-card">
+          <span class="section-tag">Chromebook · Intel / AMD 64 bits</span>
+          <h2 id="chromeos-title">Installer sur ChromeOS</h2>
+          <p>Le launcher utilise l’environnement Linux de votre Chromebook. Un modèle Intel ou AMD 64 bits avec Linux activé est nécessaire ; les modèles ARM ne sont pas pris en charge.</p>
+          <p class="chromeos-status" id="chromeos-package-status" role="status">Retrouvez le paquet ChromeOS .deb dans les versions GitHub. L’installation et Minecraft restent à valider sur un Chromebook réel.</p>
+          <a id="chromeos-download" class="btn btn-primary" hidden>Télécharger pour ChromeOS</a>
+          <details>
+            <summary>Comment installer le launcher sur ChromeOS ?</summary>
+            <ol>
+              <li>Dans les paramètres ChromeOS, ouvrez <strong>Développeurs → Environnement de développement Linux</strong> et activez Linux. Le mode développeur de ChromeOS n’est pas nécessaire.</li>
+              <li>Dans le terminal Linux, exécutez <code>uname -m</code> : le résultat doit être <code>x86_64</code>. Actualisez ensuite les paquets avec <code>sudo apt update</code>.</li>
+              <li>Depuis les versions GitHub, récupérez le fichier <code>Yapapouaiye-Launcher-ChromeOS-…-x64.deb</code>, placez-le dans <strong>Fichiers Linux</strong>, puis double-cliquez dessus et choisissez <strong>Installer avec Linux</strong>.</li>
+              <li>Ouvrez <strong>Yapapouaiye Launcher</strong> dans les applications Linux. Java est téléchargé automatiquement ; adaptez la RAM du jeu à la mémoire disponible.</li>
+            </ol>
+            <p>Linux doit être autorisé sur le Chromebook. Les performances dépendent du modèle et de sa prise en charge graphique.</p>
+            <a href="https://github.com/YapapouaiyeDev/YapapouaiyeLauncher/releases" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Consulter les versions publiées</a>
+          </details>
         </div>
       </div>
     </section>
@@ -217,5 +258,6 @@
   </footer>
 
   <script src="app.js"></script>
+  <script type="module" src="downloads.js"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 # Environment variables (contains secrets!)
 .env
+site/.dev.vars
 
 # Build output
 dist/

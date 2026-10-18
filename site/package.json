@@ -5,11 +5,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev . --binding ADMIN_USERNAME=admin --binding ADMIN_PASSWORD=admin --binding ADMIN_TOKEN_SECRET=yapapouaiye-launcher-secret-key-2026 --d1 DB=yapapouaiye-launcher-db --r2 LAUNCHER_BUCKET=yapapouaiye-launcher-dev --port 8789 --ip 127.0.0.1",
-    "deploy": "wrangler pages deploy . --project-name yapapouaiye-launcher",
-    "test": "node test-db.js && node test-functions.js"
+    "build": "node build-site.js",
+    "dev": "wrangler pages dev . --d1 INVITATIONS_DB=yapapouaiye-launcher-invitations --r2 LAUNCHER_BUCKET=yapapouaiye-launcher-dev --port 8789 --ip 127.0.0.1",
+    "deploy": "npm run build && wrangler pages deploy --project-name yapapouaiye-launcher --branch main --commit-dirty=true",
+    "test": "node test-db.js && node test-functions.js && node test-invitations.js && node test-servers.js && node test-android-mods.js && node --test test-downloads.js"
   },
   "devDependencies": {
+    "esbuild": "0.28.1",
+    "miniflare": "5.20260811.1-alpha",
     "wrangler": "^4.123.0"
   }
 }

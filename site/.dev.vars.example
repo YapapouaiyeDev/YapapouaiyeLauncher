@@ -1,0 +1,13 @@
+# Copier ce fichier vers .dev.vars et définir des valeurs privées.
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=
+ADMIN_TOKEN_SECRET=
+
+# Dépôts privés des mods Android (secrets côté API uniquement).
+GITEA_TOKEN=
+B2_KEY_ID=
+B2_APP_KEY=
+B2_ENDPOINT=https://s3.eu-central-003.backblazeb2.com
+B2_REGION=eu-central-003
+B2_BUCKET=adoserv67
+B2_MODS_PREFIX=

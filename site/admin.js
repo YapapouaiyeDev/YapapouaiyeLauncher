@@ -21,6 +21,27 @@ function clearAdminToken() {
   sessionStorage.removeItem(TOKEN_KEY);
 }
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[char]);
+}
+
+function safeWebUrl(value) {
+  const candidate = String(value ?? "").trim();
+  if (!candidate || /^(?:file|javascript|data|vbscript):/i.test(candidate)) return "";
+  try {
+    const url = new URL(candidate, window.location.href);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
 // Toast notification helper
 function showToast(message, type = "info") {
   let container = document.getElementById("toast-container");
@@ -33,7 +54,9 @@ function showToast(message, type = "info") {
 
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
-  toast.innerHTML = `<span>${message}</span>`;
+  const text = document.createElement('span');
+  text.textContent = message;
+  toast.appendChild(text);
   container.appendChild(toast);
 
   setTimeout(() => {
@@ -58,7 +81,12 @@ function parseMarkdown(md) {
   html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, target) => {
+    const href = safeWebUrl(target);
+    return href
+      ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`
+      : label;
+  });
   html = html.replace(/^\s*>\s+(.*$)/gim, "<blockquote>$1</blockquote>");
   html = html.replace(/^\s*-\s+(.*$)/gim, "<li>$1</li>");
   html = html.replace(/(<li>.*<\/li>)/gim, "<ul>$1</ul>");
@@ -332,23 +360,23 @@ function initDashboardPage() {
         : `<span style="color:var(--text-faint); font-size:11px;">Standard</span>`;
 
       return `
-        <tr data-news-id="${item.id}">
+        <tr data-news-id="${escapeHtml(item.id)}">
           <td style="font-weight:700; color:#ffffff;">
-            <div>${item.title}</div>
+          <div>${escapeHtml(item.title)}</div>
             <div style="font-size:11.5px; color:var(--text-muted); font-weight:400; margin-top:2px;">
-              ${item.summary ? item.summary.slice(0, 80) + "..." : (item.content ? item.content.slice(0, 80).replace(/[#*`]/g, "") + "..." : "")}
+              ${escapeHtml(item.summary ? item.summary.slice(0, 80) + "..." : (item.content ? item.content.slice(0, 80).replace(/[#*`]/g, "") + "..." : ""))}
             </div>
           </td>
-          <td><span class="badge badge-update">${item.badge || "Mise à jour"}</span></td>
-          <td><span style="font-family:var(--font-mono); font-size:12px;">${item.version || "—"}</span></td>
-          <td style="font-size:12px; color:var(--text-muted);">${item.date || "—"}</td>
+          <td><span class="badge badge-update">${escapeHtml(item.badge || "Mise à jour")}</span></td>
+          <td><span style="font-family:var(--font-mono); font-size:12px;">${escapeHtml(item.version || "—")}</span></td>
+          <td style="font-size:12px; color:var(--text-muted);">${escapeHtml(item.date || "—")}</td>
           <td>${featuredPill}</td>
           <td>
             <div class="action-buttons">
-              <button type="button" class="btn btn-secondary btn-sm btn-edit-news" data-id="${item.id}" title="Modifier dans la base">
+              <button type="button" class="btn btn-secondary btn-sm btn-edit-news" data-id="${escapeHtml(item.id)}" title="Modifier dans la base">
                 ✏️ Modifier
               </button>
-              <button type="button" class="btn btn-danger btn-sm btn-delete-news" data-id="${item.id}" title="Supprimer de la base">
+              <button type="button" class="btn btn-danger btn-sm btn-delete-news" data-id="${escapeHtml(item.id)}" title="Supprimer de la base">
                 🗑️
               </button>
             </div>
@@ -381,7 +409,7 @@ function initDashboardPage() {
     const badge = inputBadge?.value.trim() || "Mise à jour";
     const version = inputVersion?.value.trim() || "v1.5.7";
     const content = inputContent?.value.trim() || "Le contenu au format Markdown s'affichera ici en temps réel...";
-    const image = inputImage?.value.trim() || "";
+    const image = safeWebUrl(inputImage?.value);
 
     const imgHtml = image ? `<div style="margin-bottom:12px;"><img src="${image}" style="width:100%; height:130px; object-fit:cover; border-radius:6px;" onerror="this.style.display='none'" /></div>` : "";
 
@@ -389,10 +417,10 @@ function initDashboardPage() {
       <div style="background:rgba(0,0,0,0.35); border:1px solid var(--panel-border); border-radius:8px; padding:16px;">
         ${imgHtml}
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-          <span class="badge badge-update">${badge}</span>
-          <span style="font-family:var(--font-mono); font-size:11.5px; color:var(--text-faint);">${version}</span>
+          <span class="badge badge-update">${escapeHtml(badge)}</span>
+          <span style="font-family:var(--font-mono); font-size:11.5px; color:var(--text-faint);">${escapeHtml(version)}</span>
         </div>
-        <h3 style="font-size:16px; font-weight:800; color:#ffffff; margin-bottom:10px;">${title}</h3>
+        <h3 style="font-size:16px; font-weight:800; color:#ffffff; margin-bottom:10px;">${escapeHtml(title)}</h3>
         <div class="article-content" style="font-size:13px;">${parseMarkdown(content)}</div>
       </div>
     `;
@@ -702,4 +730,77 @@ function broadcastNewsUpdate(newsList) {
 document.addEventListener("DOMContentLoaded", () => {
   initLoginPage();
   initDashboardPage();
+  initInvitationManagement();
 });
+
+function initInvitationManagement() {
+  const form = document.getElementById('admin-invitation-form');
+  if (!form) return;
+  const table = document.getElementById('admin-invitations-table-body');
+  const status = document.getElementById('invitation-admin-status');
+  const created = document.getElementById('invitation-created');
+  const codeOutput = document.getElementById('invitation-created-code');
+  async function api(method = 'GET', body) {
+    const response = await fetch('/api/admin/invitations', {
+      method,
+      headers: { Authorization: `Bearer ${getAdminToken()}`, 'Content-Type': 'application/json' },
+      ...(body ? { body: JSON.stringify(body) } : {})
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Gestion des invitations indisponible.');
+    return result;
+  }
+  async function load() {
+    try {
+      const { invitations } = await api();
+      table.replaceChildren();
+      for (const invitation of invitations) {
+        const row = document.createElement('tr');
+        const values = [invitation.label, new Date(invitation.created_at).toLocaleString('fr-FR'), invitation.revoked ? 'Révoqué' : invitation.redeemed_at ? 'Utilisé' : 'Disponible'];
+        for (const value of values) {
+          const cell = document.createElement('td');
+          cell.textContent = value;
+          row.appendChild(cell);
+        }
+        const action = document.createElement('td');
+        if (!invitation.revoked && !invitation.redeemed_at) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'btn btn-danger btn-sm';
+          button.textContent = 'Révoquer';
+          button.addEventListener('click', async () => {
+            button.disabled = true;
+            try { await api('DELETE', { id: invitation.id }); await load(); }
+            catch (error) { status.textContent = error.message; button.disabled = false; }
+          });
+          action.appendChild(button);
+        }
+        row.appendChild(action);
+        table.appendChild(row);
+      }
+      status.textContent = invitations.length ? `${invitations.length} invitation(s).` : 'Aucune invitation créée.';
+    } catch (error) { status.textContent = error.message; }
+  }
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = document.getElementById('btn-create-invitation');
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+      const result = await api('POST', { label: document.getElementById('invitation-label').value, code: document.getElementById('invitation-code').value });
+      codeOutput.value = result.code;
+      created.classList.remove('hidden');
+      form.reset();
+      await load();
+      codeOutput.focus();
+      codeOutput.select();
+    } catch (error) { status.textContent = error.message; }
+    finally { button.disabled = false; }
+  });
+  document.getElementById('btn-refresh-invitations').addEventListener('click', load);
+  document.getElementById('btn-copy-invitation').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(codeOutput.value); status.textContent = 'Code copié.'; }
+    catch { codeOutput.focus(); codeOutput.select(); status.textContent = 'Sélectionnez et copiez le code affiché.'; }
+  });
+  load();
+}

@@ -8,6 +8,7 @@
     "start": "electron .",
     "build": "electron-builder --win",
     "build:chromeos": "electron-builder --linux deb --x64 --publish never",
+    "build:chromeos:windows": "electron-builder --linux dir --x64 --publish never && py -3 scripts/package-chromeos.py",
     "test:chromeos": "node --test scripts/test-chromeos.cjs scripts/test-launcher-updates.cjs",
     "build:publish": "electron-builder --win --publish always",
     "publish:mods": "powershell -ExecutionPolicy Bypass -File publish-mods-b2.ps1",
@@ -18,6 +19,7 @@
     "prestart": "npm run version:sync",
     "prebuild": "npm run version:sync",
     "prebuild:chromeos": "npm run version:sync",
+    "prebuild:chromeos:windows": "npm run version:sync",
     "prebuild:publish": "npm run version:sync",
     "pretauri:dev": "npm run version:sync",
     "pretauri:build": "npm run version:sync"
@@ -43,7 +45,14 @@
       "artifactName": "Yapapouaiye-Launcher-Setup-${version}.${ext}"
     },
     "linux": {
-      "target": [{ "target": "deb", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "assets/logo.png",
       "category": "Game",
       "executableName": "yapapouaiye-launcher",
@@ -52,9 +61,20 @@
     },
     "deb": {
       "depends": [
-        "libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils",
-        "libatspi2.0-0", "libuuid1", "libsecret-1-0", "libgl1", "libgl1-mesa-dri",
-        "libopenal1", "libxrandr2", "libasound2"
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0",
+        "libgl1",
+        "libgl1-mesa-dri",
+        "libopenal1",
+        "libxrandr2",
+        "libasound2"
       ]
     },
     "files": [

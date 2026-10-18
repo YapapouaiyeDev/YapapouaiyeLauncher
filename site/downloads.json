@@ -1,0 +1,19 @@
+{
+  "windows": {
+    "version": "1.6.1-3",
+    "url": "https://github.com/YapapouaiyeDev/YapapouaiyeLauncher/releases/download/v1.6.1-3/Yapapouaiye-Launcher-Setup-1.6.1-3.exe",
+    "prerelease": false
+  },
+  "chromeos": {
+    "version": "1.6.1-4-beta.1",
+    "url": "https://github.com/YapapouaiyeDev/YapapouaiyeLauncher/releases/download/v1.6.1-4-beta.1/Yapapouaiye-Launcher-ChromeOS-1.6.1-4-beta.1-x64.deb",
+    "prerelease": true
+  },
+  "linux": {
+    "version": "1.6.1-4-beta.1",
+    "url": "https://github.com/YapapouaiyeDev/YapapouaiyeLauncher/releases/download/v1.6.1-4-beta.1/Yapapouaiye-Launcher-ChromeOS-1.6.1-4-beta.1-x64.deb",
+    "prerelease": true
+  },
+  "android": null,
+  "macos": null
+}

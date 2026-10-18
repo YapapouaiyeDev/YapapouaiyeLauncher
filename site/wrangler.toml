@@ -1,13 +1,13 @@
 name = "yapapouaiye-launcher"
-pages_build_output_dir = "."
+pages_build_output_dir = ".wrangler/publish"
 compatibility_date = "2026-08-01"
 
-# Cloudflare D1 SQL Database (Nouveautés & Patch Notes)
+# Cloudflare D1 SQL Database (invitations uniquement ; actualités conservées dans R2)
 [[d1_databases]]
-binding = "DB"
-database_name = "yapapouaiye-launcher-db"
-database_id = "yapapouaiye-launcher-db"
-migrations_dir = "migrations"
+binding = "INVITATIONS_DB"
+database_name = "yapapouaiye-launcher-invitations"
+database_id = "a901367b-2369-4103-b962-ed7d07561b1f"
+migrations_dir = "migrations/invitations"
 
 # Cloudflare R2 Storage Bucket (Fallback & Assets)
 [[r2_buckets]]
