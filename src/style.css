@@ -123,12 +123,14 @@ body {
    ============================================================ */
 .topbar {
   height: var(--topbar-height);
+  flex-shrink: 0;
   background: rgba(12, 14, 20, 0.85);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--panel-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 0 16px;
   -webkit-app-region: drag;
   z-index: 10;
@@ -136,6 +138,7 @@ body {
 
 .brand {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 10px;
 }
@@ -171,6 +174,7 @@ body {
 /* Navigation Tabs */
 .nav-menu {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 6px;
   -webkit-app-region: no-drag;
@@ -179,6 +183,9 @@ body {
 .nav-item {
   display: flex;
   align-items: center;
+  min-height: 36px;
+  flex-shrink: 0;
+  white-space: nowrap;
   gap: 8px;
   padding: 8px 14px;
   background: transparent;
@@ -210,23 +217,25 @@ body {
 /* Topbar Right & Server Indicator */
 .topbar-right {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 16px;
   -webkit-app-region: no-drag;
 }
 
 .topbar-theme-btn {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--panel-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   color: var(--text-muted);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color 150ms, border-color 150ms, color 150ms;
   padding: 0;
 }
 
@@ -234,31 +243,14 @@ body {
   background: rgba(var(--accent-rgb), 0.15);
   border-color: var(--mc-green-primary);
   color: var(--mc-green-primary);
-  transform: translateY(-1px);
 }
 
 .topbar-theme-btn svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
   color: inherit;
-}
-
-.server-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 12px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--panel-border);
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.server-badge:hover {
-  border-color: var(--mc-green-primary);
-  color: #ffffff;
 }
 
 .status-dot {
@@ -320,6 +312,8 @@ body {
    ============================================================ */
 .main-content {
   flex: 1;
+  min-height: 0;
+  min-width: 0;
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
@@ -553,11 +547,15 @@ body {
   background: linear-gradient(135deg, var(--hero-card-a) 0%, var(--hero-card-b) 100%);
 }
 
+#play-section {
+  container-type: inline-size;
+  container-name: play;
+}
+
 .play-server-layout {
   display: grid;
   grid-template-columns: minmax(176px, 220px) minmax(0, 1fr);
-  align-items: stretch;
-  min-height: calc(100vh - var(--topbar-height) - var(--footer-height) - var(--nav-bottom-space, 0px) - var(--main-content-padding-y) - var(--main-content-padding-y));
+  align-items: start;
   gap: 16px;
 }
 
@@ -642,7 +640,7 @@ body {
 /* News cards grid */
 .news-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 16px;
 }
 
@@ -1495,6 +1493,8 @@ body {
 
 .account-item {
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 12px;
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
@@ -1533,7 +1533,8 @@ body {
 }
 
 .account-info {
-  flex: 1;
+  min-width: 0;
+  flex: 1 1 140px;
   margin-left: 14px;
 }
 
@@ -1566,8 +1567,24 @@ body {
 
 .account-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.accounts-sessions-summary {
+  margin-bottom: 16px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.account-session-state {
+  display: block;
+  margin-top: 6px;
+  color: var(--mc-green-primary);
+  font-size: 11px;
+  overflow-wrap: anywhere;
 }
 
 .account-actions .btn-switch {
@@ -3963,7 +3980,7 @@ input:checked + .toggle-slider:before {
   line-height: 1.5;
 }
 
-@media (max-width: 760px) {
+@container play (max-width: 800px) {
   .play-server-layout {
     grid-template-columns: minmax(0, 1fr);
     min-height: 0;
@@ -3975,15 +3992,15 @@ input:checked + .toggle-slider:before {
   }
 
   .server-tabs {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-block-end: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+    overflow: visible;
+    padding: 0 4px 4px;
+    scrollbar-gutter: auto;
   }
 
   .server-tab {
-    flex: 0 0 min(190px, 65vw);
+    width: 100%;
   }
 }
 
@@ -4274,7 +4291,6 @@ body[data-theme="obsidian"] .btn-close-sm,
 body[data-theme="obsidian"] .btn-logout-mini,
 body[data-theme="obsidian"] .win-btn,
 body[data-theme="obsidian"] .nav-item,
-body[data-theme="obsidian"] .server-badge,
 body[data-theme="obsidian"] .server-tab,
 body[data-theme="obsidian"] .server-ip-banner,
 body[data-theme="obsidian"] .footer-profile-widget {
@@ -4291,7 +4307,6 @@ body[data-theme="obsidian"] .btn-close-sm:hover,
 body[data-theme="obsidian"] .btn-logout-mini:hover,
 body[data-theme="obsidian"] .win-btn:hover,
 body[data-theme="obsidian"] .nav-item:hover,
-body[data-theme="obsidian"] .server-badge:hover,
 body[data-theme="obsidian"] .server-tab:hover,
 body[data-theme="obsidian"] .server-ip-banner:hover,
 body[data-theme="obsidian"] .footer-profile-widget:hover {
@@ -4304,8 +4319,7 @@ body[data-theme="obsidian"] .footer-profile-widget:hover {
 body[data-theme="obsidian"] .btn-secondary:active,
 body[data-theme="obsidian"] .btn-mc-action:active,
 body[data-theme="obsidian"] .btn-switch:active,
-body[data-theme="obsidian"] .server-tab:active,
-body[data-theme="obsidian"] .server-badge:active {
+body[data-theme="obsidian"] .server-tab:active {
   transform: translateY(1px);
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
 }
@@ -4586,7 +4600,6 @@ body[data-theme="cyber"] .nav-item.active {
 }
 
 /* --- CYBER SERVER BADGE & CARDS --- */
-body[data-theme="cyber"] .server-badge,
 body[data-theme="cyber"] .server-tab,
 body[data-theme="cyber"] .server-ip-banner,
 body[data-theme="cyber"] .version-selector-chip,
@@ -4771,7 +4784,6 @@ body[data-theme="netherite"] .server-tab.active {
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
 }
 
-body[data-theme="netherite"] .server-badge,
 body[data-theme="netherite"] .server-tab,
 body[data-theme="netherite"] .server-ip-banner,
 body[data-theme="netherite"] .version-selector-chip,
@@ -5041,11 +5053,13 @@ select option {
 
 .onboarding-ram-cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
 }
 
 .onboarding-ram-card {
+  font: inherit;
+  text-align: left;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-md);
@@ -5055,6 +5069,10 @@ select option {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.onboarding-ram-card[hidden] {
+  display: none;
 }
 
 .onboarding-ram-card:hover {
@@ -6178,13 +6196,6 @@ body.is-booting #play-section {
     gap: 6px;
   }
 
-  .server-badge .server-text {
-    max-width: 110px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .main-content {
     padding: 14px;
   }
@@ -6279,15 +6290,6 @@ body.is-booting #play-section {
     height: 18px;
   }
 
-  /* Badge serveur : pastille seule */
-  .server-badge .server-text {
-    display: none;
-  }
-
-  .server-badge {
-    padding: 6px 8px;
-  }
-
   .topbar-theme-btn {
     padding: 6px;
   }
@@ -6315,18 +6317,6 @@ body.is-booting #play-section {
     padding: 0 4px;
   }
 
-  /* Sélecteur de serveur : onglets en grille 1 colonne */
-  .server-tabs {
-    display: grid;
-    grid-template-columns: 1fr;
-    width: 100%;
-  }
-
-  .server-tab {
-    justify-content: flex-start;
-    width: 100%;
-  }
-
   .mc-tag-row {
     flex-wrap: wrap;
   }
@@ -6334,10 +6324,6 @@ body.is-booting #play-section {
   .server-ip-banner {
     flex-wrap: wrap;
     font-size: 12px;
-  }
-
-  .news-cards-grid {
-    grid-template-columns: 1fr;
   }
 
   .mods-grid {

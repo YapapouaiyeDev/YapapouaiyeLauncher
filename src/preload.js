@@ -28,6 +28,10 @@ contextBridge.exposeInMainWorld('launcher', {
 
   // Multi-account
   getAccounts: () => ipcRenderer.invoke('get-accounts'),
+  getGameSessions: () => ipcRenderer.invoke('get-game-sessions'),
+    closeGameSession: (id) => ipcRenderer.invoke('close-game-session', id),
+  // Presence of this API advertises network mode; the Tauri build has no Node worker.
+  stopNetworkSession: (id) => ipcRenderer.invoke('stop-network-session', id),
   switchAccount: (index) => ipcRenderer.invoke('switch-account', index),
   removeAccount: (index) => ipcRenderer.invoke('remove-account', index),
 
@@ -101,6 +105,7 @@ contextBridge.exposeInMainWorld('launcher', {
   onUpdateError: singleListener('progress', 'update-error'),
   onGameLog: singleListener('game-log'),
   onGameClosed: singleListener('game-closed'),
+  onGameSessions: singleListener('game-sessions'),
   onGameError: singleListener('game-error'),
   onWindowStateChanged: singleListener('window-state'),
   onRemoteStateChanged: singleListener('remote-state'),

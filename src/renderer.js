@@ -2,14 +2,23 @@ const DEFAULT_GAME_VERSION = '1.21.1';
 // Version Minecraft effective du serveur actif (mise à jour par applyServerUI)
 let currentGameVersion = DEFAULT_GAME_VERSION;
 let currentLoader = 'neoforge';
-const SKIN_HEAD_URL = 'https://mc-heads.net/avatar/';
 let currentServerIp = '158.178.200.70:25565';
 let currentServerId = 'adoserv2';
 
 let isCheckingForUpdates = false;
-let systemRamGB = 16;
+let systemRamGB = null;
 let ramMin = 2;
-let ramMax = 16;
+let ramMax = 2;
+let selectedAccountUuid = null;
+let pendingLaunch = null;
+let launchInProgress = false;
+let launchRequestPending = false;
+let gameSessions = [];
+
+function sessionForAccount(uuid) {
+  const key = value => String(value || '').replace(/-/g, '').toLowerCase();
+  return gameSessions.find(session => key(session.accountUuid) === key(uuid));
+}
 
 // RAM slider elements - declare early so initRamLimits can use them
 const ramSlider = document.getElementById('input-ram');
@@ -566,8 +575,7 @@ body[data-theme="${id}"] .btn-mc-play-huge {
 body[data-theme="${id}"] .btn-secondary,
 body[data-theme="${id}"] .btn-mc-action,
 body[data-theme="${id}"] .nav-item,
-body[data-theme="${id}"] .mc-box,
-body[data-theme="${id}"] .server-badge {
+body[data-theme="${id}"] .mc-box {
   border-radius: 12px;
 }
 `;
@@ -1428,7 +1436,7 @@ function playGameLaunchSound() {
 // Explicit sound previews and the play button already provide their own audio.
 document.addEventListener('click', (e) => {
   if (e.target.closest('.btn-audio-test, #editor-preview-play, #editor-preview-action, #btn-play')) return;
-  if (e.target.closest('button, .nav-item, .server-badge, .server-ip-banner, .footer-profile-widget, .add-account-card')) {
+  if (e.target.closest('button, .nav-item, .server-ip-banner, .footer-profile-widget, .add-account-card')) {
     playMinecraftClickSound();
   }
 });
@@ -1506,30 +1514,30 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+function getRamProfile(totalGB) {
+  const total = Number.isFinite(totalGB) && totalGB > 0 ? Math.floor(totalGB) : null;
+  const min = 2;
+  const max = Math.max(min, (total || 0) - 3);
+  const recommended = Math.max(min, Math.min(8, Math.floor((total || 0) / 2), max));
+  return { total, min, max, recommended,
+    presets: [Math.max(min, recommended - 2), recommended, Math.min(max, recommended + 2)] };
+}
+
 async function initRamLimits() {
   try {
-    systemRamGB = await window.launcher.getSystemRam();
-    ramMin = 2;
-    ramMax = Math.max(ramMin + 1, systemRamGB - 3);
-
-    if (ramSlider) {
-      ramSlider.min = ramMin;
-      ramSlider.max = ramMax;
-    }
-    if (settingsRam) {
-      settingsRam.min = ramMin;
-      settingsRam.max = ramMax;
-    }
-
-    if (parseInt(ramSlider.value) > ramMax) ramSlider.value = ramMax;
-    if (parseInt(ramSlider.value) < ramMin) ramSlider.value = ramMin;
-    if (settingsRam && parseInt(settingsRam.value) > ramMax) settingsRam.value = ramMax;
-    if (settingsRam && parseInt(settingsRam.value) < ramMin) settingsRam.value = ramMin;
-
-    if (ramValue) ramValue.textContent = `${ramSlider.value} Go`;
-    if (settingsRamValue) settingsRamValue.textContent = `${settingsRam ? settingsRam.value : ramSlider.value} Go`;
+    systemRamGB = getRamProfile(await window.launcher.getSystemRam()).total;
   } catch (error) {
     console.error('[RAM] Failed to initialize RAM limits:', error);
+  }
+  const profile = getRamProfile(systemRamGB);
+  ramMin = profile.min;
+  ramMax = profile.max;
+  for (const [slider, display] of [[ramSlider, ramValue], [settingsRam, settingsRamValue]]) {
+    if (!slider) continue;
+    slider.min = ramMin;
+    slider.max = ramMax;
+    slider.value = Math.min(ramMax, Math.max(ramMin, parseInt(slider.value, 10) || profile.recommended));
+    if (display) display.textContent = `${slider.value} Go`;
   }
 }
 
@@ -1599,59 +1607,23 @@ const userStatusEl = document.getElementById('user-status');
 const userSkinHead = document.getElementById('user-skin-head');
 const defaultSkinSrc = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Crect fill='%231e293b' width='36' height='36' rx='8'/%3E%3Cpath fill='%2364748b' d='M18 8a6 6 0 1 0 0 12 6 6 0 0 0 0-12zm-8 18c0-3.3 3.6-6 8-6s8 2.7 8 6v2H10v-2z'/%3E%3C/svg%3E";
 
-function isRealMojangUuid(uuid) {
-  if (!uuid || typeof uuid !== 'string') return false;
-  const clean = uuid.replace(/-/g, '').trim();
-  if (clean.length !== 32 || !/^[0-9a-fA-F]{32}$/.test(clean)) return false;
-  // Version 3 UUIDs (from MD5 offline hashes) have '3' as the 13th character
-  if (uuid.includes('-3') || clean.charAt(12) === '3') return false;
-  return true;
-}
-
-function getPlayerAvatarUrl(username, uuid, size = 48) {
-  const cleanName = (username && username !== 'Joueur' && username !== 'Non connecté') ? username.trim() : '';
-  if (cleanName) {
-    return `https://mc-heads.net/avatar/${encodeURIComponent(cleanName)}/${size}`;
-  }
-  if (isRealMojangUuid(uuid)) {
-    const cleanUuid = String(uuid).replace(/-/g, '');
-    return `https://mc-heads.net/avatar/${cleanUuid}/${size}`;
-  }
-  return defaultSkinSrc;
-}
-
-function setSkinHead(username, uuid) {
+let skinHeadRequest = null;
+async function setSkinHead(username, uuid) {
   if (!userSkinHead) return;
-  const cleanName = (username && username !== 'Joueur' && username !== 'Non connecté') ? username.trim() : '';
-  const queryParam = cleanName || (isRealMojangUuid(uuid) ? String(uuid).replace(/-/g, '') : '');
-
-  if (!queryParam) {
-    userSkinHead.src = defaultSkinSrc;
-    return;
-  }
-
-  const sources = [
-    `https://mc-heads.net/avatar/${encodeURIComponent(queryParam)}/48`,
-    `https://minotar.net/helm/${encodeURIComponent(queryParam)}/48`,
-    `https://crafthead.net/helm/${encodeURIComponent(queryParam)}/48`,
-    `https://mineskin.eu/helm/${encodeURIComponent(queryParam)}/48`
-  ];
-
-  let currentSourceIndex = 0;
-  userSkinHead.onerror = () => {
-    currentSourceIndex++;
-    if (currentSourceIndex < sources.length) {
-      userSkinHead.src = sources[currentSourceIndex];
-    } else {
-      userSkinHead.onerror = null;
-      userSkinHead.src = defaultSkinSrc;
-    }
-  };
-
-  userSkinHead.src = sources[0];
+  const request = {};
+  skinHeadRequest = request;
+  AccountAvatars.apply(userSkinHead, { name: username, uuid }, 48);
+  if (!uuid || !window.launcher.getAccounts) return;
+  try {
+    const data = await window.launcher.getAccounts();
+    if (skinHeadRequest !== request) return;
+    const account = data.accounts?.find(item => String(item.uuid).replace(/-/g, '').toLowerCase() === String(uuid).replace(/-/g, '').toLowerCase());
+    if (account?.skin) AccountAvatars.apply(userSkinHead, account, 48);
+  } catch {}
 }
 
 function setLoggedIn(username, uuid) {
+  selectedAccountUuid = uuid;
   if (authSection) authSection.classList.add('hidden');
   if (playSection) playSection.classList.remove('hidden');
   if (userNameEl) userNameEl.textContent = username;
@@ -1662,9 +1634,11 @@ function setLoggedIn(username, uuid) {
   setSkinHead(username, uuid);
   const playerNameEl = document.getElementById('player-name');
   if (playerNameEl) playerNameEl.textContent = username;
+  resetPlayBtn();
 }
 
 function setLoggedOut() {
+  selectedAccountUuid = null;
   if (authSection) authSection.classList.remove('hidden');
   if (playSection) playSection.classList.add('hidden');
   if (userNameEl) userNameEl.textContent = 'Non connecté';
@@ -1797,39 +1771,10 @@ function copyServerIP() {
 const btnCopyIp = document.getElementById('btn-copy-ip');
 if (btnCopyIp) btnCopyIp.addEventListener('click', copyServerIP);
 
-const topbarServerBadge = document.getElementById('topbar-server-badge');
-if (topbarServerBadge) topbarServerBadge.addEventListener('click', copyServerIP);
-
 async function updateLiveServerBadge() {
-  const topbarBadge = document.getElementById('topbar-server-badge');
-  const homeBadge = document.getElementById('home-server-badge');
-
   try {
     const res = await window.launcher.checkServerStatus(currentServerId);
-
-    // 1. Topbar Badge
-    if (topbarBadge) {
-      const dot = topbarBadge.querySelector('.status-dot');
-      const text = topbarBadge.querySelector('.server-text');
-      if (res.online) {
-        if (dot) dot.className = 'status-dot online';
-        if (text) text.textContent = `${res.serverName || 'SERVEUR'} EN LIGNE`;
-      } else {
-        if (dot) dot.className = 'status-dot offline';
-        if (text) text.textContent = `${res.serverName || 'SERVEUR'} HORS LIGNE`;
-      }
-    }
-
-    // 2. Home Page Hero Card Badge
-    if (homeBadge) {
-      if (res.online) {
-        homeBadge.className = 'mc-tag tag-status online';
-        homeBadge.innerHTML = '<span class="status-dot online"></span> EN LIGNE';
-      } else {
-        homeBadge.className = 'mc-tag tag-status offline';
-        homeBadge.innerHTML = '<span class="status-dot offline"></span> HORS LIGNE';
-      }
-    }
+    paintHomeServerStatus(res.online);
   } catch (e) {}
 }
 
@@ -4130,7 +4075,17 @@ async function submitServerCodes() {
 // Launch Game Button (protégé par le verrou si actif)
 const btnPlay = document.getElementById('btn-play');
 if (btnPlay) {
-  btnPlay.addEventListener('click', async () => {
+  btnPlay.addEventListener('click', () => requestGameLaunch(selectedAccountUuid));
+}
+
+async function requestGameLaunch(accountUuid, mode = 'game') {
+    if (launchRequestPending || launchInProgress || gameSessions.some(session => session.state === 'preparing')) return;
+    const existing = sessionForAccount(accountUuid);
+    if (existing) { showToast('Ce compte est déjà connecté.', 'info'); return; }
+    pendingLaunch = { accountUuid, mode: 'game', serverId: currentServerId,
+      version: currentGameVersion, loader: currentLoader };
+    launchRequestPending = true;
+    try {
     // Si un verrou est actif et que ce PC n'est pas retenu, on demande
     // le mot de passe AVANT toute synchro / lancement.
     try {
@@ -4150,22 +4105,31 @@ if (btnPlay) {
     }
     // Codes d'accès serveur (définis dans l'espace admin) : à taper dans l'ordre.
     try {
-      const access = await window.launcher.checkServerAccess(currentServerId);
+      const access = await window.launcher.checkServerAccess(pendingLaunch.serverId);
       if (access && access.codesRequired && !access.verified) {
         playMinecraftClickSound();
         openServerCodesModal(access);
         return;
       }
     } catch {}
-    doLaunchGame();
-  });
+    await doLaunchGame();
+    } finally {
+      launchRequestPending = false;
+    }
 }
 
 async function doLaunchGame() {
+    if (launchInProgress) return;
+    launchInProgress = true;
+    const request = pendingLaunch || { accountUuid: selectedAccountUuid, mode: 'game',
+      serverId: currentServerId, version: currentGameVersion, loader: currentLoader };
+    const launchAccountUuid = request.accountUuid;
+    const launchMode = request.mode;
+    try {
     // Une mise à jour admin pendant la synchro ne doit pas changer sa destination.
-    const launchServerId = currentServerId;
-    const launchVersion = currentGameVersion;
-    const launchLoader = currentLoader;
+    const launchServerId = request.serverId;
+    const launchVersion = request.version;
+    const launchLoader = request.loader;
     playGameLaunchSound();
     const ram = parseInt(ramSlider ? ramSlider.value : 4);
     const progressSection = document.getElementById('progress-section');
@@ -4173,29 +4137,34 @@ async function doLaunchGame() {
     const progressText = document.getElementById('progress-text');
 
     btnPlay.disabled = true;
+    document.querySelectorAll('.btn-launch-account').forEach(button => { button.disabled = true; });
     btnPlay.classList.add('loading', 'hidden');
     if (progressSection) progressSection.classList.remove('hidden');
     if (progressFill) progressFill.style.width = '10%';
     if (progressText) progressText.textContent = 'Mise à jour des mods...';
+    if (launchMode === 'game') {
+      const syncResult = await window.launcher.syncMods(launchServerId);
+      if (!syncResult.success) {
+        showToast('Synchro mods impossible (' + (syncResult.error || 'hors-ligne') + ') — lancement avec les mods locaux.', 'error');
+      } else if ((syncResult.downloaded || 0) > 0 || (syncResult.removed || 0) > 0) {
+        showToast(`Mods à jour : +${syncResult.downloaded || 0} / -${syncResult.removed || 0}`, 'success');
+      }
 
-    const syncResult = await window.launcher.syncMods(launchServerId);
-    if (!syncResult.success) {
-      showToast('Synchro mods impossible (' + (syncResult.error || 'hors-ligne') + ') — lancement avec les mods locaux.', 'error');
-    } else if ((syncResult.downloaded || 0) > 0 || (syncResult.removed || 0) > 0) {
-      showToast(`Mods à jour : +${syncResult.downloaded || 0} / -${syncResult.removed || 0}`, 'success');
+      if (progressText) progressText.textContent = 'Lancement de Minecraft...';
+      loadMods();
     }
-
-    if (progressText) progressText.textContent = 'Lancement de Minecraft...';
-    loadMods();
 
     const result = await window.launcher.launchGame({
       version: launchVersion,
       loader: launchLoader,
       ram,
-      serverId: launchServerId
+      mode: launchMode,
+      serverId: launchServerId,
+      accountUuid: launchAccountUuid
     });
 
     if (!result.success) {
+      if (result.code === 'LAUNCH_CANCELLED') return;
       // Garde-fou : le main refuse sans mot de passe (ex. PC dérétenu
       // entre le clic et le lancement) -> rouvre la saisie.
       if (result.code === 'LAUNCH_LOCKED') {
@@ -4231,24 +4200,30 @@ async function doLaunchGame() {
       } else if ((result.modsStaged || 0) === 0) {
         showToast('Jeu lancé SANS mods — synchronisez depuis l\'onglet Mods.', 'error', 6000);
       }
-      if (progressText) progressText.textContent = 'Minecraft est en cours d\'exécution (ouverture dans quelques secondes)...';
-      if (btnPlay) {
-        btnPlay.disabled = true;
-        btnPlay.innerHTML = '<span class="play-text">EN JEU...</span>';
-      }
+      showToast(`Minecraft lancé avec ${result.accountName || 'ce compte'}. Vous pouvez lancer un autre compte depuis Comptes.`, 'success', 5000);
+    }
+    } catch (error) {
+      showToast('Erreur de lancement : ' + (error?.message || error), 'error');
+    } finally {
+      launchInProgress = false;
+      resetPlayBtn();
+      loadAccountsList().catch(() => {});
     }
 }
 
 function resetPlayBtn() {
-  if (!btnPlay) return;
+  if (!btnPlay || launchInProgress) return;
   const progressSection = document.getElementById('progress-section');
   const currentTheme = getThemeObj(document.body.dataset.theme || DEFAULT_THEME);
   const activeIconKey = currentTheme.images?.playButtonIcon || 'play';
   const activePlayText = currentTheme.images?.playButtonText || 'JOUER';
 
-  btnPlay.disabled = false;
+  const session = sessionForAccount(selectedAccountUuid);
+  const preparing = launchInProgress || gameSessions.some(item => item.state === 'preparing');
+  const canControl = session?.relay && session.state === 'running';
+  btnPlay.disabled = preparing || (!!session && !canControl);
   btnPlay.classList.remove('loading', 'hidden');
-  btnPlay.innerHTML = `<span class="play-icon-mc">${getButtonIconSvg(activeIconKey)}</span> <span class="play-text">${escapeHtml(activePlayText)}</span>`;
+  btnPlay.innerHTML = `<span class="play-icon-mc">${getButtonIconSvg(activeIconKey)}</span> <span class="play-text">${preparing ? 'PRÉPARATION…' : escapeHtml(activePlayText)}</span>`;
   if (progressSection) {
     progressSection.classList.add('hidden');
     progressSection.classList.remove('indeterminate');
@@ -4296,8 +4271,21 @@ window.launcher.onProgress((data) => {
   }
 });
 
-window.launcher.onGameClosed(() => resetPlayBtn());
-window.launcher.onGameError((err) => { showToast('Erreur du jeu : ' + err, 'error'); resetPlayBtn(); });
+if (window.launcher.onGameSessions) {
+  window.launcher.onGameSessions(sessions => {
+    gameSessions = Array.isArray(sessions) ? sessions : [];
+    if (!launchInProgress) resetPlayBtn();
+    loadAccountsList().catch(() => {});
+  });
+}
+window.launcher.onGameClosed(event => {
+  if (event?.accountName) showToast(`Session de ${event.accountName} terminée.`, 'info');
+  if (!launchInProgress) resetPlayBtn();
+});
+window.launcher.onGameError((err) => {
+  if (!launchInProgress) showToast('Erreur du jeu' + (err?.accountName ? ` (${err.accountName})` : '') + ' : ' + (err?.error || err), 'error');
+  if (!launchInProgress) resetPlayBtn();
+});
 
 // Mods loader & Real-time Search
 let cachedServerMods = [];
@@ -4450,8 +4438,16 @@ async function loadAccountsList() {
   if (!list) return;
 
   const data = await window.launcher.getAccounts();
+  if (Array.isArray(data.sessions)) gameSessions = data.sessions;
   const count = data.accounts?.length || 0;
   if (countEl) countEl.textContent = `${count} compte${count !== 1 ? 's' : ''}`;
+  const summary = document.getElementById('accounts-sessions-summary');
+  if (summary) {
+    const allocated = gameSessions.reduce((sum, session) => sum + (session.ram || 0), 0);
+    summary.textContent = gameSessions.length
+      ? `${gameSessions.length} session${gameSessions.length > 1 ? 's' : ''} ouverte${gameSessions.length > 1 ? 's' : ''} · ${allocated} Go de RAM alloués`
+      : 'Lancez plusieurs comptes. Le menu Échap du jeu permet de mettre un compte en veille.';
+  }
 
   if (!data.accounts || data.accounts.length === 0) {
     list.innerHTML = '<div class="empty-state"><p>Aucun compte enregistré.</p></div>';
@@ -4462,20 +4458,43 @@ async function loadAccountsList() {
   data.accounts.forEach((acc, i) => {
     const item = document.createElement('div');
     item.className = 'account-item' + (acc.active ? ' account-active' : '');
-    const skinUrl = getPlayerAvatarUrl(acc.name, acc.uuid, 40);
     const typeText = acc.type === 'microsoft' ? 'Microsoft' : 'Hors-ligne';
+    const session = sessionForAccount(acc.uuid);
+    const disconnected = session?.state === 'disconnected';
+    const closing = session?.state === 'closing';
+    const closeWindow = session?.pid && ['disconnected', 'stopping', 'closing'].includes(session.state) && window.launcher.closeGameSession;
+    const preparing = launchInProgress || gameSessions.some(item => item.state === 'preparing');
 
     item.innerHTML = `
-      <img class="account-skin" src="${skinUrl}" onerror="if(!this.dataset.tried){this.dataset.tried='1';this.src='https://minotar.net/helm/${encodeURIComponent(acc.name)}/40';}else if(this.dataset.tried==='1'){this.dataset.tried='2';this.src='https://crafthead.net/helm/${encodeURIComponent(acc.name)}/40';}else{this.src='${defaultSkinSrc}';}" />
+      <img class="account-skin" src="${AccountAvatars.fallback}" alt="Avatar de ${escapeHtml(acc.name)}" width="40" height="40" />
       <div class="account-info">
         <span class="account-name">${escapeHtml(acc.name)}</span>
         <span class="account-type-badge ${acc.type}">${typeText}</span>
+        ${session ? `<span class="account-session-state">${disconnected ? 'Jeu déconnecté — fermez la fenêtre pour relancer' : closing ? 'Fermeture du jeu…' : session.state === 'preparing' ? 'Préparation' : session.state === 'stopping' ? 'Fermeture' : 'En jeu'} · ${escapeHtml(session.serverName)} · ${session.ram} Go</span>` : ''}
       </div>
       <div class="account-actions">
         ${!acc.active ? `<button class="btn-mc-action btn-switch" data-index="${i}">Utiliser</button>` : '<span class="active-badge" style="font-size:11px;font-weight:700;color:var(--mc-green-primary);padding:4px 10px;background:rgba(56,204,86,0.12);border-radius:4px;">Actif</span>'}
-        <button class="btn-mc-action btn-remove" data-index="${i}">Supprimer</button>
+        <button type="button" class="btn-mc-primary btn-launch-account" data-index="${i}" ${session || preparing ? 'disabled' : ''}>${session?.state === 'preparing' ? 'Préparation…' : 'Jouer'}</button>
+        ${closeWindow ? `<button type="button" class="btn-mc-primary btn-close-game" data-id="${escapeHtml(session.id)}" ${closing ? 'disabled' : ''}>${closing ? 'Fermeture…' : 'Fermer le jeu'}</button>` : ''}
+        <button class="btn-mc-action btn-remove" data-index="${i}" ${session ? 'disabled title="Fermez cette session avant de supprimer le compte"' : ''}>Supprimer</button>
       </div>`;
     list.appendChild(item);
+    AccountAvatars.apply(item.querySelector('.account-skin'), acc, 40);
+  });
+
+  list.querySelectorAll('.btn-launch-account').forEach(btn => {
+    btn.addEventListener('click', () => requestGameLaunch(data.accounts[Number(btn.dataset.index)].uuid));
+  });
+
+  list.querySelectorAll('.btn-close-game').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        const result = await window.launcher.closeGameSession(btn.dataset.id);
+        if (!result.success) showToast(result.error || 'Fermez la fenêtre Minecraft directement.', 'error');
+      } catch { showToast('Fermez la fenêtre Minecraft directement.', 'error'); }
+      finally { loadAccountsList().catch(() => {}); }
+    });
   });
 
   list.querySelectorAll('.btn-switch').forEach(btn => {
@@ -4495,7 +4514,7 @@ async function loadAccountsList() {
     btn.addEventListener('click', async () => {
       const idx = parseInt(btn.dataset.index);
       const result = await window.launcher.removeAccount(idx);
-      if (!result.success) return;
+      if (!result.success) { showToast(result.error || 'Suppression impossible.', 'error'); return; }
       if (result.activeIndex < 0 || !result.activeAccount) {
         setLoggedOut();
       } else {
@@ -5340,6 +5359,43 @@ function initBetaTesterFromConfig(config) {
   setTimeout(() => { refreshBetaChannel(true).catch(() => {}); }, 4000);
 })();
 
+function initOnboardingRamControls() {
+  const cards = document.querySelectorAll('.onboarding-ram-card');
+  const slider = document.getElementById('onboarding-ram-slider');
+  const display = document.getElementById('onboarding-ram-val-display');
+  const tag = document.getElementById('onboarding-system-ram-tag');
+  const profile = getRamProfile(systemRamGB);
+  if (!slider) return null;
+
+  slider.min = profile.min;
+  slider.max = profile.max;
+  if (tag) tag.textContent = profile.total
+    ? `RAM système détectée : ${profile.total} Go`
+    : 'Détection RAM indisponible : allocation prudente de 2 Go';
+
+  function selectRam(value) {
+    slider.value = Math.min(profile.max, Math.max(profile.min, value));
+    if (display) display.textContent = `${slider.value} Go`;
+    cards.forEach(card => {
+      const selected = !card.hidden && Number(card.dataset.ram) === Number(slider.value);
+      card.classList.toggle('active', selected);
+      card.setAttribute('aria-pressed', String(selected));
+    });
+  }
+
+  cards.forEach((card, index) => {
+    const value = profile.presets[index];
+    // Sur les petits PC, ne pas afficher plusieurs fois la même allocation.
+    card.hidden = index !== 1 && value === profile.recommended;
+    card.dataset.ram = String(value);
+    card.querySelector('.ram-amount').textContent = `${value} Go`;
+    card.addEventListener('click', () => selectRam(value));
+  });
+  slider.addEventListener('input', () => selectRam(Number(slider.value)));
+  selectRam(profile.recommended);
+  return slider;
+}
+
 function initOnboardingWizard() {
   const modal = document.getElementById('modal-onboarding');
   if (!modal) return null;
@@ -5418,28 +5474,13 @@ function initOnboardingWizard() {
   }
 
   // Step 2 Elements
-  const ramCards = document.querySelectorAll('.onboarding-ram-card');
-  const ramSliderEl = document.getElementById('onboarding-ram-slider');
-  const ramDisplay = document.getElementById('onboarding-ram-val-display');
-  const systemRamTag = document.getElementById('onboarding-system-ram-tag');
+  const ramSliderEl = initOnboardingRamControls();
 
   // Step 3 Elements (choix du serveur)
   const serverCards = document.querySelectorAll('#onboarding-server-grid .onboarding-server-card');
 
   let currentStep = 0;
   const TOTAL_STEPS = 3;
-
-  // Set detected system RAM on step 2
-  if (systemRamTag && window.launcher.getSystemRam) {
-    window.launcher.getSystemRam().then(totalGB => {
-      if (totalGB && totalGB > 0) {
-        systemRamTag.textContent = `RAM système détectée : ${totalGB} Go`;
-        if (ramSliderEl) {
-          ramSliderEl.max = Math.min(32, Math.max(8, totalGB));
-        }
-      }
-    }).catch(() => {});
-  }
 
   // Pre-fill username if already logged in
   const currentLoggedIn = document.getElementById('account-name')?.textContent;
@@ -5497,27 +5538,6 @@ function initOnboardingWizard() {
       avatarTimeout = setTimeout(() => {
         avatarImg.src = `https://mc-heads.net/avatar/${encodeURIComponent(name)}/96`;
       }, 300);
-    });
-  }
-
-  // RAM cards & slider sync
-  ramCards.forEach(card => {
-    card.addEventListener('click', () => {
-      const ramVal = parseInt(card.dataset.ram, 10);
-      if (ramSliderEl) ramSliderEl.value = ramVal;
-      if (ramDisplay) ramDisplay.textContent = `${ramVal} Go`;
-      ramCards.forEach(c => c.classList.remove('active'));
-      card.classList.add('active');
-    });
-  });
-
-  if (ramSliderEl) {
-    ramSliderEl.addEventListener('input', () => {
-      const val = parseInt(ramSliderEl.value, 10);
-      if (ramDisplay) ramDisplay.textContent = `${val} Go`;
-      ramCards.forEach(card => {
-        card.classList.toggle('active', parseInt(card.dataset.ram, 10) === val);
-      });
     });
   }
 
@@ -5669,7 +5689,7 @@ function initOnboardingWizard() {
         }
 
         // 2. RAM
-        const chosenRam = parseInt(ramSliderEl?.value || '6', 10);
+        const chosenRam = Math.min(ramMax, Math.max(ramMin, parseInt(ramSliderEl?.value, 10) || ramMin));
         if (ramSlider) ramSlider.value = chosenRam;
         if (ramValue) ramValue.textContent = `${chosenRam} Go`;
         if (settingsRam) settingsRam.value = chosenRam;
@@ -5743,16 +5763,8 @@ function initOnboardingWizard() {
 }
 
 // Peint le badge serveur à partir de l'état pré-chargé (sans réseau).
-function paintServerBadgeFromBoot(online, serverName) {
-  const topbarBadge = document.getElementById('topbar-server-badge');
+function paintHomeServerStatus(online) {
   const homeBadge = document.getElementById('home-server-badge');
-  const label = `${serverName || 'SERVEUR'} ${online ? 'EN LIGNE' : 'HORS LIGNE'}`;
-  if (topbarBadge) {
-    const dot = topbarBadge.querySelector('.status-dot');
-    const text = topbarBadge.querySelector('.server-text');
-    if (dot) dot.className = online ? 'status-dot online' : 'status-dot offline';
-    if (text) text.textContent = label;
-  }
   if (homeBadge) {
     homeBadge.className = online ? 'mc-tag tag-status online' : 'mc-tag tag-status offline';
     homeBadge.innerHTML = online
@@ -5772,6 +5784,9 @@ function paintServerBadgeFromBoot(online, serverName) {
   };
   try {
     await initRamLimits();
+    if (window.launcher.getGameSessions) {
+      try { gameSessions = await window.launcher.getGameSessions(); } catch {}
+    }
     initCustomThemeModal();
     const onboarding = initOnboardingWizard();
 
@@ -5856,7 +5871,7 @@ function paintServerBadgeFromBoot(online, serverName) {
       if (el) el.textContent = `v${boot.appVersion}`;
     }
     if (boot && typeof boot.serverOnline === 'boolean') {
-      try { paintServerBadgeFromBoot(boot.serverOnline, boot.servers?.activeServer?.name); } catch {}
+      try { paintHomeServerStatus(boot.serverOnline); } catch {}
     }
 
     await initServerSelector();

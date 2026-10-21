@@ -56,6 +56,7 @@
 
     // Multi-account
     getAccounts: () => invoke('get_accounts'),
+    getGameSessions: () => invoke('get_game_sessions'),
     switchAccount: (index) => invoke('switch_account', { index }),
     removeAccount: (index) => invoke('remove_account', { index }),
 
@@ -135,6 +136,7 @@
     onUpdateError: singleListener('progress', 'update-error'),
     onGameLog: singleListener('game-log'),
     onGameClosed: singleListener('game-closed'),
+    onGameSessions: singleListener('game-sessions'),
     onClientModsUpdated: singleListener('client-mods-updated'),
     onGameError: singleListener('game-error'),
     onWindowStateChanged: singleListener('window-state')

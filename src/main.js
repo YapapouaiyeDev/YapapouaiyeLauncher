@@ -3,7 +3,11 @@ const path = require("path");
 const os = require("os");
 const net = require("net");
 const http = require("http");
-const { Launch, Microsoft } = require("minecraft-java-core");
+const { Microsoft } = require("minecraft-java-core");
+const { NetworkSessions } = require("./network-sessions");
+const { ManagedLaunch } = require("./managed-launch");
+const { skinForAccount } = require("./account-avatars");
+const { GameSessions, accountKey, prepareAccountInstance } = require("./game-sessions");
 const { autoUpdater } = require("electron-updater");
 const { LauncherUpdateProvider, installRequestedUpdate, normalizeVersion } = require("./launcher-update-provider");
 let requestedUpdateVersion = null;
@@ -380,6 +384,7 @@ function getMaintenanceState() {
 async function refreshRemoteLauncherState() {
   loadRemoteStateCache();
   let serversOk = false;
+  const serversFailures = [];
   for (const url of serversApiCandidates()) {
     try {
       const parsed = await fetchRemoteJson(`${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`);
@@ -389,10 +394,11 @@ async function refreshRemoteLauncherState() {
       serversOk = true;
       break;
     } catch (err) {
-      console.warn(`[RemoteServers] Injoignable ${url}:`, err.message);
+      serversFailures.push(`${url}: ${err.message}`);
     }
   }
   let configOk = false;
+  const configFailures = [];
   for (const url of launcherConfigApiCandidates()) {
     try {
       const parsed = await fetchRemoteJson(`${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`);
@@ -404,10 +410,13 @@ async function refreshRemoteLauncherState() {
         configOk = true;
         break;
       }
+      throw new Error("Configuration du launcher invalide.");
     } catch (err) {
-      console.warn(`[RemoteServers] Config injoignable ${url}:`, err.message);
+      configFailures.push(`${url}: ${err.message}`);
     }
   }
+  if (!serversOk) console.warn("[RemoteServers] Aucun endpoint serveurs disponible ; cache conservé.", serversFailures.join(" | "));
+  if (!configOk) console.warn("[RemoteServers] Aucune configuration distante disponible ; cache conservé.", configFailures.join(" | "));
   if (serversOk || configOk) {
     remoteStateFetchedAt = Date.now();
     saveRemoteStateCache();
@@ -660,7 +669,33 @@ let splashWindow;
 let splashStartedAt = 0;
 let authAccount = null;
 let gameOptions = { nightVision: false, noFog: false, shaders: false };
-let gameProcess = null;
+const gameSessions = new GameSessions(sessions => sendToRenderer("game-sessions", sessions));
+const gameLaunchers = new Map();
+const relayProfiles = new Map();
+const networkSessions = new NetworkSessions((id, error, wasReady) => {
+  if (error) {
+    console.warn(`[NetworkSession] ${id}: ${error}`);
+    logToFile("NETWORK", `${id}: ${error}`);
+  }
+  const session = gameSessions.list().find(item => item.id === id);
+  const profile = relayProfiles.get(id);
+  relayProfiles.delete(id);
+  if (profile?.controlFile) { try { fs.unlinkSync(profile.controlFile); } catch {} }
+  if (gameLaunchers.has(id)) gameSessions.disconnected(id);
+  else gameSessions.finish(id);
+  if (session && wasReady && (error || !gameLaunchers.has(id))) sendToRenderer(error ? "game-error" : "game-closed", {
+    sessionId: id, accountUuid: session.accountUuid, accountName: session.accountName,
+    ...(error ? { error } : {}),
+  });
+}, (id, status) => {
+  gameSessions.relay(id, status);
+  if (status.error) {
+    console.warn(`[NetworkSession] ${id}: ${status.error}`);
+    logToFile("NETWORK", `${id}: ${status.error}`);
+    const session = gameSessions.list().find(item => item.id === id);
+    sendToRenderer("game-error", { sessionId: id, accountName: session?.accountName, error: status.error });
+  }
+});
 
 // ============================================================
 // Central server status monitor
@@ -1070,14 +1105,14 @@ const DEFAULT_CLIENT_MODS = {
   },
 };
 
-function getClientModsConfig() {
+function getClientModsConfig(targetGameDir = gameDir) {
   const config = loadConfig();
   const base = normalizeClientModsDeep(config.clientMods || {});
 
   // Lit également yapapouaiye_client.json (ou lunar_client.json) pour charger
   // les dernières coordonnées et réglages sauvegardés par le mod compagnon in-game
   try {
-    const configDir = path.join(gameDir, "config");
+    const configDir = path.join(targetGameDir, "config");
     const diskData = readClientOptions(configDir);
     if (diskData && typeof diskData === "object") {
       if (!base.hudPositions) base.hudPositions = {};
@@ -1174,9 +1209,9 @@ const QWERTY_DEFAULT_KEYS = {
   "key_key.hotbar.9": "key.keyboard.9",
 };
 
-function ensureNeoForgeFmlConfig() {
+function ensureNeoForgeFmlConfig(targetGameDir = gameDir) {
   try {
-    const fmlPath = path.join(gameDir, "config", "fml.toml");
+    const fmlPath = path.join(targetGameDir, "config", "fml.toml");
     if (fs.existsSync(fmlPath)) {
       let content = fs.readFileSync(fmlPath, "utf-8");
       if (/^earlyWindowControl\s*=\s*true/m.test(content)) {
@@ -1190,9 +1225,9 @@ function ensureNeoForgeFmlConfig() {
   }
 }
 
-function applyKeyboardLayoutToOptionsTxt(targetLayout = "azerty", force = false) {
+function applyKeyboardLayoutToOptionsTxt(targetLayout = "azerty", force = false, targetGameDir = gameDir) {
   try {
-    const optionsPath = path.join(gameDir, "options.txt");
+    const optionsPath = path.join(targetGameDir, "options.txt");
     if (!fs.existsSync(optionsPath)) return { applied: false, reason: "options.txt introuvable" };
 
     const targetMap = (targetLayout === "qwerty") ? QWERTY_DEFAULT_KEYS : AZERTY_DEFAULT_KEYS;
@@ -1233,14 +1268,14 @@ function applyKeyboardLayoutToOptionsTxt(targetLayout = "azerty", force = false)
   }
 }
 
-function syncClientOptionsToMinecraft(clientMods) {
+function syncClientOptionsToMinecraft(clientMods, targetGameDir = gameDir) {
   try {
-    const mods = clientMods || getClientModsConfig();
-    const configDir = path.join(gameDir, "config");
+    const mods = clientMods || getClientModsConfig(targetGameDir);
+    const configDir = path.join(targetGameDir, "config");
     if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
 
     // 0. Assure que fml.toml a earlyWindowControl = false (corrige les clics GLFW dans Options / Contrôles)
-    ensureNeoForgeFmlConfig();
+    ensureNeoForgeFmlConfig(targetGameDir);
 
     const clientJsonPath = path.join(configDir, "yapapouaiye_client.json");
     const legacyJsonPath = path.join(configDir, "lunar_client.json");
@@ -1251,7 +1286,7 @@ function syncClientOptionsToMinecraft(clientMods) {
 
     // 1. Sauvegarde et préservation des options dans options.txt SANS écraser
     // les autres paramètres de Minecraft (distance de rendu, flou d'arrière plan, etc.)
-    const optionsPath = path.join(gameDir, "options.txt");
+    const optionsPath = path.join(targetGameDir, "options.txt");
     if (fs.existsSync(optionsPath)) {
       try {
         let optText = fs.readFileSync(optionsPath, "utf-8");
@@ -1269,7 +1304,7 @@ function syncClientOptionsToMinecraft(clientMods) {
         // Initialise uniquement les touches absentes. Les contrôles enregistrés
         // par le jeu ne doivent jamais être réinitialisés pendant une synchronisation.
         const currentConfig = loadConfig();
-        applyKeyboardLayoutToOptionsTxt(currentConfig.keyboardLayout || "azerty", false);
+        applyKeyboardLayoutToOptionsTxt(currentConfig.keyboardLayout || "azerty", false, targetGameDir);
       } catch (err) {
         console.warn("[ClientMods] Could not patch options.txt:", err.message);
       }
@@ -2346,7 +2381,7 @@ async function syncModsFromRemote(targetServer) {
 }
 
 /** Mirrors the per-server mods (incl. custom mods) into the game's mods folder before launch. */
-function stageModsForLaunch(serverId, minecraftVersion, loader) {
+function stageModsForLaunch(serverId, minecraftVersion, loader, modsDir = path.join(gameDir, "mods")) {
   const serverModsDir = getServerModsDir(serverId);
   if (!fs.existsSync(serverModsDir)) fs.mkdirSync(serverModsDir, { recursive: true });
   if (!fs.existsSync(modsDir)) fs.mkdirSync(modsDir, { recursive: true });
@@ -2374,11 +2409,10 @@ function stageModsForLaunch(serverId, minecraftVersion, loader) {
       let copied = false;
       try {
         if (fs.existsSync(destFile)) fs.unlinkSync(destFile);
-        fs.linkSync(srcFile, destFile);
+        // A cache update must never mutate jars used by another open session.
+        fs.copyFileSync(srcFile, destFile);
         copied = true;
-      } catch {
-        try { fs.copyFileSync(srcFile, destFile); copied = true; } catch { copied = false; }
-      }
+      } catch { copied = false; }
       if (!copied) {
         // Fichier source verrouillé ou disque inaccessible (ex: jeu déjà lancé).
         // On compte l'échec au lieu de lancer silencieusement sans ce mod.
@@ -2399,12 +2433,12 @@ function stageModsForLaunch(serverId, minecraftVersion, loader) {
 
   // Inject the client companion mod (NexLux) providing Lunar Client features:
   // FullBright, NoFog, and in-game GUI menu
-  injectClientCompanionMod(minecraftVersion, loader);
+  injectClientCompanionMod(minecraftVersion, loader, modsDir);
   return { staged, failed, failedNames };
 }
 
 /** Injects NexLux companion mod into game mods folder to enable Lunar Client features */
-function injectClientCompanionMod(minecraftVersion, loader) {
+function injectClientCompanionMod(minecraftVersion, loader, modsDir = path.join(gameDir, "mods")) {
   const filename = loader === "neoforge" ? ({ "26.2": "nexlux-26.2.jar", "1.21.1": "nexlux-1.1.0.jar" })[minecraftVersion] : null;
   if (!filename) {
     console.log("[ClientMods] NexLux non disponible pour " + loader + " / " + minecraftVersion);
@@ -2429,9 +2463,9 @@ function injectClientCompanionMod(minecraftVersion, loader) {
 // ============================================================
 // Server list injection (servers.dat)
 // ============================================================
-function ensureServerInList() {
+function ensureServerInList(targetGameDir = gameDir) {
   try {
-    const serversDat = path.join(gameDir, "servers.dat");
+    const serversDat = path.join(targetGameDir, "servers.dat");
     const serverEntries = getAllServers().map((s) => ({ name: s.name, ip: s.displayIp }));
     const nbt = buildServersNBTMulti(serverEntries);
     fs.writeFileSync(serversDat, nbt);
@@ -3089,10 +3123,45 @@ ipcMain.handle("get-accounts", () => {
       name: a.name,
       uuid: a.uuid,
       type: isMicrosoftAccount(a) ? "microsoft" : "offline",
+      skin: skinForAccount(a),
       active: i === data.activeIndex,
     })),
     activeIndex: data.activeIndex,
+    sessions: gameSessions.list(),
   };
+});
+
+ipcMain.handle("get-game-sessions", () => gameSessions.list());
+
+ipcMain.handle("close-game-session", async (_, id) => {
+  const session = gameSessions.list().find(item => item.id === id);
+  const launcher = gameLaunchers.get(id);
+  if (!session || !launcher || !['disconnected', 'stopping'].includes(session.state)) {
+    return { success: false, error: "Aucune fenêtre bloquée disponible pour cette action." };
+  }
+  gameSessions.closing(id);
+  try {
+    await launcher.requestClose();
+    await launcher.waitForExit();
+    return { success: true };
+  } catch (error) {
+    if (gameLaunchers.get(id) === launcher) {
+      gameSessions.closeFailed(id);
+    }
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle("stop-network-session", async (_, id) => {
+  if (!gameSessions.list().some(session => session.id === id && (session.mode === "network" || session.relay))) {
+    return { success: false, error: "Session réseau introuvable." };
+  }
+  // Mark cancellation synchronously, even before a worker exists (maintenance
+  // and Microsoft refresh can still be awaiting network responses).
+  gameSessions.stopping(id);
+  await networkSessions.stop(id);
+  if (!gameLaunchers.has(id)) gameSessions.finish(id);
+  return { success: true };
 });
 
 // Switch to a different saved account
@@ -3100,7 +3169,7 @@ ipcMain.handle("switch-account", async (_, index) => {
   const blocked = invitationGate.required();
   if (blocked) return blocked;
   const data = loadAccounts();
-  if (index < 0 || index >= data.accounts.length) return { success: false };
+  if (!Number.isInteger(index) || index < 0 || index >= data.accounts.length) return { success: false };
 
   const account = data.accounts[index];
 
@@ -3113,10 +3182,13 @@ ipcMain.handle("switch-account", async (_, index) => {
         // Preserve meta.type on refreshed account
         if (!refreshed.meta) refreshed.meta = {};
         if (!refreshed.meta.type) refreshed.meta.type = "microsoft";
+        const freshData = loadAccounts();
+        const freshIndex = freshData.accounts.findIndex(a => accountKey(a.uuid) === accountKey(account.uuid));
+        if (freshIndex < 0) return { success: false, error: "Ce compte a été supprimé." };
         authAccount = refreshed;
-        data.accounts[index] = refreshed;
-        data.activeIndex = index;
-        saveAccounts(data);
+        freshData.accounts[freshIndex] = refreshed;
+        freshData.activeIndex = freshIndex;
+        saveAccounts(freshData);
         return { success: true, username: refreshed.name, uuid: refreshed.uuid };
       }
     } catch {}
@@ -3138,7 +3210,10 @@ ipcMain.handle("switch-account", async (_, index) => {
 // Remove account
 ipcMain.handle("remove-account", async (_, index) => {
   const data = loadAccounts();
-  if (index < 0 || index >= data.accounts.length) return { success: false };
+  if (!Number.isInteger(index) || index < 0 || index >= data.accounts.length) return { success: false };
+  if (gameSessions.list().some(s => accountKey(s.accountUuid) === accountKey(data.accounts[index].uuid))) {
+    return { success: false, error: "Fermez le jeu de ce compte avant de le supprimer." };
+  }
 
   const wasActive = data.activeIndex === index;
   data.accounts.splice(index, 1);
@@ -3180,7 +3255,27 @@ ipcMain.handle("auth-logout", async () => {
 ipcMain.handle("launch-game", async (_, options) => {
   const blocked = invitationGate.required();
   if (blocked) return blocked;
-  if (!authAccount) return { success: false, error: "Non connectÃ©." };
+  // Snapshot identity before any await: changing the selected account must never
+  // change a launch already in progress or overwrite another account's token.
+  const requestedUuid = options?.accountUuid || authAccount?.uuid;
+  const accountsData = loadAccounts();
+  const savedAccount = accountsData.accounts.find(a => accountKey(a.uuid) === accountKey(requestedUuid));
+  if (!savedAccount) return { success: false, error: "Compte introuvable. Reconnectez-vous." };
+  let launchAccount = structuredClone(savedAccount);
+  const mode = options?.mode ?? "game";
+  if (mode !== "game") return { success: false, error: "Utilisez Mettre en veille dans le menu Échap du jeu." };
+  const primaryUuid = loadConfig().primaryAccountUuid || accountsData.accounts[accountsData.activeIndex]?.uuid || accountsData.accounts[0]?.uuid || launchAccount.uuid;
+  const requestedServerId = options?.serverId || loadConfig().activeServerId || "adoserv2";
+  const targetServer = getAllServers().find(s => s.id === requestedServerId && s.enabled !== false);
+  if (!targetServer) return { success: false, error: "Serveur introuvable ou désactivé." };
+  let session;
+  try {
+    session = gameSessions.begin(launchAccount, targetServer, options?.ram ?? 4, os.totalmem() / (1024 ** 3), mode);
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+  let spawned = false;
+  try {
 
   // 0. Maintenance distante (espace admin du site) : bloque tout lancement.
   // Les paramètres restent accessibles, seuls JOUER + Mods sont coupés côté renderer.
@@ -3194,8 +3289,9 @@ ipcMain.handle("launch-game", async (_, options) => {
   } catch {}
 
   // 0b. Codes d'accès serveur (définis dans l'espace admin) : à taper dans l'ordre.
+  if (session.state === "stopping") return { success: false, code: "LAUNCH_CANCELLED", error: "Connexion annulée." };
   try {
-    const requestedId = (options || {}).serverId || loadConfig().activeServerId || "adoserv2";
+    const requestedId = targetServer.id;
     const target = getRemoteServerById(requestedId);
     if (target && target.codesRequired && !sessionVerifiedServers.has(target.id)) {
       console.log(`[ServerCodes] Lancement bloqué : codes requis pour ${target.id}.`);
@@ -3220,53 +3316,64 @@ ipcMain.handle("launch-game", async (_, options) => {
     }
   } catch {}
 
-  try {
-    const { version, loader, ram, serverId } = options || {};
-    const targetServer = getServerById(serverId || loadConfig().activeServerId || "adoserv2");
+    const { version, loader, ram } = options || {};
     const activeLoader = normalizeLoader(targetServer.defaultLoader || loader, targetServer);
-    const launcher = new Launch();
+    const consumeUnlock = () => {
+      try {
+        const lockAfter = loadLaunchLock();
+        if (lockAfter.enabled && !isTrustedPC(lockAfter)) launchUnlockedAt = 0;
+      } catch {}
+    };
 
     // Save RAM & selected server to config
-    saveConfig({ ram, activeServerId: targetServer.id });
+    saveConfig({ ...(mode === "game" ? { ram } : {}), activeServerId: targetServer.id });
 
     // Force refresh Microsoft token before launch to avoid "Session non valide"
-    if (isMicrosoftAccount(authAccount)) {
+    if (isMicrosoftAccount(launchAccount)) {
       console.log("[Launch] Refreshing Microsoft token before launch...");
       try {
         const microsoft = new Microsoft();
-        const refreshed = await microsoft.refresh(authAccount);
+        const refreshed = await microsoft.refresh(launchAccount);
+        if (session.state === "stopping") return { success: false, code: "LAUNCH_CANCELLED", error: "Connexion annulée." };
         if (refreshed && !refreshed.error) {
           if (!refreshed.meta) refreshed.meta = {};
           if (!refreshed.meta.type) refreshed.meta.type = "microsoft";
-          authAccount = refreshed;
           const data = loadAccounts();
-          if (data.activeIndex >= 0) {
-            data.accounts[data.activeIndex] = refreshed;
+          const index = data.accounts.findIndex(a => accountKey(a.uuid) === accountKey(launchAccount.uuid));
+          if (index >= 0) {
+            data.accounts[index] = refreshed;
             saveAccounts(data);
           }
+          if (accountKey(authAccount?.uuid) === accountKey(launchAccount.uuid)) authAccount = refreshed;
+          launchAccount = refreshed;
           console.log("[Launch] Microsoft token refreshed successfully");
         } else {
           console.error("[Launch] Token refresh returned error, session may be invalid");
           return { success: false, error: "Session expirÃ©e. Reconnecte-toi via Microsoft." };
         }
       } catch (refreshErr) {
+        if (session.state === "stopping") return { success: false, code: "LAUNCH_CANCELLED", error: "Connexion annulée." };
         console.error("[Launch] Token refresh failed:", refreshErr.message);
         return { success: false, error: "Session expirÃ©e. Reconnecte-toi via Microsoft." };
       }
     }
 
+    const launcher = new ManagedLaunch();
     // Ensure servers are in multiplayer list
-    ensureServerInList();
+    if (!loadConfig().primaryAccountUuid) saveConfig({ primaryAccountUuid: primaryUuid });
+    const profile = prepareAccountInstance(gameDir, launchAccount.uuid, primaryUuid);
+    const targetGameDir = profile.directory;
+    ensureServerInList(targetGameDir);
 
     // Sync Lunar client options (Night Vision gamma, NoFog, etc.)
-    syncClientOptionsToMinecraft();
+    syncClientOptionsToMinecraft(undefined, targetGameDir);
 
     // Load full config for user settings
     const config = loadConfig();
 
     // Vérifie si options.txt a fullscreen:true ou si config.fullscreen est true
     let isFullscreen = !!config.fullscreen;
-    const optionsPath = path.join(gameDir, "options.txt");
+    const optionsPath = path.join(targetGameDir, "options.txt");
     if (fs.existsSync(optionsPath)) {
       try {
         const optText = fs.readFileSync(optionsPath, "utf-8");
@@ -3288,10 +3395,11 @@ ipcMain.handle("launch-game", async (_, options) => {
     }
 
     const launchConfig = {
-      authenticator: authAccount,
+      authenticator: launchAccount,
       path: gameDir,
+      instance: profile.instance,
       version: gameVersion,
-      memory: { max: `${ram || 4}G`, min: "1G" },
+      memory: { max: `${ram || 4}G`, min: "256M" },
       // Si fullscreen est actif, ne pas forcer width/height pour ne pas casser le mode plein écran
       screen: isFullscreen
         ? { fullscreen: true }
@@ -3303,6 +3411,9 @@ ipcMain.handle("launch-game", async (_, options) => {
     if (config.jvmArgs) {
       launchConfig.JVM_ARGS = config.jvmArgs.split(" ").filter(Boolean);
     }
+    if (activeLoader === "neoforge" && gameSessions.list().some(other => other.id !== session.id && other.mode !== "network" && other.state === "running")) {
+      launchConfig.JVM_ARGS = [...(launchConfig.JVM_ARGS || []), "-Dnexlux.standbyOnJoin=true"];
+    }
 
     if (activeLoader && activeLoader !== "vanilla") {
       launchConfig.loader = { type: activeLoader, build: "latest", enable: true };
@@ -3312,9 +3423,10 @@ ipcMain.handle("launch-game", async (_, options) => {
 
     // Stage the active server's mods (NeoForge + Fabric together) into the game mods folder
     send("progress", { type: "mod-sync", value: `Préparation des mods de ${targetServer.name}...` });
-    const staged = stageModsForLaunch(targetServer.id, launchConfig.version, activeLoader);
+    const staged = stageModsForLaunch(targetServer.id, launchConfig.version, activeLoader, path.join(targetGameDir, "mods"));
     const stagedCount = staged?.staged ?? 0;
     const stagedFailed = staged?.failed ?? 0;
+    if (stagedFailed > 0) throw new Error(`${stagedFailed} mod(s) n'ont pas pu être préparés.`);
     console.log(`[Launch] ${targetServer.name} (${activeLoader}) mods staged (${stagedCount} fichier(s), ${stagedFailed} échec(s)). Setting up game launch pipeline...`);
     if (stagedCount === 0) {
       console.warn(`[Launch] Aucun mod installé pour ${targetServer.id} — le jeu démarrera sans mods. Pensez à synchroniser depuis l'onglet Mods.`);
@@ -3351,22 +3463,31 @@ ipcMain.handle("launch-game", async (_, options) => {
     launcher.on("speed", (speed) => send("progress", { type: "speed", value: speed }));
     launcher.on("estimated", (time) => send("progress", { type: "estimated", value: time }));
     launcher.on("patch", (patch) => send("progress", { type: "patch", value: patch }));
+    let gameOutputTail = "";
     launcher.on("data", (data) => {
+      gameOutputTail = (gameOutputTail + String(data)).slice(-64 * 1024);
       send("game-log", data);
       if (config.minimizeOnLaunch && mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMinimized()) {
         mainWindow.minimize();
       }
     });
     launcher.on("close", (code) => {
+      logToFile("GAME", `Session ${session.id} fermée (code ${code}). Dernières sorties :\n${gameOutputTail}`);
+      gameLaunchers.delete(session.id);
+      const keepConnection = networkSessions.isRelay(session.id) && networkSessions.relayStatus(session.id)?.canDetach && networkSessions.relayStatus(session.id)?.connected;
+      if (keepConnection) gameSessions.background(session.id);
+      else { void networkSessions.stop(session.id); gameSessions.finish(session.id); }
       console.log(`[Launch] Game process closed with code ${code}`);
       if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show();
         mainWindow.restore();
         mainWindow.focus();
       }
-      send("game-closed", code ?? 0);
+      if (!keepConnection) send("game-closed", { sessionId: session.id, accountName: launchAccount.name, code: code ?? 0 });
       // Synchronise les éventuels changements faits en jeu (positions HUD, fullscreen, etc.)
       try {
-        const refreshedMods = getClientModsConfig();
+        if (profile.instance) return;
+        const refreshedMods = getClientModsConfig(targetGameDir);
         saveConfig({ clientMods: refreshedMods });
         send("client-mods-updated", refreshedMods);
         if (fs.existsSync(optionsPath)) {
@@ -3379,29 +3500,35 @@ ipcMain.handle("launch-game", async (_, options) => {
       } catch {}
     });
     launcher.on("error", (err) => {
+      // Only the actual child close releases its Java RAM reservation.
       console.error("[Launch] Game launch error event:", err);
-      send("game-error", err.message || String(err));
+      send("game-error", { sessionId: session.id, accountName: launchAccount.name, error: err?.message || String(err) });
     });
 
     console.log("[Launch] Calling minecraft-java-core Launch()...");
+    launcher.once("spawn", pid => {
+      spawned = true; gameLaunchers.set(session.id, launcher);
+      gameSessions.running(session.id, pid);
+    });
     await launcher.Launch(launchConfig);
     console.log("[Launch] Launch() resolved - game process spawned.");
 
     // Consomme le déverrouillage ponctuel : sans PC retenu, le prochain
     // lancement redemandera le mot de passe.
-    try {
-      const lockAfter = loadLaunchLock();
-      if (lockAfter.enabled && !isTrustedPC(lockAfter)) launchUnlockedAt = 0;
-    } catch {}
+    consumeUnlock();
 
-    if (config.closeOnLaunch && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.close();
-    }
+    // Keep session tracking alive when hiding the launcher after launch.
+    if (config.closeOnLaunch && mainWindow && !mainWindow.isDestroyed()) mainWindow.hide();
 
-    return { success: true, modsStaged: stagedCount, modsFailed: stagedFailed };
+    return { success: true, sessionId: session.id, accountName: launchAccount.name, modsStaged: stagedCount, modsFailed: stagedFailed };
   } catch (error) {
+    if (session.state === "stopping") return { success: false, code: "LAUNCH_CANCELLED", error: "Connexion annulée." };
     console.error("Launch error:", error);
     return { success: false, error: error.message };
+  } finally {
+    if (!spawned) {
+      await networkSessions.stop(session.id); gameSessions.finish(session.id);
+    }
   }
 });
 

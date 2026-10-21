@@ -1,0 +1,24 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "fr.yapapouaiye.nexlux.standby.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "RelayPlayerListMixin",
+    "RelayChatMixin",
+    "StandbyConnectionMixin",
+    "StandbyChunkSenderMixin",
+    "StandbyServerChatMixin"
+  ],
+  "client": [
+    "WorldRenderMixin",
+    "FramerateMixin",
+    "RelayLoginMixin",
+    "RelayCommonMixin",
+    "StandbyWorldTickMixin",
+    "StandbyParticlesMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
