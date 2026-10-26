@@ -372,14 +372,7 @@ function applyThemeMediaAndCustomization(theme) {
   document.documentElement.style.setProperty('--theme-bg-brightness', bgBrightness);
 
   // 3. Play Button custom text & icon
-  const btnPlayText = document.querySelector('#btn-play .play-text');
-  const btnPlayIcon = document.querySelector('#btn-play .play-icon-mc');
-  if (btnPlayText) {
-    btnPlayText.textContent = theme.images?.playButtonText || 'JOUER';
-  }
-  if (btnPlayIcon) {
-    btnPlayIcon.innerHTML = getButtonIconSvg(theme.images?.playButtonIcon || 'play');
-  }
+  updatePlayButtonContent(theme);
 
   // 4. Audio profiles
   currentClickSoundProfile = theme.audio?.soundProfile || (theme.id === 'cyber' ? 'laser_click' : theme.id === 'netherite' ? 'anvil_heavy' : theme.id === 'amethyst' ? 'magic_chime' : theme.id === 'sculk' ? 'bubble_pop' : 'minecraft_stone');
@@ -647,13 +640,6 @@ function applyTheme(theme, notify = false) {
   const pillEl = document.getElementById('current-theme-pill');
   if (pillEl) {
     pillEl.innerHTML = `${getThemeFaviconSvg(currentThemeObj)} <span>${escapeHtml(currentThemeObj.name)}</span>`;
-  }
-
-  // Sync topbar quick theme button tooltip & dynamic icon
-  const btnQuickThemeEl = document.getElementById('btn-quick-theme');
-  if (btnQuickThemeEl) {
-    btnQuickThemeEl.title = `Thème : ${currentThemeObj.name} (Cliquer pour changer)`;
-    btnQuickThemeEl.innerHTML = getThemeFaviconSvg(currentThemeObj);
   }
 
   // Sync visual cards active state
@@ -1565,7 +1551,8 @@ navItems.forEach(item => {
     if (targetPage === 'accounts') loadAccountsList();
     if (targetPage === 'client') loadClientPageSettings();
     if (targetPage === 'mods') loadMods();
-    if (targetPage === 'settings') { loadSettings(); renderThemeGrid(); }
+    if (targetPage === 'settings') loadSettings();
+    if (targetPage === 'themes') { loadSettings(); renderThemeGrid(); }
     if (targetPage === 'news' || targetPage === 'home') loadLatestReleaseInfo();
   });
 });
@@ -1923,67 +1910,11 @@ if (langSelect) {
   });
 }
 
-const keyboardLayoutSelect = document.getElementById('settings-keyboard-layout');
-if (keyboardLayoutSelect) {
-  keyboardLayoutSelect.addEventListener('change', async (e) => {
-    const layout = e.target.value;
-    try {
-      await window.launcher.applyKeyboardLayout(layout);
-      showToast(`Disposition ${layout.toUpperCase()} appliquée avec succès !`, 'success');
-    } catch (err) {
-      showToast('Erreur lors de l\'application des touches : ' + err.message, 'error');
-    }
-  });
-}
-
-const btnApplyKeyboardLayout = document.getElementById('btn-apply-keyboard-layout');
-if (btnApplyKeyboardLayout) {
-  btnApplyKeyboardLayout.addEventListener('click', async () => {
-    const layout = keyboardLayoutSelect ? keyboardLayoutSelect.value : 'azerty';
-    try {
-      await window.launcher.applyKeyboardLayout(layout);
-      if (typeof playMinecraftClickSound === 'function') playMinecraftClickSound();
-      showToast(`Touches ${layout.toUpperCase()} appliquées à Minecraft !`, 'success');
-    } catch (err) {
-      showToast('Erreur lors de l\'application des touches : ' + err.message, 'error');
-    }
-  });
-}
-
-const btnClientAzertyNow = document.getElementById('btn-client-azerty-now');
-if (btnClientAzertyNow) {
-  btnClientAzertyNow.addEventListener('click', async () => {
-    try {
-      if (keyboardLayoutSelect) keyboardLayoutSelect.value = 'azerty';
-      await window.launcher.applyKeyboardLayout('azerty');
-      if (typeof playMinecraftClickSound === 'function') playMinecraftClickSound();
-      showToast('Touches AZERTY (ZQSD) configurées et synchronisées !', 'success');
-    } catch (err) {
-      showToast('Erreur lors de la configuration AZERTY : ' + err.message, 'error');
-    }
-  });
-}
-
 const themeSelect = document.getElementById('settings-theme');
 if (themeSelect) {
   themeSelect.addEventListener('change', (e) => {
     applyTheme(e.target.value, true);
     window.launcher.saveConfig({ theme: e.target.value });
-  });
-}
-
-// Topbar Quick Theme Switcher Button
-const btnQuickTheme = document.getElementById('btn-quick-theme');
-if (btnQuickTheme) {
-  btnQuickTheme.addEventListener('click', () => {
-    const all = getAllThemes();
-    const currentTheme = document.body.dataset.theme || DEFAULT_THEME;
-    const currentIndex = all.findIndex(t => t.id === currentTheme);
-    const nextIndex = (currentIndex + 1) % all.length;
-    const nextTheme = all[nextIndex].id;
-    applyTheme(nextTheme, true);
-    window.launcher.saveConfig({ theme: nextTheme });
-    playMinecraftClickSound();
   });
 }
 
@@ -1999,8 +1930,149 @@ function initCustomThemeModal() {
   const btnPasteClipboard = document.getElementById('btn-paste-clipboard-json');
   const btnApplyJson = document.getElementById('btn-apply-custom-json');
   const jsonTextarea = document.getElementById('custom-theme-json-input');
+  const aiRequest = document.getElementById('theme-ai-request');
+  const aiKey = document.getElementById('theme-ai-api-key');
+  const aiGenerate = document.getElementById('btn-theme-ai-generate');
+  const aiStatus = document.getElementById('theme-ai-status');
+  const aiModel = document.getElementById('theme-ai-model');
+  const aiGenerateLabel = document.getElementById('theme-ai-generate-label');
+  const aiKeyHint = document.getElementById('theme-ai-key-hint');
+  const aiForgetKey = document.getElementById('btn-theme-ai-forget-key');
+  const manualImport = document.getElementById('theme-ai-manual-import');
+  let generatedTheme = null;
+  let generating = false;
+  let keyRevision = 0;
+  let keySaveTimer;
+  let savedApiKey = null;
+  let keyStorageQueue = Promise.resolve();
+
+  function setKeyHint(message, state = 'idle') {
+    aiKeyHint.textContent = message;
+    aiKeyHint.dataset.state = state;
+  }
+
+  function persistApiKey() {
+    clearTimeout(keySaveTimer);
+    const apiKey = aiKey.value.trim();
+    const revision = keyRevision;
+    keyStorageQueue = keyStorageQueue.then(async () => {
+      if (apiKey === savedApiKey) return;
+      try {
+        const result = await window.launcher.saveThemeAiApiKey(apiKey);
+        if (!result?.success) throw new Error(result?.error || 'Impossible de sauvegarder la clé.');
+        savedApiKey = apiKey;
+        if (revision === keyRevision) setKeyHint(apiKey ? 'Clé sauvegardée sur cet appareil.' : 'Clé oubliée.');
+      } catch (error) {
+        if (revision === keyRevision) setKeyHint(error.message || 'Impossible de sauvegarder la clé.', 'error');
+      }
+    });
+    return keyStorageQueue;
+  }
+
+  // Loading must not overwrite a key the user has already started editing.
+  Promise.resolve().then(() => window.launcher.getThemeAiApiKey()).then(result => {
+    if (keyRevision !== 0) return;
+    if (!result?.success) throw new Error(result?.error || 'Impossible de relire la clé enregistrée.');
+    savedApiKey = result.apiKey || '';
+    aiKey.value = savedApiKey;
+    setKeyHint(savedApiKey ? 'Clé sauvegardée sur cet appareil.' : 'La clé sera sauvegardée sur cet appareil.');
+  }).catch(error => {
+    if (keyRevision === 0) setKeyHint(error.message || 'Impossible de relire la clé enregistrée.', 'error');
+  });
+
+  aiKey.addEventListener('input', () => {
+    keyRevision++;
+    clearTimeout(keySaveTimer);
+    setKeyHint('Sauvegarde de la clé…');
+    keySaveTimer = setTimeout(persistApiKey, 400);
+  });
+  aiKey.addEventListener('change', persistApiKey);
+  aiForgetKey?.addEventListener('click', async () => {
+    keyRevision++;
+    aiKey.value = '';
+    aiKey.type = 'password';
+    const toggle = document.getElementById('btn-theme-ai-toggle-key');
+    toggle.textContent = 'Afficher';
+    toggle.setAttribute('aria-pressed', 'false');
+    await persistApiKey();
+  });
+
+  function setAiStatus(message, state = 'idle') {
+    aiStatus.textContent = message;
+    aiStatus.dataset.state = state;
+  }
+
+  document.querySelectorAll('[data-theme-idea]').forEach(button => {
+    button.addEventListener('click', () => {
+      aiRequest.value = button.dataset.themeIdea;
+      aiRequest.focus();
+    });
+  });
+  document.getElementById('btn-theme-ai-toggle-key')?.addEventListener('click', event => {
+    const visible = aiKey.type === 'password';
+    aiKey.type = visible ? 'text' : 'password';
+    event.currentTarget.textContent = visible ? 'Masquer' : 'Afficher';
+    event.currentTarget.setAttribute('aria-pressed', String(visible));
+  });
+  document.getElementById('btn-theme-ai-get-key')?.addEventListener('click', () => {
+    window.launcher.openExternal('https://build.nvidia.com/settings/api-keys');
+  });
+
+  function openAiGenerator() {
+    modal?.classList.remove('hidden');
+    document.querySelector('.modal-tab-btn[data-tab="tab-ai-import"]')?.click();
+    manualImport?.classList.add('hidden');
+  }
+
+  function buildThemeRequest() {
+    const context = generatedTheme ? `\n\nThème précédent à modifier :\n${JSON.stringify(generatedTheme)}` : '';
+    return `${AI_PROMPT_TEMPLATE}${context}\n\nDemande : ${aiRequest?.value.trim() || 'Crée un thème Minecraft original.'}`;
+  }
+
+  aiGenerate?.addEventListener('click', async () => {
+    if (generating) return;
+    if (!aiRequest.value.trim()) {
+      setAiStatus('Décrivez le thème à créer ou les modifications souhaitées.', 'error');
+      aiRequest.focus();
+      return;
+    }
+    if (!aiKey.value.trim()) {
+      setAiStatus('Saisissez votre clé API NVIDIA NIM ou utilisez « Copier le prompt IA ».', 'error');
+      aiKey.focus();
+      return;
+    }
+    generating = true;
+    const apiKey = aiKey.value.trim();
+    aiGenerate.disabled = true;
+    btnApplyJson.disabled = true;
+    aiGenerate.setAttribute('aria-busy', 'true');
+    aiGenerateLabel.textContent = 'Génération en cours…';
+    setAiStatus('NVIDIA prépare votre thème. Cela peut prendre un moment.', 'loading');
+    try {
+      await persistApiKey();
+      const result = await window.launcher.generateThemeAi({ apiKey, prompt: buildThemeRequest(), model: aiModel.value });
+      if (!result?.success) throw new Error(result?.error || 'Génération indisponible.');
+      const parsed = parseThemeJson(result.content);
+      if (generatedTheme) parsed.id = generatedTheme.id;
+      saveCustomTheme(parsed, true);
+      generatedTheme = parsed;
+      jsonTextarea.value = result.content;
+      checkAndValidateJsonInput();
+      setAiStatus(`Thème « ${parsed.name} » enregistré et activé. Décrivez vos prochaines modifications dans « Votre idée ».`, 'success');
+    } catch (error) {
+      setAiStatus(error.message || 'Impossible de générer le thème. Réessayez.', 'error');
+    } finally {
+      generating = false;
+      aiGenerate.disabled = false;
+      aiGenerate.removeAttribute('aria-busy');
+      aiGenerateLabel.textContent = generatedTheme ? 'Appliquer mes modifications' : 'Générer mon thème';
+      btnApplyJson.disabled = false;
+    }
+  });
 
   function closeThemeModal() {
+    // Flush the last edit even when the dialog is closed before the debounce.
+    if (keyRevision > 0) persistApiKey();
     soundPlayer.stop('preview');
     audioEditRevision++;
     if (modal) modal.classList.add('hidden');
@@ -2011,7 +2083,7 @@ function initCustomThemeModal() {
 
   if (btnOpenModal && modal) {
     btnOpenModal.addEventListener('click', () => {
-      modal.classList.remove('hidden');
+      openAiGenerator();
       updateCustomThemesManageList();
       updateVisualEditorPreview();
     });
@@ -2063,8 +2135,12 @@ function initCustomThemeModal() {
 
   // Copy AI Prompt
   const copyPromptHandler = async () => {
+    modal?.classList.remove('hidden');
+    document.querySelector('.modal-tab-btn[data-tab="tab-ai-import"]')?.click();
+    manualImport?.classList.remove('hidden');
     try {
-      await navigator.clipboard.writeText(AI_PROMPT_TEMPLATE);
+      await navigator.clipboard.writeText(buildThemeRequest());
+      setAiStatus('Prompt copié. Collez-le dans votre IA, puis ajoutez sa réponse JSON ci-dessous.', 'success');
       showToast('Prompt IA copié ! Collez-le dans ChatGPT, Gemini ou Claude.', 'info', 3500);
     } catch (err) {
       showToast('Erreur lors de la copie du prompt', 'error');
@@ -2073,6 +2149,7 @@ function initCustomThemeModal() {
 
   if (btnCopyPromptDirect) btnCopyPromptDirect.addEventListener('click', copyPromptHandler);
   if (btnModalCopyPrompt) btnModalCopyPrompt.addEventListener('click', copyPromptHandler);
+  document.getElementById('btn-theme-ai-recopy')?.addEventListener('click', copyPromptHandler);
 
   // Live JSON validation feedback
   const jsonStatusEl = document.getElementById('ai-json-validation-status');
@@ -2151,6 +2228,7 @@ function initCustomThemeModal() {
       try {
         const parsed = parseThemeJson(res.content);
         saveCustomTheme(parsed, true);
+        generatedTheme = parsed;
         loadThemeIntoVisualEditor(parsed);
         closeThemeModal();
         showToast(`Thème "${parsed.name}" importé avec succès !`, 'info', 2500);
@@ -2174,6 +2252,7 @@ function initCustomThemeModal() {
       try {
         const parsed = parseThemeJson(raw);
         saveCustomTheme(parsed, true);
+        generatedTheme = parsed;
         loadThemeIntoVisualEditor(parsed);
         closeThemeModal();
         jsonTextarea.value = '';
@@ -4211,19 +4290,22 @@ async function doLaunchGame() {
     }
 }
 
+function updatePlayButtonContent(theme) {
+  const button = document.getElementById('btn-play');
+  if (!button) return;
+  const activeIconKey = theme.images?.playButtonIcon || 'play';
+  const activePlayText = theme.images?.playButtonText || 'JOUER';
+  const session = sessionForAccount(selectedAccountUuid);
+  const preparing = launchInProgress || gameSessions.some(item => item.state === 'preparing');
+  button.disabled = preparing || Boolean(session);
+  button.innerHTML = `<span class="play-icon-mc">${getButtonIconSvg(activeIconKey)}</span> <span class="play-text">${preparing ? 'PRÉPARATION…' : session ? 'EN JEU' : escapeHtml(activePlayText)}</span>`;
+}
+
 function resetPlayBtn() {
   if (!btnPlay || launchInProgress) return;
   const progressSection = document.getElementById('progress-section');
-  const currentTheme = getThemeObj(document.body.dataset.theme || DEFAULT_THEME);
-  const activeIconKey = currentTheme.images?.playButtonIcon || 'play';
-  const activePlayText = currentTheme.images?.playButtonText || 'JOUER';
-
-  const session = sessionForAccount(selectedAccountUuid);
-  const preparing = launchInProgress || gameSessions.some(item => item.state === 'preparing');
-  const canControl = session?.relay && session.state === 'running';
-  btnPlay.disabled = preparing || (!!session && !canControl);
+  updatePlayButtonContent(getThemeObj(document.body.dataset.theme || DEFAULT_THEME));
   btnPlay.classList.remove('loading', 'hidden');
-  btnPlay.innerHTML = `<span class="play-icon-mc">${getButtonIconSvg(activeIconKey)}</span> <span class="play-text">${preparing ? 'PRÉPARATION…' : escapeHtml(activePlayText)}</span>`;
   if (progressSection) {
     progressSection.classList.add('hidden');
     progressSection.classList.remove('indeterminate');
@@ -4474,7 +4556,7 @@ async function loadAccountsList() {
       </div>
       <div class="account-actions">
         ${!acc.active ? `<button class="btn-mc-action btn-switch" data-index="${i}">Utiliser</button>` : '<span class="active-badge" style="font-size:11px;font-weight:700;color:var(--mc-green-primary);padding:4px 10px;background:rgba(56,204,86,0.12);border-radius:4px;">Actif</span>'}
-        <button type="button" class="btn-mc-primary btn-launch-account" data-index="${i}" ${session || preparing ? 'disabled' : ''}>${session?.state === 'preparing' ? 'Préparation…' : 'Jouer'}</button>
+        <button type="button" class="btn-mc-primary btn-launch-account" data-index="${i}" ${session || preparing ? 'disabled' : ''}>${session?.state === 'preparing' ? 'Préparation…' : session ? 'En jeu' : 'Jouer'}</button>
         ${closeWindow ? `<button type="button" class="btn-mc-primary btn-close-game" data-id="${escapeHtml(session.id)}" ${closing ? 'disabled' : ''}>${closing ? 'Fermeture…' : 'Fermer le jeu'}</button>` : ''}
         <button class="btn-mc-action btn-remove" data-index="${i}" ${session ? 'disabled title="Fermez cette session avant de supprimer le compte"' : ''}>Supprimer</button>
       </div>`;
@@ -4949,10 +5031,6 @@ async function loadSettings() {
       if (config.theme && themeSelect) {
         themeSelect.value = config.theme;
         applyTheme(config.theme);
-      }
-      const keyboardLayoutEl = document.getElementById('settings-keyboard-layout');
-      if (keyboardLayoutEl && config.keyboardLayout) {
-        keyboardLayoutEl.value = config.keyboardLayout;
       }
       renderThemeGrid();
     }
@@ -5781,6 +5859,7 @@ function paintHomeServerStatus(online) {
     try { document.body.classList.remove('is-booting'); } catch {}
     const b = document.getElementById('boot-overlay');
     if (b) b.classList.add('hidden');
+    if (window.launcher.ready) window.launcher.ready();
   };
   try {
     await initRamLimits();
@@ -5840,7 +5919,7 @@ function paintHomeServerStatus(online) {
     if (boot && boot.login && boot.login.success) {
       setLoggedIn(boot.login.username, boot.login.uuid);
       loggedIn = true;
-    } else {
+    } else if (!boot) {
       try {
         const login = await window.launcher.autoLogin();
         if (login && login.success) {
@@ -5874,7 +5953,11 @@ function paintHomeServerStatus(online) {
       try { paintHomeServerStatus(boot.serverOnline); } catch {}
     }
 
-    await initServerSelector();
+    if (boot && boot.servers && boot.servers.activeServer) {
+      applyRemoteLauncherState(boot.servers);
+    } else {
+      await initServerSelector();
+    }
     // 4. Révèle l'UI avec le bon état AVANT les appels réseau lents
     finishBoot();
 

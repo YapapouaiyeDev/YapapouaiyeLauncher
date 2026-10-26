@@ -12,6 +12,14 @@ class GameSessions {
 
   list() { return [...this.sessions.values()].map(session => ({ ...session })); }
 
+  restore(sessions) {
+    for (const session of sessions) {
+      if (this.sessions.has(session.id) || this.list().some(s => accountKey(s.accountUuid) === accountKey(session.accountUuid))) continue;
+      this.sessions.set(session.id, { ...session, state: 'running' });
+    }
+    this.onChange(this.list());
+  }
+
   checkRam(ram, totalGB, ignoreId) {
     if (!Number.isInteger(ram) || ram < 2) throw new Error('Allocation RAM invalide (minimum 2 Go).');
     const budget = Math.max(0, Math.floor(totalGB) - 3);

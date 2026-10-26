@@ -59,6 +59,7 @@ app.whenReady().then(async () => {
     };
     ${implementation('sessionForAccount')}
     ${implementation('escapeHtml')}
+    ${implementation('updatePlayButtonContent')}
     ${implementation('resetPlayBtn')}
     async ${implementation('requestGameLaunch')}
     async ${implementation('doLaunchGame')}
@@ -98,7 +99,9 @@ app.whenReady().then(async () => {
   await win.webContents.executeJavaScript(`document.querySelectorAll('.btn-launch-account')[2].click(); new Promise(resolve => setTimeout(resolve, 0))`);
   await win.webContents.executeJavaScript(`finishSync(); new Promise(resolve => setTimeout(resolve, 0))`);
   assert.equal(await win.webContents.executeJavaScript(`launched[1].accountUuid`), 'third');
-  assert.equal(await win.webContents.executeJavaScript(`document.querySelectorAll('.btn-launch-account')[2].textContent`), 'Jouer');
+  assert.equal(await win.webContents.executeJavaScript(`document.querySelectorAll('.btn-launch-account')[2].textContent`), 'En jeu');
+  assert.equal(await win.webContents.executeJavaScript(`document.getElementById('btn-play').textContent.includes('EN JEU')`), true);
+  assert.equal(await win.webContents.executeJavaScript(`document.getElementById('btn-play').disabled`), true);
   assert.equal(await win.webContents.executeJavaScript(`document.querySelectorAll('.btn-launch-account')[2].disabled`), true);
   assert.equal(await win.webContents.executeJavaScript(`launched.length`), 2);
   await win.webContents.executeJavaScript(`

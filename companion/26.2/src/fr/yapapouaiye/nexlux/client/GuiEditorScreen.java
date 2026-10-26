@@ -68,13 +68,24 @@ extends Screen {
         this.renderSpeedWidget(guiGraphics, mouseX, mouseY);
         this.renderFpsWidget(guiGraphics, mouseX, mouseY);
         this.renderPingWidget(guiGraphics, mouseX, mouseY);
-        int barW = 280;
+        for (String id : new String[]{"potions"}) {
+            ExtraHud.render(guiGraphics, id, true);
+            int x = HudMetrics.x(id), y = HudMetrics.y(id);
+            guiGraphics.outline(x, y, HudMetrics.width(id), HudMetrics.height(id),
+                id.equals(draggingWidget) ? 0xFF00FF88 : ExtraHud.settings(id).enabled ? 0xFF00BBF9 : 0xFF666666);
+            if (isInsideWidget(id, mouseX, mouseY)) {
+                String tip = font.plainSubstrByWidth(("potions".equals(id) ? "Potion Timer" : "Saturation")
+                    + " " + Math.round(ExtraHud.settings(id).scale * 100) + "% | Molette : taille", width - 8);
+                guiGraphics.text(font, tip, Math.clamp(x, 4, Math.max(4, width - font.width(tip) - 4)), Math.max(2, y - 11), -1, true);
+            }
+        }
+        int barW = Math.min(320, this.width - 16);
         int barH = 26;
         int barX = (this.width - barW) / 2;
         int barY = 8;
         guiGraphics.fill(barX, barY, barX + barW, barY + barH, -99544034);
         guiGraphics.outline(barX, barY, barW, barH, -16733953);
-        guiGraphics.text(this.font, "\u00a76\u2726 \u00a7f\u00a7l\u00c9diteur HUD", barX + 8, barY + 9, 0xFFFFFF, false);
+        guiGraphics.text(this.font, "Éditeur HUD", barX + 8, barY + 9, -1, false);
         int btnResetX = barX + barW - 144;
         int btnResetY = barY + 4;
         int btnResetW = 64;
@@ -82,21 +93,22 @@ extends Screen {
         boolean hoverReset = mouseX >= btnResetX && mouseX <= btnResetX + btnResetW && mouseY >= btnResetY && mouseY <= btnResetY + btnResetH;
         guiGraphics.fill(btnResetX, btnResetY, btnResetX + btnResetW, btnResetY + btnResetH, hoverReset ? 1088765502 : 624837977);
         guiGraphics.outline(btnResetX, btnResetY, btnResetW, btnResetH, hoverReset ? -38037 : -12696231);
-        guiGraphics.centeredText(this.font, "\u21ba Reset", btnResetX + btnResetW / 2, btnResetY + 5, hoverReset ? -30584 : -6248779);
+        guiGraphics.centeredText(this.font, "Rétablir", btnResetX + btnResetW / 2, btnResetY + 5, hoverReset ? -30584 : -6248779);
         int btnDoneX = barX + barW - 74;
         int btnDoneY = barY + 4;
         int btnDoneW = 68;
         int btnDoneH = 18;
         boolean hoverDone = mouseX >= btnDoneX && mouseX <= btnDoneX + btnDoneW && mouseY >= btnDoneY && mouseY <= btnDoneY + btnDoneH;
         guiGraphics.fill(btnDoneX, btnDoneY, btnDoneX + btnDoneW, btnDoneY + btnDoneH, hoverDone ? -16726529 : -16733953);
-        guiGraphics.centeredText(this.font, "\u2713 Valider", btnDoneX + btnDoneW / 2, btnDoneY + 5, -1);
-        int tipW = 340;
+        guiGraphics.centeredText(this.font, "Valider", btnDoneX + btnDoneW / 2, btnDoneY + 5, -1);
+        int tipW = Math.min(340, this.width - 16);
         int tipH = 16;
         int tipX = (this.width - tipW) / 2;
         int tipY = this.height - 22;
         guiGraphics.fill(tipX, tipY, tipX + tipW, tipY + tipH, -1072688356);
         guiGraphics.outline(tipX, tipY, tipW, tipH, -14144195);
-        guiGraphics.centeredText(this.font, "\u00a77Glisser: \u00a7fD\u00e9placer  \u00a78|  \u00a77Clic Droit: \u00a7fActiver/Couper  \u00a78|  \u00a77\u00c9chap: \u00a7fQuitter", this.width / 2, tipY + 4, 11909831);
+        String hint = this.width < 400 ? "Glisser : déplacer | Clic droit : activer" : "Glisser : déplacer | Clic droit : activer | Échap : quitter";
+        guiGraphics.centeredText(this.font, this.font.plainSubstrByWidth(hint, tipW - 12), this.width / 2, tipY + 4, 0xFFB6C5D8);
         if (this.draggingWidget != null) {
             this.renderDragTooltip(guiGraphics, mouseX, mouseY);
         }
@@ -108,13 +120,10 @@ extends Screen {
         int x = LunarClientConfig.getCoordsX();
         int y = LunarClientConfig.getCoordsY();
         boolean enabled = LunarClientConfig.isCoordinates();
-        BlockPos pos = mc.player != null ? mc.player.blockPosition() : null;
-        String coords = pos != null ? "XYZ: " + pos.getX() + " / " + pos.getY() + " / " + pos.getZ() : "XYZ: 94 / 50 / -9";
-        String facing = "Direction: " + (mc.player != null ? mc.player.getDirection().name() : "NORTH");
+        String[] lines = HudMetrics.coordinateLines();
         int pad = 4;
-        int w = Math.max(this.font.width(coords), this.font.width(facing));
-        Objects.requireNonNull(this.font);
-        int h = 9 * 2 + 2;
+        int w = HudMetrics.width("coords") - 8;
+        int h = HudMetrics.height("coords") - 8;
         int boxX = x - pad;
         int boxY = y - pad;
         int boxW = w + pad * 2;
@@ -122,15 +131,16 @@ extends Screen {
         boolean isHovered = mouseX >= boxX && mouseX <= boxX + boxW && mouseY >= boxY && mouseY <= boxY + boxH;
         boolean isDragging = "coords".equals(this.draggingWidget);
         guiGraphics.fill(boxX, boxY, boxX + boxW, boxY + boxH, enabled ? Integer.MIN_VALUE : 1345327120);
-        guiGraphics.text(this.font, coords, x, y, enabled ? -1 : 0x888888, true);
-        Objects.requireNonNull(this.font);
-        guiGraphics.text(this.font, facing, x, y + 9 + 2, enabled ? -4867385 : 0x666666, true);
+        for (int line = 0; line < lines.length; line++) {
+            int color = line == lines.length - 1 ? (enabled ? -4867385 : 0xFF666666) : (enabled ? -1 : 0xFF888888);
+            guiGraphics.text(this.font, lines[line], x, y + line * 11, color, true);
+        }
         int outline = isDragging ? -16711800 : (isHovered ? -16733953 : (enabled ? -2143402663 : 1357200958));
         guiGraphics.outline(boxX, boxY, boxW, boxH, outline);
         if (isHovered || isDragging) {
             String badge = "\u00a7bCoordonn\u00e9es " + (enabled ? "\u00a7a[ON]" : "\u00a7c[OFF]");
             int tagY = boxY - 11 >= 2 ? boxY - 11 : boxY + boxH + 2;
-            guiGraphics.text(this.font, badge, boxX, tagY, 0xFFFFFF, true);
+            guiGraphics.text(this.font, badge, boxX, tagY, -1, true);
         }
     }
 
@@ -140,7 +150,7 @@ extends Screen {
         boolean enabled = LunarClientConfig.isCpsCounter();
         String cpsTxt = LunarClientEvents.leftClicks.size() + " | " + LunarClientEvents.rightClicks.size() + " CPS";
         int pad = 4;
-        int w = this.font.width(cpsTxt);
+        int w = HudMetrics.width("cps") - 8;
         Objects.requireNonNull(this.font);
         int h = 9;
         int boxX = x - pad;
@@ -150,13 +160,13 @@ extends Screen {
         boolean isHovered = mouseX >= boxX && mouseX <= boxX + boxW && mouseY >= boxY && mouseY <= boxY + boxH;
         boolean isDragging = "cps".equals(this.draggingWidget);
         guiGraphics.fill(boxX, boxY, boxX + boxW, boxY + boxH, enabled ? Integer.MIN_VALUE : 1345327120);
-        guiGraphics.text(this.font, cpsTxt, x, y, enabled ? -1 : 0x888888, true);
+        guiGraphics.text(this.font, cpsTxt, x, y, enabled ? -1 : 0xFF888888, true);
         int outline = isDragging ? -16711800 : (isHovered ? -16733953 : (enabled ? -2143402663 : 1357200958));
         guiGraphics.outline(boxX, boxY, boxW, boxH, outline);
         if (isHovered || isDragging) {
             String badge = "\u00a7eCPS " + (enabled ? "\u00a7a[ON]" : "\u00a7c[OFF]");
             int tagY = boxY - 11 >= 2 ? boxY - 11 : boxY + boxH + 2;
-            guiGraphics.text(this.font, badge, boxX, tagY, 0xFFFFFF, true);
+            guiGraphics.text(this.font, badge, boxX, tagY, -1, true);
         }
     }
 
@@ -183,13 +193,13 @@ extends Screen {
         if (isHovered || isDragging) {
             String badge = "\u00a7aArmure " + (enabled ? "\u00a7a[ON]" : "\u00a7c[OFF]");
             int tagY = boxY - 11 >= 2 ? boxY - 11 : boxY + boxH + 2;
-            guiGraphics.text(this.font, badge, boxX, tagY, 0xFFFFFF, true);
+            guiGraphics.text(this.font, badge, boxX, tagY, -1, true);
         }
     }
 
     private void renderSingleLineWidget(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, String widgetId, String badge, int x, int y, boolean enabled, String text, int textColor) {
         int pad = 4;
-        int w = this.font.width(text);
+        int w = HudMetrics.width(widgetId) - 8;
         Objects.requireNonNull(this.font);
         int h = 9;
         int boxX = x - pad;
@@ -199,29 +209,18 @@ extends Screen {
         boolean isHovered = mouseX >= boxX && mouseX <= boxX + boxW && mouseY >= boxY && mouseY <= boxY + boxH;
         boolean isDragging = widgetId.equals(this.draggingWidget);
         guiGraphics.fill(boxX, boxY, boxX + boxW, boxY + boxH, enabled ? Integer.MIN_VALUE : 1345327120);
-        guiGraphics.text(this.font, text, x, y, enabled ? textColor : 0x888888, true);
+        guiGraphics.text(this.font, text, x, y, enabled ? textColor : 0xFF888888, true);
         int outline = isDragging ? -16711800 : (isHovered ? -16733953 : (enabled ? -2143402663 : 1357200958));
         guiGraphics.outline(boxX, boxY, boxW, boxH, outline);
         if (isHovered || isDragging) {
             String tag = badge + " " + (enabled ? "\u00a7a[ON]" : "\u00a7c[OFF]");
             int tagY = boxY - 11 >= 2 ? boxY - 11 : boxY + boxH + 2;
-            guiGraphics.text(this.font, tag, boxX, tagY, 0xFFFFFF, true);
+            guiGraphics.text(this.font, tag, boxX, tagY, -1, true);
         }
     }
 
     private void renderSpeedWidget(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
-        Minecraft mc = Minecraft.getInstance();
-        double velocity = 0.0;
-        try {
-            if (mc.player != null) {
-                net.minecraft.world.entity.Entity ref = mc.player.getVehicle() != null ? mc.player.getVehicle() : mc.player;
-                velocity = ref.getDeltaMovement().horizontalDistance() * 20.0;
-            }
-        }
-        catch (Throwable ref) {
-            // empty catch block
-        }
-        String txt = String.format(Locale.ROOT, "%.1f m/s", velocity);
+        String txt = HudMetrics.counterText("speed");
         this.renderSingleLineWidget(guiGraphics, mouseX, mouseY, "speed", "\u00a7bVitesse", LunarClientConfig.getSpeedX(), LunarClientConfig.getSpeedY(), LunarClientConfig.isSpeed(), txt, -1);
     }
 
@@ -256,6 +255,10 @@ extends Screen {
     private void renderDragTooltip(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         int curX = 0;
         int curY = 0;
+        if (ExtraHud.supports(this.draggingWidget)) {
+            curX = HudMetrics.x(this.draggingWidget);
+            curY = HudMetrics.y(this.draggingWidget);
+        }
         if ("coords".equals(this.draggingWidget)) {
             curX = LunarClientConfig.getCoordsX();
             curY = LunarClientConfig.getCoordsY();
@@ -291,55 +294,12 @@ extends Screen {
         guiGraphics.text(this.font, label, tx + 4, ty + 3, -16711800, false);
     }
 
-    private int getWidgetWidth(String id) {
-        Minecraft mc = Minecraft.getInstance();
-        return switch (id) {
-            case "coords" -> {
-                BlockPos pos = mc.player != null ? mc.player.blockPosition() : null;
-                String c = pos != null ? "XYZ: " + pos.getX() + " / " + pos.getY() + " / " + pos.getZ() : "XYZ: 94 / 50 / -9";
-                String f = "Direction: " + (mc.player != null ? mc.player.getDirection().name() : "NORTH");
-                yield Math.max(this.font.width(c), this.font.width(f)) + 8;
-            }
-            case "cps" -> {
-                String cps = LunarClientEvents.leftClicks.size() + " | " + LunarClientEvents.rightClicks.size() + " CPS";
-                yield this.font.width(cps) + 8;
-            }
-            case "armor" -> LunarClientEvents.getArmorHudBlockWidth(true) + 4;
-            case "speed" -> this.font.width("00.0 m/s") + 8;
-            case "fps" -> this.font.width("999 FPS") + 8;
-            case "ping" -> this.font.width("999 ms") + 8;
-            default -> 60;
-        };
-    }
-
-    private int getWidgetHeight(String id) {
-        return switch (id) {
-            case "coords" -> {
-                Objects.requireNonNull(this.font);
-                yield 9 * 2 + 10;
-            }
-            case "cps" -> {
-                Objects.requireNonNull(this.font);
-                yield 9 + 8;
-            }
-            case "armor" -> 68;
-            case "speed" -> {
-                Objects.requireNonNull(this.font);
-                yield 9 + 8;
-            }
-            case "fps" -> {
-                Objects.requireNonNull(this.font);
-                yield 9 + 8;
-            }
-            case "ping" -> {
-                Objects.requireNonNull(this.font);
-                yield 9 + 8;
-            }
-            default -> 28;
-        };
-    }
+    private int getWidgetWidth(String id) { return HudMetrics.width(id); }
+    private int getWidgetHeight(String id) { return HudMetrics.height(id); }
 
     private boolean isInsideWidget(String id, double mouseX, double mouseY) {
+        if (ExtraHud.supports(id)) return ClientMenuLayout.contains(mouseX, mouseY,
+            HudMetrics.x(id), HudMetrics.y(id), HudMetrics.width(id), HudMetrics.height(id));
         int x = switch (id) {
             case "coords" -> LunarClientConfig.getCoordsX() - 4;
             case "cps" -> LunarClientConfig.getCpsX() - 4;
@@ -373,7 +333,7 @@ extends Screen {
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
         double mouseX = event.x(), mouseY = event.y(); int button = event.button();
-        int barW = 280;
+        int barW = Math.min(320, this.width - 16);
         int barH = 26;
         int barX = (this.width - barW) / 2;
         int barY = 8;
@@ -390,6 +350,13 @@ extends Screen {
             if (mouseX >= (double)btnDoneX && mouseX <= (double)(btnDoneX + 68) && mouseY >= (double)btnDoneY && mouseY <= (double)(btnDoneY + 18)) {
                 this.playClickSound();
                 this.closeEditor();
+                return true;
+            }
+            for (String id : new String[]{"potions"}) if (isInsideWidget(id, mouseX, mouseY)) {
+                draggingWidget = id;
+                dragOffsetX = (int)mouseX - HudMetrics.x(id);
+                dragOffsetY = (int)mouseY - HudMetrics.y(id);
+                playClickSound();
                 return true;
             }
             if (this.isInsideWidget("coords", mouseX, mouseY)) {
@@ -435,6 +402,10 @@ extends Screen {
                 return true;
             }
         } else if (button == 1) {
+            for (String id : new String[]{"potions"}) if (isInsideWidget(id, mouseX, mouseY)) {
+                minecraft.gui.setScreen(new ExtraHudScreen(this, id));
+                return true;
+            }
             if (this.isInsideWidget("coords", mouseX, mouseY)) {
                 LunarClientConfig.setCoordinates(!LunarClientConfig.isCoordinates(), true);
                 this.playClickSound();
@@ -477,28 +448,28 @@ extends Screen {
             int h = this.getWidgetHeight(this.draggingWidget);
             int targetX = (int)mouseX - this.dragOffsetX;
             int targetY = (int)mouseY - this.dragOffsetY;
-            if (Math.abs(targetX - 8) < 8) {
-                targetX = 8;
-            } else if (Math.abs(targetX + w - (this.width - 8)) < 8) {
-                targetX = this.width - 8 - w;
+            int pad = HudMetrics.padding(this.draggingWidget);
+            int count = HudMetrics.IDS.length - 1;
+            int[] otherX = new int[count], otherY = new int[count], otherW = new int[count], otherH = new int[count];
+            int index = 0;
+            for (String id : HudMetrics.IDS) {
+                if (id.equals(this.draggingWidget)) continue;
+                otherX[index] = HudMetrics.x(id) - HudMetrics.padding(id);
+                otherY[index] = HudMetrics.y(id) - HudMetrics.padding(id);
+                otherW[index] = HudMetrics.width(id);
+                otherH[index] = HudMetrics.height(id);
+                index++;
             }
-            if (Math.abs(targetY - 8) < 8) {
-                targetY = 8;
-            } else if (Math.abs(targetY + h - (this.height - 8)) < 8) {
-                targetY = this.height - 8 - h;
+            targetX = HudLayout.snap(targetX - pad, w, otherX, otherW, this.width) + pad;
+            targetY = HudLayout.snap(targetY - pad, h, otherY, otherH, this.height) + pad;
+            this.snapToCenterX = Math.abs(targetX - pad + w / 2 - this.width / 2) <= 1;
+            this.snapToCenterY = Math.abs(targetY - pad + h / 2 - this.height / 2) <= 1;
+            if (ExtraHud.supports(this.draggingWidget)) {
+                var settings = ExtraHud.settings(this.draggingWidget);
+                settings.x = targetX;
+                settings.y = targetY;
+                return true;
             }
-            int centerX = this.width / 2;
-            int centerY = this.height / 2;
-            boolean bl = this.snapToCenterX = Math.abs(targetX + w / 2 - centerX) < 8;
-            if (this.snapToCenterX) {
-                targetX = centerX - w / 2;
-            }
-            boolean bl2 = this.snapToCenterY = Math.abs(targetY + h / 2 - centerY) < 8;
-            if (this.snapToCenterY) {
-                targetY = centerY - h / 2;
-            }
-            targetX = Math.max(2, Math.min(this.width - w - 2, targetX));
-            targetY = Math.max(2, Math.min(this.height - h - 2, targetY));
             if ("coords".equals(this.draggingWidget)) {
                 LunarClientConfig.setCoordsX(targetX);
                 LunarClientConfig.setCoordsY(targetY);
@@ -521,6 +492,20 @@ extends Screen {
             return true;
         }
         return super.mouseDragged(event, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double x, double y, double dx, double dy) {
+        if (draggingWidget != null || !Double.isFinite(dy) || dy == 0) return super.mouseScrolled(x, y, dx, dy);
+        for (String id : new String[]{"potions"}) if (isInsideWidget(id, x, y)) {
+            var settings = ExtraHud.settings(id);
+            settings.scale = Math.clamp(Math.round(settings.scale * 100 + dy * 5) / 100f, 0.5f, 3f);
+            ExtraHud.invalidate();
+            ExtraHud.fit(id);
+            LunarClientConfig.save();
+            return true;
+        }
+        return super.mouseScrolled(x, y, dx, dy);
     }
 
     @Override
@@ -560,6 +545,13 @@ extends Screen {
         catch (Exception exception) {
             // empty catch block
         }
+    }
+
+    @Override public void onClose() { closeEditor(); }
+    @Override public void removed() {
+        draggingWidget = null;
+        LunarClientConfig.save();
+        super.removed();
     }
 
     public boolean isPauseScreen() {

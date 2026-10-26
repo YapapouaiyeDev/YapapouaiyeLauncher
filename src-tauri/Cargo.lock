@@ -5669,7 +5669,7 @@ dependencies = [
 
 [[package]]
 name = "yapapouaiye-launcher"
-version = "1.6.1-4-beta.2"
+version = "1.6.1-4"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

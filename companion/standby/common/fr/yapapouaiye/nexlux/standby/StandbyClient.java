@@ -19,6 +19,7 @@ public final class StandbyClient {
     public static final int FRAME_LIMIT = 5;
     private static volatile boolean active;
     private static int memoryCleanupTicks;
+    private static Object standbyListener;
     private static boolean standbyOnJoin = Boolean.getBoolean("nexlux.standbyOnJoin");
 
     private StandbyClient() {}
@@ -33,6 +34,7 @@ public final class StandbyClient {
     public static void enter() {
         if (active || !canStandby()) return;
         active = true;
+        standbyListener = Minecraft.getInstance().getConnection();
         KeyMapping.releaseAll();
         StandbyPlatform.pauseSounds();
         ((fr.yapapouaiye.nexlux.standby.mixin.StandbyParticlesMixin)Minecraft.getInstance().particleEngine).nexlux$clearParticles();
@@ -42,6 +44,7 @@ public final class StandbyClient {
     }
 
     public static void resume() {
+        standbyListener = null;
         if (!active) return;
         active = false;
         StandbyNetworkClient.resume();
@@ -62,7 +65,7 @@ public final class StandbyClient {
     public static void onTick(ClientTickEvent.Post event) {
         StandbyNetworkClient.tick();
         Screen screen = StandbyPlatform.getScreen();
-        if (active && (!canStandby() || !(screen instanceof StandbyScreen))) {
+        if (active && (!canStandby() || Minecraft.getInstance().getConnection() != standbyListener || !(screen instanceof StandbyScreen))) {
             resume();
             if (screen instanceof StandbyScreen) StandbyPlatform.setScreen(null);
         }

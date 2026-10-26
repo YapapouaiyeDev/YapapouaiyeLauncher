@@ -1,28 +1,11 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  net.minecraft.client.Minecraft
- *  net.minecraft.client.gui.GuiGraphicsExtractor
- *  net.minecraft.client.gui.components.EditBox
- *  net.minecraft.client.gui.components.events.GuiEventListener
- *  net.minecraft.client.gui.screens.Screen
- *  net.minecraft.client.resources.sounds.SimpleSoundInstance
- *  net.minecraft.client.resources.sounds.SoundInstance
- *  net.minecraft.core.Holder
- *  net.minecraft.network.chat.Component
- *  net.minecraft.sounds.SoundEvents
- */
 package fr.yapapouaiye.nexlux.client;
 
-import fr.yapapouaiye.nexlux.client.GuiEditorScreen;
-import fr.yapapouaiye.nexlux.client.LunarClientConfig;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -30,44 +13,53 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 
-public class LunarClientScreen
-extends Screen {
-    private int scrollOffset = 0;
+public class LunarClientScreen extends Screen {
+    private int scrollOffset;
     private EditBox searchBox;
-    private static final int COLS = 4;
-    private static final int CARD_H = 68;
-    private static final int CARD_GAP = 6;
-    private final List<ClientModItem> allMods = new ArrayList<ClientModItem>();
+    private int windowGesture;
+    private double gestureMouseX, gestureMouseY;
+    private ClientMenuLayout gestureStart;
+    private final List<ClientModItem> allMods = new ArrayList<>();
 
     public LunarClientScreen() {
-        super((Component)Component.literal((String)"Yapapouaiye Client In-Game Menu"));
-        this.initModList();
+        super(Component.literal("NexLux"));
+        initModList();
     }
 
-    protected void init() {
-        String previousSearch = this.searchBox != null ? this.searchBox.getValue() : "";
+    private ClientMenuLayout layout() { return LunarClientConfig.getClientMenu().layout(width, height); }
+
+    private void updateWindowWidgets() {
+        ClientMenuLayout l = layout();
+        if (searchBox != null) {
+            searchBox.setX(l.searchX + 19);
+            searchBox.setY(l.searchY + 6);
+            searchBox.setWidth(Math.max(1, l.searchWidth - 25));
+        }
+        scrollOffset = Math.max(0, Math.min(scrollOffset, l.maxScroll(getFilteredMods().size())));
+    }
+
+    private void finishWindowGesture() {
+        if (windowGesture != 0) {
+            windowGesture = 0;
+            gestureStart = null;
+            LunarClientConfig.save();
+        }
+    }
+
+    @Override protected void init() {
+        finishWindowGesture();
+        String query = searchBox == null ? "" : searchBox.getValue();
         super.init();
-        try {
-            Minecraft.getInstance().gameRenderer.clearPostEffect();
-        }
-        catch (Throwable throwable) {
-            // empty catch block
-        }
-        int panelWidth = Math.min(460, this.width - 24);
-        int panelX = (this.width - panelWidth) / 2;
-        int panelY = (this.height - Math.min(270, this.height - 24)) / 2;
-        int tabY = panelY + 28;
-        int searchW = 105;
-        int searchX = panelX + panelWidth - searchW - 8;
-        this.searchBox = new EditBox(this.font, searchX + 18, tabY + 4, searchW - 22, 11, (Component)Component.literal((String)"Chercher..."));
-        this.searchBox.setHint((Component)Component.literal((String)"Chercher..."));
-        this.searchBox.setMaxLength(32);
-        this.searchBox.setBordered(false);
-        this.searchBox.setValue(previousSearch);
-        this.searchBox.setResponder(value -> {
-            this.scrollOffset = 0;
-        });
-        this.addRenderableWidget(this.searchBox);
+        ClientMenuLayout l = layout();
+        searchBox = new EditBox(font, l.searchX + 19, l.searchY + 6,
+            Math.max(1, l.searchWidth - 25), 12, Component.literal("Rechercher un module"));
+        searchBox.setHint(Component.literal("Rechercher…"));
+        searchBox.setMaxLength(48);
+        searchBox.setBordered(false);
+        searchBox.setValue(query);
+        searchBox.setResponder(value -> scrollOffset = 0);
+        addRenderableWidget(searchBox);
+        scrollOffset = Math.min(scrollOffset, l.maxScroll(getFilteredMods().size()));
     }
 
     private void initModList() {
@@ -82,9 +74,12 @@ extends Screen {
         this.allMods.add(new ClientModItem("speed", "Vitesse", "\ud83d\udca8", "hud", false));
         this.allMods.add(new ClientModItem("fps", "FPS", "\ud83c\udfa5", "hud", false));
         this.allMods.add(new ClientModItem("ping", "Ping", "\ud83d\udcf6", "hud", false));
+        this.allMods.add(new ClientModItem("potions", "Potion Timer", "", "hud", false));
+        this.allMods.add(new ClientModItem("saturation", "Saturation", "", "hud", false));
     }
 
     private boolean isModActive(String id) {
+        if (ExtraHud.supports(id)) return ExtraHud.settings(id).enabled;
         return switch (id) {
             case "nightvision" -> LunarClientConfig.isNightVision();
             case "nofog" -> LunarClientConfig.isNoFog();
@@ -102,6 +97,14 @@ extends Screen {
 
     private void toggleMod(String id) {
         this.playClickSound();
+        if (ExtraHud.supports(id)) {
+            var settings = ExtraHud.settings(id);
+            settings.enabled = !settings.enabled;
+            ExtraHud.invalidate();
+            ExtraHud.fit(id);
+            LunarClientConfig.save();
+            return;
+        }
         switch (id) {
             case "nightvision": {
                 LunarClientConfig.setNightVision(!LunarClientConfig.isNightVision(), true);
@@ -157,214 +160,173 @@ extends Screen {
     public void renderBlurredBackground(float partialTick) {
     }
 
-    public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-    }
 
-    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        boolean closeHover;
-        int panelWidth = Math.min(460, this.width - 24);
-        int panelHeight = Math.min(270, this.height - 24);
-        int panelX = (this.width - panelWidth) / 2;
-        int panelY = (this.height - panelHeight) / 2;
-        guiGraphics.fill(0, 0, this.width, this.height, -2063597568);
-        guiGraphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, -233498591);
-        guiGraphics.outline(panelX, panelY, panelWidth, panelHeight, -14144195);
-        guiGraphics.fill(panelX, panelY, panelX + panelWidth, panelY + 24, -15592420);
-        guiGraphics.fill(panelX, panelY + 24, panelX + panelWidth, panelY + 25, -14144195);
-        guiGraphics.text(this.font, "\u00a76\u2726 \u00a7f\u00a7lYAPAPOUAIYE CLIENT", panelX + 8, panelY + 8, 0xFFFFFF, false);
-        int closeX = panelX + panelWidth - 20;
-        int closeY = panelY + 4;
-        boolean bl = closeHover = mouseX >= closeX && mouseX <= closeX + 16 && mouseY >= closeY && mouseY <= closeY + 16;
-        if (closeHover) {
-            guiGraphics.fill(closeX, closeY, closeX + 16, closeY + 16, 1357200958);
+    @Override public void extractBackground(GuiGraphicsExtractor gui, int mx, int my, float tick) {}
+
+    @Override public void extractRenderState(GuiGraphicsExtractor gui, int mx, int my, float tick) {
+        ClientMenuLayout l = layout();
+        gui.fill(0, 0, width, height, 0x77000000);
+        gui.fill(l.x, l.y, l.x + l.width, l.y + l.height, 0xF5111721);
+        gui.outline(l.x, l.y, l.width, l.height, 0xFF303D50);
+        gui.fill(l.x, l.y, l.x + l.width, l.y + 26, 0xFF141E2C);
+        ClientIcons.draw(gui, "star", l.x + 10, l.y + 9, 1, 0xFF00BBF9);
+        gui.text(font, "NexLux", l.x + 24, l.y + 9, -1, false);
+        if (l.width >= 420) gui.centeredText(font, "Glisser le titre pour déplacer", l.x + l.width / 2, l.y + 9, 0xFF8FA6BD);
+        boolean closeHover = ClientMenuLayout.contains(mx, my, l.x + l.width - 24, l.y + 5, 18, 18);
+        if (closeHover) gui.fill(l.x + l.width - 24, l.y + 5, l.x + l.width - 6, l.y + 23, 0xFF57303C);
+        ClientIcons.draw(gui, "close", l.x + l.width - 19, l.y + 10, 1, closeHover ? 0xFFFFA6B2 : 0xFFB4C1D4);
+        gui.fill(l.x + 10, l.toolbarY, l.x + 66, l.toolbarY + 22, 0xFF00A5DF);
+        gui.centeredText(font, "Modules", l.x + 38, l.toolbarY + 7, -1);
+        boolean editorHover = ClientMenuLayout.contains(mx, my, l.x + 72, l.toolbarY, 106, 22);
+        gui.fill(l.x + 72, l.toolbarY, l.x + 178, l.toolbarY + 22, editorHover ? 0xFF293E54 : 0xFF1B2737);
+        ClientIcons.draw(gui, "move", l.x + 80, l.toolbarY + 7, 1, 0xFFB3DDF3);
+        gui.text(font, "Éditer le HUD", l.x + 94, l.toolbarY + 7, -1, false);
+        gui.fill(l.searchX, l.searchY, l.searchX + l.searchWidth, l.searchY + 22, 0xFF0B111B);
+        gui.outline(l.searchX, l.searchY, l.searchWidth, 22,
+            searchBox != null && searchBox.isFocused() ? 0xFF00BBF9 : 0xFF303D50);
+        ClientIcons.draw(gui, "search", l.searchX + 6, l.searchY + 7, 1, 0xFF91A7C0);
+
+        List<ClientModItem> items = getFilteredMods();
+        scrollOffset = Math.max(0, Math.min(scrollOffset, l.maxScroll(items.size())));
+        gui.enableScissor(l.gridX, l.gridY, l.gridX + l.gridWidth, l.gridY + l.gridHeight);
+        for (int i = 0; i < items.size(); i++) {
+            int x = l.cardX(i), y = l.cardY(i, scrollOffset);
+            if (y + ClientMenuLayout.CARD_HEIGHT <= l.gridY || y >= l.gridY + l.gridHeight) continue;
+            ClientModItem item = items.get(i);
+            boolean active = isModActive(item.id);
+            boolean hover = l.hitCard(mx, my, items.size(), scrollOffset) == i;
+            gui.fill(x, y, x + l.cardWidth, y + ClientMenuLayout.CARD_HEIGHT, hover ? 0xFF24364B : 0xFF192333);
+            gui.outline(x, y, l.cardWidth, ClientMenuLayout.CARD_HEIGHT, hover ? 0xFF00BBF9 : active ? 0xFF267798 : 0xFF303D50);
+            String label = font.plainSubstrByWidth(item.title, Math.max(1, l.cardWidth - 12));
+            gui.centeredText(font, label, x + l.cardWidth / 2, y + 9, active ? -1 : 0xFFA8B6CA);
+            ClientIcons.draw(gui, item.id, x + l.cardWidth / 2 - 8, y + 28, 2, active ? 0xFF5DD8FF : 0xFF7A91A9);
+            int toggleX = x + l.cardWidth / 2 - 13;
+            gui.fill(toggleX, y + 59, toggleX + 26, y + 71, active ? 0xFF00A9E0 : 0xFF3C485B);
+            int knobX = toggleX + (active ? 15 : 2);
+            gui.fill(knobX, y + 61, knobX + 9, y + 69, active ? -1 : 0xFF97A7BA);
         }
-        guiGraphics.centeredText(this.font, "\u2715", closeX + 8, closeY + 4, closeHover ? -38037 : -6248779);
-        int tabY = panelY + 28;
-        int tabX = panelX + 8;
-        int tabW = 55;
-        int tabH = 18;
-        guiGraphics.fill(tabX, tabY, tabX + tabW, tabY + tabH, -16733953);
-        guiGraphics.centeredText(this.font, "Mods", tabX + tabW / 2, tabY + 5, -1);
-        int editorBtnX = tabX + tabW + 6;
-        int editorBtnW = 95;
-        boolean editorHover = mouseX >= editorBtnX && mouseX <= editorBtnX + editorBtnW && mouseY >= tabY && mouseY <= tabY + tabH;
-        guiGraphics.fill(editorBtnX, tabY, editorBtnX + editorBtnW, tabY + tabH, editorHover ? 1073785087 : 0x20FFFFFF);
-        guiGraphics.outline(editorBtnX, tabY, editorBtnW, tabH, editorHover ? -16733953 : -14144195);
-        guiGraphics.centeredText(this.font, "\u2725 \u00c9diter HUD", editorBtnX + editorBtnW / 2, tabY + 5, editorHover ? -1 : -6248779);
-        int searchW = 105;
-        int searchX = panelX + panelWidth - searchW - 8;
-        boolean searchHover = mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= tabY && mouseY <= tabY + 18;
-        guiGraphics.fill(searchX, tabY, searchX + searchW, tabY + 18, 0x30000000);
-        guiGraphics.outline(searchX, tabY, searchW, 18, this.searchBox != null && this.searchBox.isFocused() || searchHover ? -16733953 : -14144195);
-        guiGraphics.text(this.font, "\u00a77\ud83d\udd0d", searchX + 5, tabY + 5, 0x888888, false);
-        guiGraphics.fill(panelX, panelY + 50, panelX + panelWidth, panelY + 51, -14144195);
-        int gridX = panelX + 8;
-        int gridY = panelY + 56;
-        int gridW = panelWidth - 16;
-        int gridH = panelHeight - 62;
-        List<ClientModItem> filtered = this.getFilteredMods();
-        this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, this.getMaxScroll(gridH, filtered.size())));
-        int cardW = (gridW - 18) / 4;
-        for (int i = 0; i < filtered.size(); ++i) {
-            ClientModItem item = filtered.get(i);
-            int col = i % 4;
-            int row = i / 4;
-            int cX = gridX + col * (cardW + 6);
-            int cY = gridY + row * 74 - this.scrollOffset;
-            if (cY + 68 < gridY || cY > gridY + gridH) continue;
-            boolean active = this.isModActive(item.id);
-            boolean cardHover = mouseX >= cX && mouseX <= cX + cardW && mouseY >= cY && mouseY <= cY + 68 && mouseY >= gridY && mouseY <= gridY + gridH;
-            int cardBg = cardHover ? -2145245644 : 1612192292;
-            guiGraphics.fill(cX, cY, cX + cardW, cY + 68, cardBg);
-            int outlineColor = cardHover ? -16733953 : (active ? -2147440385 : -14144195);
-            guiGraphics.outline(cX, cY, cardW, 68, outlineColor);
-            guiGraphics.centeredText(this.font, item.title, cX + cardW / 2, cY + 6, active ? -1 : -4867385);
-            guiGraphics.centeredText(this.font, item.icon, cX + cardW / 2, cY + 22, 0xFFFFFF);
-            int swW = 24;
-            int swH = 11;
-            int swX = cX + (cardW - swW) / 2;
-            int swY = cY + 68 - 18;
-            int swBg = active ? -16733953 : -13815233;
-            guiGraphics.fill(swX, swY, swX + swW, swY + swH, swBg);
-            if (active) {
-                guiGraphics.fill(swX + 13, swY + 1, swX + 23, swY + swH - 1, -1);
-                continue;
+        if (items.isEmpty()) gui.centeredText(font, "Aucun module trouvé", l.x + l.width / 2, l.gridY + 20, 0xFFB4C1D4);
+        gui.disableScissor();
+        int maxScroll = l.maxScroll(items.size());
+        if (maxScroll > 0) {
+            int thumbHeight = Math.max(12, l.gridHeight * l.gridHeight / (l.gridHeight + maxScroll));
+            int thumbY = l.gridY + scrollOffset * (l.gridHeight - thumbHeight) / maxScroll;
+            gui.fill(l.x + l.width - 5, l.gridY, l.x + l.width - 3, l.gridY + l.gridHeight, 0xFF263345);
+            gui.fill(l.x + l.width - 5, thumbY, l.x + l.width - 3, thumbY + thumbHeight, 0xFF00A9E0);
+        }
+        gui.text(font, font.plainSubstrByWidth("Coin : taille | Clic droit : réglages HUD", l.width - 28), l.x + 10, l.y + l.height - 12, 0xFF8FA6BD, false);
+        int gripColor = windowGesture == 2 || l.onResizeHandle(mx, my) ? 0xFF5DD8FF : 0xFF7891A9;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j <= i; j++) {
+                int gx = l.x + l.width - 5 - j * 3;
+                int gy = l.y + l.height - 5 - (i - j) * 3;
+                gui.fill(gx, gy, gx + 2, gy + 2, gripColor);
             }
-            guiGraphics.fill(swX + 1, swY + 1, swX + 11, swY + swH - 1, -7696224);
         }
-        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(gui, mx, my, tick);
     }
 
     private List<ClientModItem> getFilteredMods() {
-        String query = this.searchBox != null ? this.searchBox.getValue().trim().toLowerCase() : "";
-        ArrayList<ClientModItem> list = new ArrayList<ClientModItem>();
-        for (ClientModItem item : this.allMods) {
-            if (!query.isEmpty() && !item.title.toLowerCase().contains(query) && !item.id.toLowerCase().contains(query)) continue;
-            list.add(item);
+        String query = searchBox == null ? "" : searchBox.getValue().trim().toLowerCase(Locale.ROOT);
+        List<ClientModItem> result = new ArrayList<>();
+        for (ClientModItem item : allMods) {
+            if (query.isEmpty() || item.title.toLowerCase(Locale.ROOT).contains(query) || item.id.contains(query)) result.add(item);
         }
-        return list;
+        return result;
     }
 
-    private int getMaxScroll(int gridH, int itemCount) {
-        int rows = (itemCount + 4 - 1) / 4;
-        if (rows <= 0) {
-            return 0;
-        }
-        int totalH = rows * 68 + (rows - 1) * 6;
-        return Math.max(0, totalH - gridH);
-    }
-
-    @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-        double mouseX = event.x(), mouseY = event.y(); int button = event.button();
-        int panelWidth = Math.min(460, this.width - 24);
-        int panelHeight = Math.min(270, this.height - 24);
-        int panelX = (this.width - panelWidth) / 2;
-        int panelY = (this.height - panelHeight) / 2;
-        int closeX = panelX + panelWidth - 20;
-        int closeY = panelY + 4;
-        if (mouseX >= (double)closeX && mouseX <= (double)(closeX + 16) && mouseY >= (double)closeY && mouseY <= (double)(closeY + 16)) {
-            this.playClickSound();
-            this.onClose();
-            return true;
-        }
-        int tabY = panelY + 28;
-        int tabX = panelX + 8;
-        int tabW = 55;
-        int tabH = 18;
-        int editorBtnX = tabX + tabW + 6;
-        int editorBtnW = 95;
-        if (mouseX >= (double)editorBtnX && mouseX <= (double)(editorBtnX + editorBtnW) && mouseY >= (double)tabY && mouseY <= (double)(tabY + tabH)) {
-            this.playClickSound();
-            if (this.minecraft != null) {
-                this.minecraft.gui.setScreen((Screen)new GuiEditorScreen(this));
-            }
-            return true;
-        }
-        int gridX = panelX + 8;
-        int gridY = panelY + 56;
-        int gridW = panelWidth - 16;
-        int gridH = panelHeight - 62;
-        if (mouseX >= (double)gridX && mouseX <= (double)(gridX + gridW) && mouseY >= (double)gridY && mouseY <= (double)(gridY + gridH)) {
-            List<ClientModItem> filtered = this.getFilteredMods();
-            int cardW = (gridW - 18) / 4;
-            for (int i = 0; i < filtered.size(); ++i) {
-                int col = i % 4;
-                int row = i / 4;
-                int cX = gridX + col * (cardW + 6);
-                int cY = gridY + row * 74 - this.scrollOffset;
-                if (cY + 68 < gridY || cY > gridY + gridH || !(mouseX >= (double)cX) || !(mouseX <= (double)(cX + cardW)) || !(mouseY >= (double)cY) || !(mouseY <= (double)(cY + 68))) continue;
-                this.toggleMod(filtered.get((int)i).id);
+    @Override public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        ClientMenuLayout l = layout();
+        if (event.button() == 1) {
+            List<ClientModItem> items = getFilteredMods();
+            int index = l.hitCard(event.x(), event.y(), items.size(), scrollOffset);
+            if (index >= 0 && ExtraHud.supports(items.get(index).id)) {
+                minecraft.gui.setScreen(new ExtraHudScreen(this, items.get(index).id));
                 return true;
             }
+        }
+        if (event.button() == 0) {
+            if (ClientMenuLayout.contains(event.x(), event.y(), l.x + l.width - 24, l.y + 5, 18, 18)) {
+                playClickSound(); onClose(); return true;
+            }
+            if (l.onHeader(event.x(), event.y()) || l.onResizeHandle(event.x(), event.y())) {
+                if (doubleClick && l.onHeader(event.x(), event.y())) {
+                    LunarClientConfig.getClientMenu().reset();
+                    updateWindowWidgets();
+                    LunarClientConfig.save();
+                    return true;
+                }
+                windowGesture = l.onResizeHandle(event.x(), event.y()) ? 2 : 1;
+                gestureMouseX = event.x();
+                gestureMouseY = event.y();
+                gestureStart = l;
+                if (searchBox != null) searchBox.setFocused(false);
+                return true;
+            }
+            if (ClientMenuLayout.contains(event.x(), event.y(), l.x + 72, l.toolbarY, 106, 22)) {
+                playClickSound(); minecraft.gui.setScreen(new GuiEditorScreen(this)); return true;
+            }
+            List<ClientModItem> items = getFilteredMods();
+            int index = l.hitCard(event.x(), event.y(), items.size(), scrollOffset);
+            if (index >= 0) { toggleMod(items.get(index).id); return true; }
         }
         return super.mouseClicked(event, doubleClick);
     }
 
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (scrollY != 0.0) {
-            int panelWidth = Math.min(460, this.width - 24);
-            int panelHeight = Math.min(270, this.height - 24);
-            int panelX = (this.width - panelWidth) / 2;
-            int panelY = (this.height - panelHeight) / 2;
-            int gridX = panelX + 8;
-            int gridY = panelY + 56;
-            int gridW = panelWidth - 16;
-            int gridH = panelHeight - 62;
-            if (mouseX >= (double)gridX && mouseX <= (double)(gridX + gridW) && mouseY >= (double)gridY && mouseY <= (double)(gridY + gridH)) {
-                int maxScroll = this.getMaxScroll(gridH, this.getFilteredMods().size());
-                this.scrollOffset = Math.max(0, Math.min(maxScroll, this.scrollOffset - (int)(scrollY * 16.0)));
-                return true;
+    @Override public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dx, double dy) {
+        if (windowGesture != 0 && event.button() == 0) {
+            int deltaX = (int)Math.round(event.x() - gestureMouseX);
+            int deltaY = (int)Math.round(event.y() - gestureMouseY);
+            ClientMenuWindow window = LunarClientConfig.getClientMenu();
+            if (windowGesture == 1) {
+                window.moveTo(width, height, gestureStart.x + deltaX, gestureStart.y + deltaY);
+            } else {
+                window.resizeTo(width, height, gestureStart.x, gestureStart.y,
+                    gestureStart.width + deltaX, gestureStart.height + deltaY);
             }
-        }
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
-    }
-
-    @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        int keyCode = event.key();
-        if (this.searchBox != null && this.searchBox.isFocused()) {
-            if (keyCode == 256) {
-                this.searchBox.setFocused(false);
-                return true;
-            }
-            if (this.searchBox.keyPressed(event)) {
-                return true;
-            }
-        }
-        if (keyCode == 344 || keyCode == 256) {
-            this.onClose();
+            updateWindowWidgets();
             return true;
         }
+        return super.mouseDragged(event, dx, dy);
+    }
+
+    @Override public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        if (windowGesture != 0 && event.button() == 0) {
+            finishWindowGesture();
+            return true;
+        }
+        return super.mouseReleased(event);
+    }
+
+    @Override public void removed() {
+        finishWindowGesture();
+        super.removed();
+    }
+
+    @Override public boolean mouseScrolled(double mx, double my, double dx, double dy) {
+        ClientMenuLayout l = layout();
+        if (l.inGrid(mx, my) && dy != 0) {
+            scrollOffset = Math.max(0, Math.min(l.maxScroll(getFilteredMods().size()), scrollOffset - (int)(dy * 24)));
+            return true;
+        }
+        return super.mouseScrolled(mx, my, dx, dy);
+    }
+
+    @Override public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        if (searchBox != null && searchBox.isFocused()) {
+            if (event.key() == 256) { searchBox.setFocused(false); return true; }
+            return super.keyPressed(event);
+        }
+        if (event.key() == 344 || event.key() == 256) { onClose(); return true; }
         return super.keyPressed(event);
     }
 
-    @Override
-    public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
-        if (this.searchBox != null && this.searchBox.isFocused() && this.searchBox.charTyped(event)) {
-            return true;
-        }
-        return super.charTyped(event);
-    }
-
-    public boolean isPauseScreen() {
-        return false;
-    }
+    @Override public boolean isPauseScreen() { return false; }
 
     private static class ClientModItem {
-        final String id;
-        final String title;
-        final String icon;
-        final String category;
-        final boolean isPopular;
-
-        ClientModItem(String id, String title, String icon, String category, boolean isPopular) {
-            this.id = id;
-            this.title = title;
-            this.icon = icon;
-            this.category = category;
-            this.isPopular = isPopular;
+        final String id, title;
+        ClientModItem(String id, String title, String unusedIcon, String category, boolean popular) {
+            this.id = id; this.title = title;
         }
     }
 }
-

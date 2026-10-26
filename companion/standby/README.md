@@ -50,6 +50,10 @@ local reste figé jusqu'à la fin de cette synchronisation. Le même personnage,
 son inventaire et sa connexion sont conservés. Une mort survenue pendant la
 veille est présentée au retour.
 
+Une déconnexion normale de Minecraft efface l'état de veille et restaure le
+son. Une nouvelle connexion ne réutilise pas l'ancien état de gel ; un rappel
+de déconnexion retardé de l'ancien serveur ne réinitialise pas le nouveau.
+
 ## Compilation et tests
 
 - `scripts/build-companion-26.2.ps1` : compagnon complet Java 25 / NeoForge 26.2.0.93.

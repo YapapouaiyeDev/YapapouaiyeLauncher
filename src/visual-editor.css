@@ -1,4 +1,65 @@
 /* Theme workshop: scoped chrome keeps the editable preview independent. */
+#tab-ai-import { padding-bottom: 24px; }
+#modal-custom-theme .theme-ai-generator { display: grid; gap: 20px; }
+#modal-custom-theme .theme-ai-intro { padding: 2px 0 4px; }
+#modal-custom-theme .theme-ai-eyebrow { font-size: 10px; letter-spacing: 1.6px; font-weight: 650; color: var(--mc-green-primary); }
+#modal-custom-theme .theme-ai-intro h4 { margin: 7px 0; font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
+#modal-custom-theme .theme-ai-intro p { color: var(--workshop-muted); font-size: 13px; line-height: 1.6; }
+#modal-custom-theme .theme-ai-workspace { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr); gap: 18px; }
+#modal-custom-theme .theme-ai-composer, #modal-custom-theme .theme-ai-connection { min-width: 0; padding: 20px; background: var(--workshop-card); border: 1px solid var(--workshop-line); border-radius: 14px; }
+#modal-custom-theme .theme-ai-composer { display: flex; flex-direction: column; gap: 14px; }
+#modal-custom-theme .theme-ai-generator label, #theme-ai-manual-import label { display: block; font-weight: 600; font-size: 12px; }
+#modal-custom-theme .theme-ai-field-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+#modal-custom-theme .theme-ai-field-heading span { font-size: 10px; color: var(--workshop-muted); }
+#modal-custom-theme #theme-ai-request { flex: 1; width: 100%; min-height: 160px; padding: 14px; box-sizing: border-box; resize: vertical; border: 1px solid var(--workshop-line); border-radius: 9px; background: var(--workshop-field); color: #edf3ef; font: 13px/1.75 'Inter', system-ui, sans-serif; user-select: text; }
+#modal-custom-theme #theme-ai-request::placeholder { color: #81918a; }
+#modal-custom-theme .theme-ai-inspirations { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+#modal-custom-theme .theme-ai-inspirations > span { flex-basis: 100%; font-size: 10px; color: var(--workshop-muted); margin-bottom: 2px; }
+#modal-custom-theme .theme-ai-inspirations button { padding: 6px 10px; border: 1px solid var(--workshop-line); border-radius: 7px; background: transparent; font: inherit; font-size: 11px; color: #c4d1c9; cursor: pointer; }
+#modal-custom-theme .theme-ai-inspirations button:hover { background: rgba(var(--accent-rgb), .1); border-color: var(--mc-green-primary); color: #edf3ef; }
+#modal-custom-theme .theme-ai-connection { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+#modal-custom-theme .theme-ai-provider { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+#modal-custom-theme .theme-ai-provider-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: #76b9001a; color: #a0d957; font-size: 17px; font-weight: 800; }
+#modal-custom-theme .theme-ai-provider strong { display: block; font-size: 12px; }
+#modal-custom-theme .theme-ai-provider div > span { display: block; margin-top: 3px; font-size: 10px; color: var(--workshop-muted); }
+#modal-custom-theme .theme-ai-key-field { display: flex; align-items: center; min-width: 0; border: 1px solid var(--workshop-line); border-radius: 8px; background: var(--workshop-field); }
+#modal-custom-theme #theme-ai-api-key { flex: 1; min-width: 0; width: 100%; padding: 11px; background: transparent; color: #edf3ef; border: 0; border-radius: 8px; font-size: 12px; user-select: text; }
+#modal-custom-theme #btn-theme-ai-toggle-key { padding: 8px; margin-right: 3px; background: none; color: var(--workshop-muted); border: 0; font-size: 10px; cursor: pointer; }
+#modal-custom-theme #theme-ai-key-hint, #modal-custom-theme #theme-ai-model-hint { margin: -2px 0 4px; font-size: 10px; line-height: 1.6; color: var(--workshop-muted); }
+#modal-custom-theme .theme-ai-key-storage { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+#modal-custom-theme #btn-theme-ai-forget-key { flex-shrink: 0; padding: 0; border: 0; background: none; font: inherit; font-size: 10px; color: var(--workshop-muted); cursor: pointer; }
+#modal-custom-theme #btn-theme-ai-forget-key:hover { color: #ffc0b7; }
+#modal-custom-theme #theme-ai-key-hint[data-state="error"] { color: #ffc0b7; }
+#modal-custom-theme #theme-ai-model { width: 100%; min-width: 0; height: 38px; padding: 8px; border: 1px solid var(--workshop-line); border-radius: 8px; background: var(--workshop-field); color: #edf3ef; font: inherit; font-size: 11px; }
+#modal-custom-theme .theme-ai-key-link { align-self: flex-start; padding: 2px 0; background: none; color: var(--mc-green-primary); border: 0; font: inherit; font-size: 11px; cursor: pointer; }
+#modal-custom-theme .theme-ai-key-link:hover { text-decoration: underline; }
+#modal-custom-theme .theme-ai-actions { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 0; background: none; border: 0; }
+#modal-custom-theme .theme-ai-primary-action { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+#modal-custom-theme .theme-ai-primary-action > span { font-size: 10px; color: var(--workshop-muted); }
+#modal-custom-theme .theme-ai-actions button { width: auto; min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 10px 18px; border-radius: 9px; font: inherit; font-size: 12px; font-weight: 600; white-space: normal; }
+#modal-custom-theme #btn-modal-copy-ai-prompt { flex: none; background: transparent; border: 1px solid var(--workshop-line); box-shadow: none; color: #d4e0d8; }
+#modal-custom-theme #btn-modal-copy-ai-prompt:hover { background: #ffffff08; border-color: #ffffff33; }
+#modal-custom-theme .theme-ai-privacy { margin: -10px 0 0; font-size: 11px; line-height: 1.6; color: var(--workshop-muted); }
+#modal-custom-theme #theme-ai-status { display: flex; align-items: center; gap: 10px; margin: 0; padding: 12px 14px; border: 1px solid var(--workshop-line); border-radius: 9px; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+#modal-custom-theme #theme-ai-status:empty { display: none; }
+#modal-custom-theme #theme-ai-status[data-state="error"] { color: #ffc0b7; background: #f8717110; border-color: #f8717138; }
+#modal-custom-theme #theme-ai-status[data-state="success"] { color: #b1e5c0; background: #4ade8010; border-color: #4ade8038; }
+#modal-custom-theme #theme-ai-status[data-state="loading"]::before { content: ''; flex: 0 0 13px; height: 13px; border: 2px solid #ffffff26; border-top-color: var(--mc-green-primary); border-radius: 50%; animation: theme-ai-spin .8s linear infinite; }
+@keyframes theme-ai-spin { to { transform: rotate(360deg); } }
+#modal-custom-theme #theme-ai-manual-import { margin-top: 26px; padding: 22px; border: 1px solid var(--workshop-line); border-radius: 14px; background: var(--workshop-card); }
+#modal-custom-theme .theme-ai-import-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+#modal-custom-theme .theme-ai-import-heading h4 { margin: 0 0 6px; font-size: 15px; }
+#modal-custom-theme .theme-ai-import-heading p { font-size: 12px; color: var(--workshop-muted); line-height: 1.6; }
+#modal-custom-theme #custom-theme-json-input { box-sizing: border-box; min-height: 150px; margin-top: 8px; }
+#modal-custom-theme .theme-ai-import-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+#modal-custom-theme .theme-ai-import-actions button, #modal-custom-theme #btn-theme-ai-recopy { min-height: 36px; width: auto; flex: none; padding: 8px 12px; font-size: 11px; border-radius: 8px; }
+#btn-theme-ai-generate:disabled { opacity: .6; cursor: wait; }
+#modal-custom-theme #theme-ai-request:focus-visible, #modal-custom-theme #theme-ai-model:focus-visible, #modal-custom-theme .theme-ai-key-field:focus-within { outline: 2px solid var(--mc-green-primary); outline-offset: 2px; }
+@media (max-width: 820px) {
+  #modal-custom-theme .theme-ai-workspace { grid-template-columns: minmax(0, 1fr); }
+  #modal-custom-theme .theme-ai-composer, #modal-custom-theme .theme-ai-connection { padding: 16px; }
+  #modal-custom-theme .theme-ai-intro h4 { font-size: 23px; }
+}
 #modal-custom-theme {
   --workshop-bg: #101614;
   --workshop-card: color-mix(in srgb, var(--workshop-bg) 92%, white);

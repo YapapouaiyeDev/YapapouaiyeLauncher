@@ -8,7 +8,9 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const game = process.env.NEXLUX_GAME_ROOT || path.join(process.env.APPDATA, '.yapapouaiye-launcher/minecraft');
 const jdk = path.join(game, 'runtime/java-runtime-epsilon/bin');
-const asm = path.join(game, 'loader/neoforge/libraries/org/ow2/asm/asm/9.11/asm-9.11.jar');
+const asmRoot = path.join(game, 'loader/neoforge/libraries/org/ow2/asm/asm');
+const asmVersion = fs.readdirSync(asmRoot).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
+const asm = path.join(asmRoot, asmVersion, `asm-${asmVersion}.jar`);
 
 test('bundled armor HUD: empty, every individual slot, full armor, preview and numbers', () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'nexlux-hud-test-'));

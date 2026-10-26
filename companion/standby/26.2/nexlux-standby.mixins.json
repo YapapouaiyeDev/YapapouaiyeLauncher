@@ -11,6 +11,8 @@
     "StandbyServerChatMixin"
   ],
   "client": [
+    "SaturationPacketMixin",
+    "SaturationHudMixin",
     "WorldRenderMixin",
     "WorldExtractMixin",
     "FramerateMixin",

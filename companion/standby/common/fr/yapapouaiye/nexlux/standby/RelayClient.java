@@ -62,10 +62,14 @@ public final class RelayClient {
         }
     }
     public static void disconnected(Connection connection) {
+        var listener = Minecraft.getInstance().getConnection();
+        // A delayed callback from the old server must not reset a new connection.
+        if (listener != null && listener.getConnection() != connection) return;
         StandbyNetworkClient.reset();
+        StandbyClient.resume();
         // Keep Minecraft's disconnect screen and its explanation visible.
         // Only an authenticated EXIT command requests a graceful shutdown.
-        if (isLocal(connection)) available = false;
+        available = false;
     }
     public static void detach() {
         var listener = Minecraft.getInstance().getConnection();

@@ -2,6 +2,7 @@ const { Launch } = require('minecraft-java-core');
 const path = require('node:path');
 const fs = require('node:fs');
 const { spawn } = require('node:child_process');
+const { spawnIndependentGame, markerFor } = require('./persistent-game-sessions');
 
 // minecraft-java-core 4.2.7 does not expose the child process or await start().
 // Reuse its download/argument builders; own only spawning and process events.
@@ -49,12 +50,38 @@ class ManagedLaunch extends Launch {
       const nativeProperties = ['-Djava.library.path=', '-Djna.tmpdir=', '-Dorg.lwjgl.system.SharedLibraryExtractPath=', '-Dio.netty.native.workdir='];
       const commandArgs = [...args.jvm, ...args.classpath, ...loader.jvm, args.mainClass, ...args.game, ...loader.game]
         .map(arg => nativeProperties.some(prefix => arg.startsWith(prefix)) ? `${arg.split('=')[0]}=${natives}` : arg);
-      this.child = spawn(this.options.java.path || minecraftJava.path, commandArgs, { cwd: directory, detached: false });
-      this.child.stdout.on('data', data => this.emit('data', data.toString('utf8')));
-      this.child.stderr.on('data', data => this.emit('data', data.toString('utf8')));
-      this.child.once('close', code => this.emit('close', code));
+      let flushLogs = () => {};
+      let logTimer;
+      if (this.options.sessionId) {
+        commandArgs.unshift(markerFor(this.options.sessionId));
+        const logFile = path.join(directory, `.launcher-session-${this.options.sessionId}.log`);
+        let offset = 0;
+        flushLogs = () => {
+          let descriptor;
+          try {
+            descriptor = fs.openSync(logFile, 'r');
+            const size = fs.fstatSync(descriptor).size;
+            const start = Math.max(offset, size - 64 * 1024);
+            const bytes = Buffer.alloc(size - start);
+            const count = fs.readSync(descriptor, bytes, 0, bytes.length, start);
+            offset = start + count;
+            if (count) this.emit('data', bytes.subarray(0, count).toString('utf8'));
+          } catch {} finally { if (descriptor !== undefined) fs.closeSync(descriptor); }
+        };
+        this.child = spawnIndependentGame(this.options.java.path || minecraftJava.path, commandArgs, directory, logFile);
+        logTimer = setInterval(flushLogs, 250);
+        logTimer.unref();
+      } else {
+        this.child = spawn(this.options.java.path || minecraftJava.path, commandArgs, { cwd: directory, detached: false });
+        this.child.stdout.on('data', data => this.emit('data', data.toString('utf8')));
+        this.child.stderr.on('data', data => this.emit('data', data.toString('utf8')));
+      }
+      this.child.once('close', code => { clearInterval(logTimer); flushLogs(); this.emit('close', code); });
       await new Promise((resolve, reject) => {
-        this.child.once('spawn', () => { this.emit('spawn', this.child.pid); resolve(); });
+        this.child.once('spawn', () => {
+          if (this.options.sessionId) this.child.unref();
+          this.emit('spawn', this.child.pid); resolve();
+        });
         this.child.once('error', error => { this.emit('error', error); reject(error); });
       });
     } catch (error) {

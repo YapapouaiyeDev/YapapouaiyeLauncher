@@ -44,10 +44,11 @@ public final class StandbyNetworkClient {
         var listener = Minecraft.getInstance().getConnection();
         if (connection != null && (listener == null || listener.getConnection() != connection)) reset();
     }
-    public static void reset() { state = State.OFF; connection = null; }
+    public static void reset() { state = State.OFF; connection = null; unsupported = false; probeTicks = 0; }
     public static boolean receive(RelayPayload message) {
         if (!StandbyProtocol.owns(message.request())) return false;
-        if (connection == null) return true;
+        var listener = Minecraft.getInstance().getConnection();
+        if (connection == null || listener == null || listener.getConnection() != connection) return true;
         if (message.request().equals(StandbyProtocol.PROBE)) {
             if (state == State.PROBING && message.operation() == RelayPayload.BACKGROUND) {
                 state = State.ENTERING;

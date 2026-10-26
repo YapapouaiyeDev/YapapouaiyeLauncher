@@ -71,6 +71,11 @@
           <span>Comptes</span>
         </button>
 
+        <button class="nav-item" data-page="themes" title="Thème et personnalisation">
+          <i class="nav-icon theme-customization-icon theme-navigation-icon" aria-hidden="true"></i>
+          <span>Thème</span>
+        </button>
+
         <button class="nav-item" data-page="settings" title="Paramètres du jeu">
           <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.32 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.32 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831 2.34 2.34 0 0 1 2.33-4.033 2.34 2.34 0 0 0 3.32-1.915"/>
@@ -80,14 +85,8 @@
         </button>
       </nav>
 
-      <!-- Topbar Right: Quick Theme & Window Controls -->
+      <!-- Topbar Right: Window Controls -->
       <div class="topbar-right">
-        <button type="button" class="topbar-theme-btn" id="btn-quick-theme" title="Changer de thème rapidement" aria-label="Changer de thème rapidement">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-          </svg>
-        </button>
-
         <div class="window-controls">
           <button class="win-btn minimize" id="btn-minimize" aria-label="Minimize">
             <svg width="12" height="12" viewBox="0 0 12 12"><line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -781,6 +780,65 @@
         </div>
       </section>
 
+      <!-- THEMES PAGE -->
+      <section class="page" id="page-themes">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1 class="page-title">Thème</h1>
+            <p class="page-subtitle">Personnalisez l’apparence du launcher et gérez vos thèmes</p>
+          </div>
+        </div>
+        <div class="settings-grid">
+          <!-- Theme & Customization Card -->
+          <div class="settings-card mc-box">
+            <div class="card-header">
+              <span class="card-icon theme-customization-icon" aria-hidden="true"></span>
+              <div class="card-header-title-group">
+                <h3>Thème & Personnalisation</h3>
+                <span class="card-header-sub">Sélectionnez un style visuel ou créez des thèmes personnalisés générés par IA</span>
+              </div>
+              <div class="theme-active-pill" id="current-theme-pill">Classic</div>
+            </div>
+
+            <!-- Custom Theme Quick Actions Bar -->
+            <div class="theme-actions-bar">
+              <button class="btn-theme-action primary" id="btn-open-custom-theme-modal">
+                <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14"/></svg>
+                <span>Créer</span>
+              </button>
+              <button class="btn-theme-action" id="btn-copy-ai-prompt-direct" title="Copier les instructions pour demander à une IA de créer un thème">
+                <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copier le Prompt IA</span>
+              </button>
+              <button class="btn-theme-action" id="btn-import-theme-file-direct" title="Importer un fichier .json de thème">
+                <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                <span>Importer .json</span>
+              </button>
+            </div>
+
+            <div class="theme-selection-container">
+              <!-- Visual Theme Cards Gallery Grid -->
+              <div class="theme-cards-grid" id="theme-cards-grid">
+                <!-- Dynamically generated from THEME_REGISTRY in renderer.js -->
+              </div>
+
+              <div class="setting-row theme-quick-dropdown-row">
+                <div class="setting-info">
+                  <label class="setting-label">Sélection rapide par liste</label>
+                  <span class="setting-desc">Pour un choix direct sans passer par la galerie</span>
+                </div>
+                <div class="setting-control">
+                  <select class="mc-select" id="settings-theme">
+                    <option value="classic" selected>Classic (Défaut)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       <!-- SETTINGS PAGE -->
       <section class="page" id="page-settings">
         <div class="page-header">
@@ -897,57 +955,6 @@
             </div>
           </div>
 
-          <!-- Theme & Customization Card -->
-          <div class="settings-card mc-box">
-            <div class="card-header">
-              <svg class="card-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--mc-green-primary)" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path>
-                <line x1="9" y1="21" x2="15" y2="21"></line>
-              </svg>
-              <div class="card-header-title-group">
-                <h3>Thème & Personnalisation</h3>
-                <span class="card-header-sub">Sélectionnez un style visuel ou créez des thèmes personnalisés générés par IA</span>
-              </div>
-              <div class="theme-active-pill" id="current-theme-pill">Classic</div>
-            </div>
-
-            <!-- Custom Theme Quick Actions Bar -->
-            <div class="theme-actions-bar">
-              <button class="btn-theme-action primary" id="btn-open-custom-theme-modal">
-                <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14"/></svg>
-                <span>Créer / Importer un Thème (IA)</span>
-              </button>
-              <button class="btn-theme-action" id="btn-copy-ai-prompt-direct" title="Copier les instructions pour demander à une IA de créer un thème">
-                <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                <span>Copier le Prompt IA</span>
-              </button>
-              <button class="btn-theme-action" id="btn-import-theme-file-direct" title="Importer un fichier .json de thème">
-                <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                <span>Importer .json</span>
-              </button>
-            </div>
-
-            <div class="theme-selection-container">
-              <!-- Visual Theme Cards Gallery Grid -->
-              <div class="theme-cards-grid" id="theme-cards-grid">
-                <!-- Dynamically generated from THEME_REGISTRY in renderer.js -->
-              </div>
-
-              <div class="setting-row theme-quick-dropdown-row">
-                <div class="setting-info">
-                  <label class="setting-label">Sélection rapide par liste</label>
-                  <span class="setting-desc">Pour un choix direct sans passer par la galerie</span>
-                </div>
-                <div class="setting-control">
-                  <select class="mc-select" id="settings-theme">
-                    <option value="classic" selected>Classic (Défaut)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- General Card -->
           <div class="settings-card mc-box">
             <div class="card-header">
@@ -968,23 +975,6 @@
                   <option value="fr" selected>Français</option>
                   <option value="en">English</option>
                 </select>
-              </div>
-            </div>
-
-            <div class="setting-row">
-              <div class="setting-info">
-                <label class="setting-label">Disposition du Clavier (Minecraft)</label>
-                <span class="setting-desc">Touches par défaut dans Minecraft : ZQSD (Français) ou WASD (International)</span>
-              </div>
-              <div class="setting-control" style="display: flex; gap: 8px; align-items: center;">
-                <select class="mc-select" id="settings-keyboard-layout" style="min-width: 190px;">
-                  <option value="azerty" selected>AZERTY (ZQSD - Français)</option>
-                  <option value="qwerty">QWERTY (WASD - International)</option>
-                </select>
-                <button type="button" class="btn-secondary" id="btn-apply-keyboard-layout" style="height: 36px; padding: 0 14px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;" title="Appliquer immédiatement à options.txt">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span>Appliquer</span>
-                </button>
               </div>
             </div>
 
@@ -1111,7 +1101,7 @@
               <img class="about-logo" src="../assets/logo.png" alt="Yapapouaiye Logo" />
               <div class="about-info">
                 <h4 class="about-name">Yapapouaiye Launcher</h4>
-                <span class="about-version" id="app-version">v1.6.1-4-beta.2</span>
+                <span class="about-version" id="app-version">v1.6.1-4</span>
                 <span class="about-mc">Minecraft 1.21.1 • NeoForge</span>
               </div>
             </div>
@@ -1164,7 +1154,7 @@
       <!-- Right: RAM Quick Widget & Info -->
       <div class="footer-right-widget">
         <div class="quick-ram-widget" title="Allocation Mémoire RAM">
-          <svg class="ram-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"></rect><line x1="6" y1="2" x2="6" y2="6"></line><line x1="10" y1="2" x2="10" y2="6"></line><line x1="14" y1="2" x2="14" y2="6"></line><line x1="18" y1="2" x2="18" y2="6"></line><line x1="6" y1="18" x2="6" y2="22"></line><line x1="10" y1="18" x2="10" y2="22"></line><line x1="14" y1="18" x2="14" y2="22"></line><line x1="18" y1="18" x2="18" y2="22"></line></svg>
+          <svg class="ram-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18a10 10 0 1 1 18 0H3zM12 14l5-6M5 13H3m4-6L5 5m7 0V2m7 11h2"/><circle cx="12" cy="14" r="1.5" fill="currentColor"/></svg>
           <div class="ram-quick-control">
             <input type="range" class="ram-slider-mini" id="input-ram" min="2" max="16" value="4" aria-label="Mémoire RAM allouée au jeu (Go)" />
             <span class="ram-value-tag" id="ram-value">4 Go</span>
@@ -1545,41 +1535,85 @@
       <div class="modal-body">
         <!-- TAB 1: AI Prompt & Import -->
         <div class="modal-tab-pane active" id="tab-ai-import">
-          <div class="ai-guide-box">
-            <div class="ai-guide-step">
-              <span class="step-num">1</span>
-              <div class="step-text">
-                <strong>Copiez le prompt d'instruction IA</strong>
-                <p>Modèle optimisé pour ChatGPT, Claude, Gemini, DeepSeek, etc.</p>
-              </div>
-              <button class="btn-mc-action btn-copy-prompt-highlight" id="btn-modal-copy-ai-prompt">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                <span>Copier le Prompt IA</span>
-              </button>
+          <div class="theme-ai-generator">
+            <div class="theme-ai-intro">
+              <span class="theme-ai-eyebrow">DE L’IDÉE AU THÈME</span>
+              <h4>Imaginez votre launcher.</h4>
+              <p>Décrivez une ambiance, des couleurs, un univers. L’IA s’occupe du reste.</p>
             </div>
-
-            <div class="ai-guide-step">
-              <span class="step-num">2</span>
-              <div class="step-text">
-                <strong>Demandez à l'IA votre thème Minecraft</strong>
-                <p>Exemple : <em>"Crée-moi un thème Minecraft Cyberpunk Glace Fluo avec boutons néon"</em>.</p>
+            <div class="theme-ai-workspace">
+              <div class="theme-ai-composer">
+                <div class="theme-ai-field-heading"><label for="theme-ai-request">Votre idée</label><span>Création ou modification</span></div>
+                <textarea id="theme-ai-request" maxlength="12000" placeholder="Ex. : un thème lapin, rose pastel et crème, avec des boutons arrondis et une ambiance douce."></textarea>
+                <div class="theme-ai-inspirations" aria-label="Idées de thèmes">
+                  <span>Une inspiration ?</span>
+                  <button type="button" data-theme-idea="Un thème lapin, rose pastel et crème, avec des boutons arrondis et une ambiance douce.">Lapin pastel</button>
+                  <button type="button" data-theme-idea="Une forêt enchantée, des verts profonds, des touches dorées et une ambiance magique.">Forêt enchantée</button>
+                  <button type="button" data-theme-idea="Un univers cyberpunk noir et violet, des boutons néon et une police futuriste.">Cyberpunk</button>
+                </div>
+              </div>
+              <div class="theme-ai-connection">
+                <div class="theme-ai-provider"><span class="theme-ai-provider-icon" aria-hidden="true">N</span><div><strong>NVIDIA NIM</strong><span>Génération dans le launcher</span></div></div>
+                <label for="theme-ai-api-key">Clé API</label>
+                <div class="theme-ai-key-field">
+                  <input id="theme-ai-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="nvapi-…" aria-describedby="theme-ai-key-hint">
+                  <button type="button" id="btn-theme-ai-toggle-key" aria-controls="theme-ai-api-key" aria-pressed="false">Afficher</button>
+                </div>
+                <div class="theme-ai-key-storage"><p id="theme-ai-key-hint" role="status" aria-live="polite">La clé sera sauvegardée sur cet appareil.</p><button type="button" id="btn-theme-ai-forget-key">Oublier</button></div>
+                <label for="theme-ai-model">Modèle</label>
+                <select id="theme-ai-model" aria-describedby="theme-ai-model-hint">
+                  <option value="auto">Automatique (recommandé)</option>
+                  <optgroup label="NVIDIA">
+                    <option value="nvidia/nemotron-3-super-120b-a12b">Nemotron 3 Super</option>
+                    <option value="nvidia/nemotron-3.5-lightning-30b-a3b">Nemotron 3.5 Lightning</option>
+                    <option value="nvidia/llama-3.1-nemotron-70b-instruct">Llama 3.1 Nemotron 70B</option>
+                  </optgroup>
+                  <optgroup label="DeepSeek">
+                    <option value="deepseek-ai/deepseek-v4.1-flash">DeepSeek V4.1 Flash</option>
+                  </optgroup>
+                  <optgroup label="Moonshot AI">
+                    <option value="moonshotai/kimi-k2.6">Kimi K2.6</option>
+                  </optgroup>
+                  <optgroup label="Z.ai">
+                    <option value="z-ai/glm-5.3-flash">GLM 5.3 Flash</option>
+                  </optgroup>
+                  <optgroup label="OpenAI">
+                    <option value="openai/gpt-oss-20b">GPT-OSS 20B</option>
+                  </optgroup>
+                  <optgroup label="Google">
+                    <option value="google/gemma-4-31b-it">Gemma 4 31B</option>
+                    <option value="google/gemma-3-12b-it">Gemma 3 12B</option>
+                  </optgroup>
+                  <optgroup label="Mistral AI">
+                    <option value="mistralai/mistral-large-2-instruct">Mistral Large 2</option>
+                    <option value="mistralai/mistral-7b-instruct-v0.3">Mistral 7B</option>
+                    <option value="mistralai/codestral-22b-instruct-v0.1">Codestral 22B</option>
+                  </optgroup>
+                </select>
+                <p id="theme-ai-model-hint">Tous ces modèles utilisent votre clé NVIDIA.</p>
+                <button type="button" class="theme-ai-key-link" id="btn-theme-ai-get-key">Obtenir une clé NVIDIA ↗</button>
               </div>
             </div>
-
-            <div class="ai-guide-step">
-              <span class="step-num">3</span>
-              <div class="step-text">
-                <strong>Collez la réponse JSON de l'IA ci-dessous :</strong>
-              </div>
+            <div class="theme-ai-actions">
+              <div class="theme-ai-primary-action"><button type="button" class="btn-mc-primary" id="btn-theme-ai-generate"><span class="theme-ai-generate-icon" aria-hidden="true">✦</span><span id="theme-ai-generate-label">Générer mon thème</span></button><span>Le thème sera enregistré et activé.</span></div>
+              <button type="button" class="btn-secondary" id="btn-modal-copy-ai-prompt">Copier le prompt IA <span aria-hidden="true">↗</span></button>
             </div>
+            <p class="theme-ai-privacy">Sans clé API, copiez le prompt pour utiliser votre IA habituelle.</p>
+            <p id="theme-ai-status" role="status" aria-live="polite" data-state="idle"></p>
+          </div>
+          <div id="theme-ai-manual-import" class="hidden">
+          <div class="theme-ai-import-heading">
+            <div><h4>Terminer avec votre IA</h4><p>Collez le prompt dans votre IA, puis sa réponse JSON ici.</p></div>
+            <button type="button" class="btn-secondary" id="btn-theme-ai-recopy">Recopier le prompt</button>
           </div>
 
           <div class="theme-input-group">
+            <label for="custom-theme-json-input">Réponse JSON</label>
             <textarea class="theme-json-textarea" id="custom-theme-json-input" placeholder='Collez ici le code JSON fourni par l&#39;IA (ex: { "name": "Mon Thème", "styleMode": "cyber", ... })'></textarea>
             <div class="json-validation-status hidden" id="ai-json-validation-status" style="margin-top: 8px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 12px; display: flex; align-items: center; gap: 8px;"></div>
           </div>
 
-          <div class="modal-actions-bar">
+          <div class="theme-ai-import-actions">
             <button class="btn-secondary" id="btn-paste-clipboard-json">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1"></rect></svg>
               <span>Coller depuis le presse-papier</span>
@@ -1592,6 +1626,7 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
               <span>Importer & Activer ce Thème</span>
             </button>
+          </div>
           </div>
         </div>
 

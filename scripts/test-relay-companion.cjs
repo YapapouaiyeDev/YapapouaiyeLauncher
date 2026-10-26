@@ -133,6 +133,10 @@ const sources = {
         RelayClient.receive(new RelayPayload(RelayPayload.EXIT,RelayPayload.NONE)); check(mc.stops==0,"remote exit allowed");
         mc.connection=new net.minecraft.client.multiplayer.ClientPacketListener(local);
         RelayClient.receive(new RelayPayload(RelayPayload.CAPABILITIES,RelayPayload.NONE)); check(RelayClient.available(),"local capability missing");
+        {
+          RelayClient.disconnected(remote);
+          check(RelayClient.available(),"late disconnect from old server cannot reset the new session");
+        }
         RelayClient.disconnected(local); check(mc.stops==0,"unexpected disconnect hides error screen");
         check(!RelayClient.available(),"stale capability after disconnect");
         RelayClient.receive(new RelayPayload(RelayPayload.EXIT,RelayPayload.NONE));
@@ -152,7 +156,7 @@ for (const version of ['1.21.1', '26.2']) test(`shipped relay ${version}: player
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'nexlux-relay-test-'));
   t.after(() => { const resolved = path.resolve(temp); assert.equal(path.dirname(resolved), path.resolve(os.tmpdir())); assert.ok(path.basename(resolved).startsWith('nexlux-relay-test-')); fs.rmSync(resolved, { recursive: true, force: true }); });
   const jar = path.join(root, 'mods', version === '1.21.1' ? 'nexlux-1.1.0.jar' : 'nexlux-26.2.jar');
-  const definition = JSON.parse(fs.readFileSync(path.join(game, 'versions', version, `${version}.json`)));
+  const definition = JSON.parse(fs.readFileSync(path.join(game, 'versions', '26.2', '26.2.json')));
   const gsonFile = definition.libraries.find(lib => lib.name.startsWith('com.google.code.gson:gson:')).downloads.artifact.path;
   const gson = path.join(game, 'libraries', gsonFile);
   const classpath = [jar, gson];
@@ -174,10 +178,11 @@ for (const version of ['1.21.1', '26.2']) test(`shipped relay ${version}: player
   execFileSync(path.join(jdk, 'javac.exe'), [`@${argsFile}`], { stdio: 'pipe' });
   const secret = crypto.randomBytes(32).toString('hex');
   const controlFile = path.join(temp, 'control.json'); fs.writeFileSync(controlFile, JSON.stringify({ secret, port: 12345 }), { mode: 0o600 });
-  const result = execFileSync(path.join(jdk, 'java.exe'), [`-Dnexlux.relayControl=${controlFile}`, '-cp', [classes, ...classpath].join(path.delimiter), 'RelayTest'], { encoding: 'utf8' });
+  const result = execFileSync(path.join(jdk, 'java.exe'), [`-Dnexlux.relayControl=${controlFile}`, '-cp', [classes, ...classpath].join(path.delimiter), 'RelayTest', version], { encoding: 'utf8' });
   const proof = crypto.createHmac('sha256', secret).update('nexlux:relay_auth/00112233445566778899aabbccddeeff', 'ascii').digest('hex');
   assert.match(result, new RegExp('PASS ' + proof));
-  const actualGame = version === '1.21.1' ? path.join(game, 'loader/neoforge/libraries/net/minecraft/client/1.21.1-20240808.144430/client-1.21.1-20240808.144430-srg.jar') : path.join(game, 'versions/26.2/26.2.jar');
+  const actualGame = version === '1.21.1' ? path.join(root, 'scratch/standby-native21/loader/neoforge/libraries/net/minecraft/client/1.21.1-20240808.144430/client-1.21.1-20240808.144430-srg.jar') : path.join(game, 'versions/26.2/26.2.jar');
+  if (!fs.existsSync(actualGame)) { t.diagnostic('Distributed relay lifecycle passed; native Minecraft JAR absent.'); return; }
   const describe = name => execFileSync(path.join(jdk, 'javap.exe'), ['-p', '-classpath', actualGame, name], { encoding: 'utf8' });
   assert.match(describe('net.minecraft.server.players.PlayerList'), /protected void updateEntireScoreboard/);
   const listener = describe('net.minecraft.server.network.ServerGamePacketListenerImpl');

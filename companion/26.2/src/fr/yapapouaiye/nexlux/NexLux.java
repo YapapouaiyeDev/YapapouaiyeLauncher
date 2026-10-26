@@ -25,6 +25,12 @@ public final class NexLux {
     public static final String MOD_VERSION = "26.2";
 
     public NexLux(IEventBus modEventBus) {
+        modEventBus.addListener(net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent.class, event ->
+            event.registrar("1").optional().playToClient(
+                fr.yapapouaiye.nexlux.network.SaturationPayload.TYPE,
+                fr.yapapouaiye.nexlux.network.SaturationPayload.CODEC,
+                (message, context) -> fr.yapapouaiye.nexlux.client.SaturationState.receive(message)));
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(fr.yapapouaiye.nexlux.network.SaturationSync.class);
         NexLuxConfig.load();
         NexLuxCore.init();
         NexLuxEvents.register();

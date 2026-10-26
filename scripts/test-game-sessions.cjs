@@ -114,6 +114,7 @@ function backend(t) {
     loadAccounts: () => structuredClone(env.accounts), saveAccounts: data => { env.accounts = structuredClone(data); },
     loadConfig: () => ({ ...env.config }), saveConfig: patch => { Object.assign(env.config, patch); },
     authAccount: env.accounts.accounts[0], accountKey, structuredClone, gameSessions: sessions,
+    sessionRecoveryError: null,
     skinForAccount: require('../src/account-avatars').skinForAccount,
     getAllServers: () => [server], getRemoteServerById: () => ({ ...server, codesRequired: env.codesRequired }),
     getFreshMaintenanceState: () => env.maintenance(), getMaintenanceState: () => ({ maintenance: false }),

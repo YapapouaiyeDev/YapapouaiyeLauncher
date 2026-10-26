@@ -1,6 +1,6 @@
 {
   "name": "yapapouaiye-launcher",
-  "version": "1.6.1-4-beta.2",
+  "version": "1.6.1-4",
   "description": "Launcher Minecraft moddé - Yapapouaiye",
   "homepage": "https://github.com/YapapouaiyeDev/YapapouaiyeLauncher",
   "main": "src/main.js",
@@ -128,8 +128,8 @@
         "provider": "github",
         "owner": "YapapouaiyeDev",
         "repo": "YapapouaiyeLauncher",
-        "releaseType": "prerelease",
-        "channel": "beta"
+        "releaseType": "release",
+        "channel": "latest"
       }
     ]
   }

@@ -44,6 +44,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.lwjgl.glfw.GLFW;
@@ -83,14 +84,7 @@ public final class LunarClientEvents {
         if (LunarClientConfig.isFullBright() && mc.options != null && (Double)mc.options.gamma().get() < 10.0) {
             mc.options.gamma() .set(100.0);
         }
-        if (LunarClientConfig.isNightVision()) {
-            MobEffectInstance current = mc.player.getEffect(MobEffects.NIGHT_VISION);
-            if (current == null || current.getDuration() < 60000) {
-                mc.player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 999999, 0, false, false, false));
-            }
-        } else if (mc.player.hasEffect(MobEffects.NIGHT_VISION)) {
-            mc.player.removeEffect(MobEffects.NIGHT_VISION);
-        }
+        maintainNightVision();
         boolean isZoomDown = LunarKeyBindings.KEY_ZOOM.isDown() && mc.gui.screen() == null;
         float targetZoom = LunarClientConfig.isZoom() && isZoomDown ? 1.0f : 0.0f;
         currentZoom += (targetZoom - currentZoom) * 0.45f;
@@ -118,6 +112,30 @@ public final class LunarClientEvents {
         }
     }
 
+    public static void maintainNightVision() {
+        ClientNightVision.update(LunarClientConfig.isNightVision());
+    }
+
+    private static void clearTransientInput() {
+        SaturationState.clear();
+        ExtraHud.invalidate();
+        currentZoom = 0;
+        wasLeftDown = false;
+        wasRightDown = false;
+        leftClicks.clear();
+        rightClicks.clear();
+    }
+
+    @SubscribeEvent public static void onClientLogin(ClientPlayerNetworkEvent.LoggingIn event) {
+        clearTransientInput();
+        maintainNightVision();
+    }
+
+    @SubscribeEvent public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        LunarClientConfig.save();
+        clearTransientInput();
+    }
+
     @SubscribeEvent
     public static void onComputeFov(ComputeFovModifierEvent event) {
         if (currentZoom > 0.005f) {
@@ -131,30 +149,26 @@ public final class LunarClientEvents {
         if (mc.player == null || mc.level == null || mc.font == null) {
             return;
         }
-        if (mc.gui.screen() instanceof LunarClientScreen || mc.gui.screen() instanceof GuiEditorScreen) {
+        if (mc.gui.screen() instanceof LunarClientScreen || mc.gui.screen() instanceof GuiEditorScreen || mc.gui.screen() instanceof ExtraHudScreen) {
             return;
         }
         int pad = 4;
         if (LunarClientConfig.isCoordinates()) {
-            BlockPos pos = mc.player.blockPosition();
-            String coords = "XYZ: " + pos.getX() + " / " + pos.getY() + " / " + pos.getZ();
-            String facing = "Direction: " + mc.player.getDirection().name();
+            String[] lines = HudMetrics.coordinateLines();
             int x = LunarClientConfig.getCoordsX();
             int y = LunarClientConfig.getCoordsY();
-            int w = Math.max(mc.font.width(coords), mc.font.width(facing));
-            Objects.requireNonNull(mc.font);
-            int h = 9 * 2 + 2;
+            int w = HudMetrics.width("coords") - 8;
+            int h = HudMetrics.height("coords") - 8;
             guiGraphics.fill(x - pad, y - pad, x + w + pad, y + h + pad, Integer.MIN_VALUE);
-            guiGraphics.text(mc.font, coords, x, y, -1, true);
-            Font font = mc.font;
-            Objects.requireNonNull(mc.font);
-            guiGraphics.text(font, facing, x, y + 9 + 2, -4867385, true);
+            for (int line = 0; line < lines.length; line++) {
+                guiGraphics.text(mc.font, lines[line], x, y + line * 11, line == lines.length - 1 ? -4867385 : -1, true);
+            }
         }
         if (LunarClientConfig.isCpsCounter()) {
             int cpsX = LunarClientConfig.getCpsX();
             int cpsY = LunarClientConfig.getCpsY();
             String cpsTxt = leftClicks.size() + " | " + rightClicks.size() + " CPS";
-            int cw = mc.font.width(cpsTxt);
+            int cw = HudMetrics.width("cps") - 8;
             Objects.requireNonNull(mc.font);
             int ch = 9;
             guiGraphics.fill(cpsX - pad, cpsY - pad, cpsX + cw + pad, cpsY + ch + pad, Integer.MIN_VALUE);
@@ -166,16 +180,8 @@ public final class LunarClientEvents {
         if (LunarClientConfig.isSpeed()) {
             int sx = LunarClientConfig.getSpeedX();
             int sy = LunarClientConfig.getSpeedY();
-            double velocity = 0.0;
-            try {
-                net.minecraft.world.entity.Entity ref = mc.player.getVehicle() != null ? mc.player.getVehicle() : mc.player;
-                velocity = ref.getDeltaMovement().horizontalDistance() * 20.0;
-            }
-            catch (Throwable ref) {
-                // empty catch block
-            }
-            String speedTxt = String.format(Locale.ROOT, "%.1f m/s", velocity);
-            int sw = mc.font.width(speedTxt);
+            String speedTxt = HudMetrics.counterText("speed");
+            int sw = HudMetrics.width("speed") - 8;
             Objects.requireNonNull(mc.font);
             int sh = 9;
             guiGraphics.fill(sx - pad, sy - pad, sx + sw + pad, sy + sh + pad, Integer.MIN_VALUE);
@@ -185,7 +191,7 @@ public final class LunarClientEvents {
             int fx = LunarClientConfig.getFpsX();
             int fy = LunarClientConfig.getFpsY();
             String fpsTxt = mc.getFps() + " FPS";
-            int fw = mc.font.width(fpsTxt);
+            int fw = HudMetrics.width("fps") - 8;
             Objects.requireNonNull(mc.font);
             int fh = 9;
             guiGraphics.fill(fx - pad, fy - pad, fx + fw + pad, fy + fh + pad, Integer.MIN_VALUE);
@@ -205,12 +211,13 @@ public final class LunarClientEvents {
                 // empty catch block
             }
             String pingTxt = String.valueOf(pingMs >= 0 ? Integer.valueOf(pingMs) : "--") + " ms";
-            int pw = mc.font.width(pingTxt);
+            int pw = HudMetrics.width("ping") - 8;
             Objects.requireNonNull(mc.font);
             int ph = 9;
             guiGraphics.fill(px - pad, py - pad, px + pw + pad, py + ph + pad, Integer.MIN_VALUE);
             guiGraphics.text(mc.font, pingTxt, px, py, -1, true);
         }
+        ExtraHud.render(guiGraphics, "potions", false);
     }
 
     private static ItemStack damagedPreview(ItemStack stack, int damage) {

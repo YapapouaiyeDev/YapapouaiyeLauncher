@@ -13,6 +13,9 @@ function singleListener(channel, typeFilter) {
 }
 
 contextBridge.exposeInMainWorld('launcher', {
+  generateThemeAi: (payload) => ipcRenderer.invoke('generate-theme-ai', payload),
+  getThemeAiApiKey: () => ipcRenderer.invoke('get-theme-ai-api-key'),
+  saveThemeAiApiKey: (apiKey) => ipcRenderer.invoke('save-theme-ai-api-key', apiKey),
   minimize: () => ipcRenderer.send('minimize'),
   maximize: () => ipcRenderer.send('maximize'),
   close: () => ipcRenderer.send('close'),
@@ -73,6 +76,7 @@ contextBridge.exposeInMainWorld('launcher', {
   // État initial pré-chargé pendant le splash (auth + serveurs + mods locaux).
   // Évite le flash "Non connecté" à l'ouverture de la fenêtre.
   getInitialState: () => ipcRenderer.invoke('get-initial-state'),
+  ready: () => ipcRenderer.send('launcher-ready'),
 
   // Updates
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),

@@ -1,5 +1,6 @@
 param([string]$GameRoot = (Join-Path $env:APPDATA '.yapapouaiye-launcher\minecraft'), [string]$JdkPath = '')
 $ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 $repo = Split-Path $PSScriptRoot -Parent
 $jdk = if ($JdkPath) { $JdkPath } else { Join-Path $GameRoot 'runtime/java-runtime-epsilon/bin' }
 $loaderVersion = '21.1.264'

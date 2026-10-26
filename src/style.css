@@ -223,36 +223,6 @@ body {
   -webkit-app-region: no-drag;
 }
 
-.topbar-theme-btn {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background-color 150ms, border-color 150ms, color 150ms;
-  padding: 0;
-}
-
-.topbar-theme-btn:hover {
-  background: rgba(var(--accent-rgb), 0.15);
-  border-color: var(--mc-green-primary);
-  color: var(--mc-green-primary);
-}
-
-.topbar-theme-btn svg {
-  display: block;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  color: inherit;
-}
-
 .status-dot {
   width: 8px;
   height: 8px;
@@ -561,10 +531,13 @@ body {
 
 .play-hero-container {
   min-width: 0;
+  container-type: inline-size;
+  container-name: home-details;
 }
 
 .mc-tag-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   margin-bottom: 12px;
@@ -603,6 +576,7 @@ body {
   font-weight: 800;
   letter-spacing: -0.2px;
   margin-bottom: 8px;
+  overflow-wrap: anywhere;
 }
 
 .mc-player-name {
@@ -611,6 +585,7 @@ body {
 
 .server-ip-banner {
   display: inline-flex;
+  max-width: 100%;
   align-items: center;
   gap: 10px;
   padding: 8px 16px;
@@ -628,6 +603,16 @@ body {
   color: #ffffff;
 }
 
+.server-ip-banner > svg,
+.server-ip-banner .copy-badge {
+  flex-shrink: 0;
+}
+
+.server-ip-banner > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .copy-badge {
   font-size: 10px;
   font-weight: 700;
@@ -642,6 +627,17 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 16px;
+}
+
+.news-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@container home-details (max-width: 620px) {
+  .news-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .news-posts-container {
@@ -1880,6 +1876,21 @@ input:checked + .toggle-slider:before {
   justify-content: space-between;
   gap: 8px;
   min-height: 24px;
+}
+
+.theme-customization-icon {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  background-color: var(--mc-green-primary);
+  mask: url('../assets/theme-palette.png') center / contain no-repeat;
+}
+
+.theme-navigation-icon {
+  width: 18px;
+  height: 18px;
+  background-color: currentColor;
 }
 
 .theme-card-header {
@@ -3438,7 +3449,9 @@ input:checked + .toggle-slider:before {
   background: rgba(10, 12, 18, 0.94);
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--panel-border);
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
@@ -3457,6 +3470,9 @@ input:checked + .toggle-slider:before {
   cursor: pointer;
   transition: all var(--transition-fast);
   width: 220px;
+  max-width: 100%;
+  min-width: 0;
+  justify-self: start;
 }
 
 .footer-profile-widget:hover {
@@ -3546,8 +3562,16 @@ input:checked + .toggle-slider:before {
   font-weight: 800;
   color: var(--mc-green-primary);
   margin-bottom: -10px;
+  max-width: 100%;
   z-index: 20;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.version-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chip-dot {
@@ -3708,6 +3732,9 @@ input:checked + .toggle-slider:before {
   gap: 12px;
   width: 220px;
   justify-content: flex-end;
+  justify-self: end;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .quick-ram-widget {
@@ -3718,6 +3745,10 @@ input:checked + .toggle-slider:before {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-sm);
+}
+
+.ram-icon-svg {
+  flex-shrink: 0;
 }
 
 .ram-icon {
@@ -3740,7 +3771,10 @@ input:checked + .toggle-slider:before {
   font-size: 11px;
   font-weight: 800;
   color: var(--mc-green-primary);
-  min-width: 32px;
+  min-width: 5ch;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Utility Class */
@@ -3823,6 +3857,7 @@ input:checked + .toggle-slider:before {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  max-height: calc(100vh - var(--topbar-height) - var(--footer-height) - var(--nav-bottom-space, 0px) - 2 * var(--main-content-padding-y));
   background: rgba(15, 20, 30, 0.6);
   border: 1px solid rgba(var(--accent-rgb), 0.2);
   border-radius: var(--radius-md);
@@ -3980,7 +4015,7 @@ input:checked + .toggle-slider:before {
   line-height: 1.5;
 }
 
-@container play (max-width: 800px) {
+@container play (max-width: 900px) {
   .play-server-layout {
     grid-template-columns: minmax(0, 1fr);
     min-height: 0;
@@ -3988,13 +4023,14 @@ input:checked + .toggle-slider:before {
 
   .server-selector-card {
     position: static;
-    max-height: none;
+    max-height: min(260px, 40vh);
   }
 
   .server-tabs {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding: 0 4px 4px;
     scrollbar-gutter: auto;
   }
@@ -6125,7 +6161,7 @@ body.is-booting #play-section {
 @media (min-width: 1500px) {
   .main-content > .page,
   .main-content > .maintenance-banner {
-    max-width: 1400px;
+    max-width: 1600px;
     margin-inline: auto;
     width: 100%;
   }
@@ -6212,10 +6248,6 @@ body.is-booting #play-section {
     padding: 18px;
   }
 
-  .server-tabs {
-    flex-wrap: wrap;
-  }
-
   .mods-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
@@ -6288,10 +6320,6 @@ body.is-booting #play-section {
   .nav-item .nav-icon {
     width: 18px;
     height: 18px;
-  }
-
-  .topbar-theme-btn {
-    padding: 6px;
   }
 
   .main-content {
@@ -6673,6 +6701,25 @@ body[data-nav-layout="bottom"] .main-content {
 }
 
 /* ---------- Fenêtres étroites : sidebar/dock compacts ---------- */
+@media (max-width: 1100px) {
+  body[data-nav-layout="right"] {
+    --sidebar-width: 62px;
+  }
+
+  body[data-nav-layout="right"] .nav-menu {
+    padding: 12px 8px;
+  }
+
+  body[data-nav-layout="right"] .nav-item {
+    justify-content: center;
+    padding: 10px 6px;
+  }
+
+  body[data-nav-layout="right"] .nav-item span {
+    display: none;
+  }
+}
+
 @media (max-width: 900px) {
   :root {
     --sidebar-width: 62px;

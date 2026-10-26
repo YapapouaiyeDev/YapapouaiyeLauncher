@@ -40,6 +40,9 @@
   }
 
   window.launcher = {
+    generateThemeAi: (payload) => invoke('generate_theme_ai', { payload }),
+    getThemeAiApiKey: () => invoke('get_theme_ai_api_key'),
+    saveThemeAiApiKey: (apiKey) => invoke('save_theme_ai_api_key', { apiKey }),
     // Window controls
     minimize: () => invoke('minimize'),
     maximize: () => invoke('maximize'),

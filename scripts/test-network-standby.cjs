@@ -123,7 +123,15 @@ const sources = {
         StandbyNetworkClient.resume();check(request(client).operation()==RelayPayload.RESYNC,"resume before ack still sends wake");
         StandbyNetworkClient.receive(new RelayPayload(RelayPayload.BACKGROUND,StandbyProtocol.ENTER));check(StandbyNetworkClient.frozen(),"late ack must not cancel wake");
         StandbyNetworkClient.receive(new RelayPayload(RelayPayload.END,StandbyProtocol.WAKE));check(!StandbyNetworkClient.frozen(),"late ack recovery");
-        StandbyNetworkClient.enter();request(client);mc.listener=null;StandbyNetworkClient.tick();check(!StandbyNetworkClient.frozen(),"disconnect clears client state");
+        StandbyNetworkClient.enter();request(client);
+        {
+          var oldListener=mc.listener; mc.listener=new net.minecraft.client.multiplayer.ClientPacketListener();
+          StandbyNetworkClient.receive(new RelayPayload(RelayPayload.BACKGROUND,StandbyProtocol.PROBE));
+          check(client.sent.isEmpty(),"stale standby acknowledgement cannot act on a replacement connection");
+          StandbyNetworkClient.tick();check(!StandbyNetworkClient.frozen(),"replacement connection clears network freeze");
+          mc.listener=oldListener;
+        }
+        mc.listener=null;StandbyNetworkClient.tick();check(!StandbyNetworkClient.frozen(),"disconnect clears client state");
         System.out.println("PASS: server gate, minimal protocol, frozen world, same-connection wake, cancellation and isolation");
       }
     }`,
@@ -152,7 +160,7 @@ for (const version of ['1.21.1', '26.2']) test(`network standby ${version}: serv
   const args = path.join(temp, 'javac.args');
   fs.writeFileSync(args, ['-proc:none', '-encoding', 'UTF-8', '-classpath', `"${[jar, mixins].join(path.delimiter).replaceAll('\\', '/')}"`, '-d', `"${classes.replaceAll('\\', '/')}"`, ...files.map(f => `"${f.replaceAll('\\', '/')}"`)].join('\n'));
   execFileSync(path.join(jdk, 'javac.exe'), [`@${args}`], { stdio: 'pipe' });
-  const result = execFileSync(path.join(jdk, 'java.exe'), ['-cp', [classes, jar, mixins].join(path.delimiter), 'NetworkStandbyTest'], { encoding: 'utf8' });
+  const result = execFileSync(path.join(jdk, 'java.exe'), ['-cp', [classes, jar, mixins].join(path.delimiter), 'NetworkStandbyTest', version], { encoding: 'utf8' });
   assert.match(result, /PASS: server gate/);
 });
 

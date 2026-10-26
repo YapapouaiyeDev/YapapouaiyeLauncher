@@ -57,6 +57,21 @@ public final class LunarClientConfig {
     private static int fpsY = 152;
     private static int pingX = 8;
     private static int pingY = 170;
+    private static int hudReferenceWidth;
+    private static int hudReferenceHeight;
+    private static int[] hudAnchorX;
+    private static int[] hudAnchorY;
+    private static ClientMenuWindow clientMenu = new ClientMenuWindow();
+    private static ExtraHudSettings potionTimer = new ExtraHudSettings();
+    private static ExtraHudSettings saturation = defaultSaturation();
+
+    private static ExtraHudSettings defaultSaturation() {
+        ExtraHudSettings settings = new ExtraHudSettings();
+        settings.y = 140;
+        return settings;
+    }
+    public static ExtraHudSettings getPotionTimer() { return potionTimer; }
+    public static ExtraHudSettings getSaturation() { return saturation; }
     private static File configFile;
     private static File legacyConfigFile;
 
@@ -235,138 +250,231 @@ public final class LunarClientConfig {
     }
 
     public static int getCoordsX() {
+        ensureHudViewport();
         return coordsX;
     }
 
     public static void setCoordsX(int x) {
+        ensureHudViewport();
         coordsX = x;
+        hudAnchorX[0] = HudLayout.anchor(coordsX - HudMetrics.padding("coords"), HudMetrics.width("coords"), hudReferenceWidth);
     }
 
     public static int getCoordsY() {
+        ensureHudViewport();
         return coordsY;
     }
 
     public static void setCoordsY(int y) {
+        ensureHudViewport();
         coordsY = y;
+        hudAnchorY[0] = HudLayout.anchor(coordsY - HudMetrics.padding("coords"), HudMetrics.height("coords"), hudReferenceHeight);
     }
 
     public static void setCoordsPos(int x, int y) {
-        coordsX = x;
-        coordsY = y;
+        setCoordsX(x);
+        setCoordsY(y);
         LunarClientConfig.save();
     }
 
     public static int getCpsX() {
+        ensureHudViewport();
         return cpsX;
     }
 
     public static void setCpsX(int x) {
+        ensureHudViewport();
         cpsX = x;
+        hudAnchorX[1] = HudLayout.anchor(cpsX - HudMetrics.padding("cps"), HudMetrics.width("cps"), hudReferenceWidth);
     }
 
     public static int getCpsY() {
+        ensureHudViewport();
         return cpsY;
     }
 
     public static void setCpsY(int y) {
+        ensureHudViewport();
         cpsY = y;
+        hudAnchorY[1] = HudLayout.anchor(cpsY - HudMetrics.padding("cps"), HudMetrics.height("cps"), hudReferenceHeight);
     }
 
     public static void setCpsPos(int x, int y) {
-        cpsX = x;
-        cpsY = y;
+        setCpsX(x);
+        setCpsY(y);
         LunarClientConfig.save();
     }
 
     public static int getArmorX() {
+        ensureHudViewport();
         return armorX;
     }
 
     public static void setArmorX(int x) {
+        ensureHudViewport();
         armorX = x;
+        hudAnchorX[2] = HudLayout.anchor(armorX - HudMetrics.padding("armor"), HudMetrics.width("armor"), hudReferenceWidth);
     }
 
     public static int getArmorY() {
+        ensureHudViewport();
         return armorY;
     }
 
     public static void setArmorY(int y) {
+        ensureHudViewport();
         armorY = y;
+        hudAnchorY[2] = HudLayout.anchor(armorY - HudMetrics.padding("armor"), HudMetrics.height("armor"), hudReferenceHeight);
     }
 
     public static void setArmorPos(int x, int y) {
-        armorX = x;
-        armorY = y;
+        setArmorX(x);
+        setArmorY(y);
         LunarClientConfig.save();
     }
 
     public static int getSpeedX() {
+        ensureHudViewport();
         return speedX;
     }
 
     public static void setSpeedX(int x) {
+        ensureHudViewport();
         speedX = x;
+        hudAnchorX[3] = HudLayout.anchor(speedX - HudMetrics.padding("speed"), HudMetrics.width("speed"), hudReferenceWidth);
     }
 
     public static int getSpeedY() {
+        ensureHudViewport();
         return speedY;
     }
 
     public static void setSpeedY(int y) {
+        ensureHudViewport();
         speedY = y;
+        hudAnchorY[3] = HudLayout.anchor(speedY - HudMetrics.padding("speed"), HudMetrics.height("speed"), hudReferenceHeight);
     }
 
     public static void setSpeedPos(int x, int y) {
-        speedX = x;
-        speedY = y;
+        setSpeedX(x);
+        setSpeedY(y);
         LunarClientConfig.save();
     }
 
     public static int getFpsX() {
+        ensureHudViewport();
         return fpsX;
     }
 
     public static void setFpsX(int x) {
+        ensureHudViewport();
         fpsX = x;
+        hudAnchorX[4] = HudLayout.anchor(fpsX - HudMetrics.padding("fps"), HudMetrics.width("fps"), hudReferenceWidth);
     }
 
     public static int getFpsY() {
+        ensureHudViewport();
         return fpsY;
     }
 
     public static void setFpsY(int y) {
+        ensureHudViewport();
         fpsY = y;
+        hudAnchorY[4] = HudLayout.anchor(fpsY - HudMetrics.padding("fps"), HudMetrics.height("fps"), hudReferenceHeight);
     }
 
     public static void setFpsPos(int x, int y) {
-        fpsX = x;
-        fpsY = y;
+        setFpsX(x);
+        setFpsY(y);
         LunarClientConfig.save();
     }
 
     public static int getPingX() {
+        ensureHudViewport();
         return pingX;
     }
 
     public static void setPingX(int x) {
+        ensureHudViewport();
         pingX = x;
+        hudAnchorX[5] = HudLayout.anchor(pingX - HudMetrics.padding("ping"), HudMetrics.width("ping"), hudReferenceWidth);
     }
 
     public static int getPingY() {
+        ensureHudViewport();
         return pingY;
     }
 
     public static void setPingY(int y) {
+        ensureHudViewport();
         pingY = y;
+        hudAnchorY[5] = HudLayout.anchor(pingY - HudMetrics.padding("ping"), HudMetrics.height("ping"), hudReferenceHeight);
     }
 
     public static void setPingPos(int x, int y) {
-        pingX = x;
-        pingY = y;
+        setPingX(x);
+        setPingY(y);
         LunarClientConfig.save();
     }
 
+    public static ClientMenuWindow getClientMenu() { return clientMenu; }
+
+    public static void ensureHudViewport() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.getWindow() == null) return;
+        int width = mc.getWindow().getGuiScaledWidth();
+        int height = mc.getWindow().getGuiScaledHeight();
+        boolean anchorsKnown = hudAnchorX != null && hudAnchorX.length == 6 && hudAnchorY != null && hudAnchorY.length == 6;
+        if (width < 1 || height < 1) return;
+        int[] xs = {coordsX, cpsX, armorX, speedX, fpsX, pingX};
+        int[] ys = {coordsY, cpsY, armorY, speedY, fpsY, pingY};
+        if (anchorsKnown && width == hudReferenceWidth && height == hudReferenceHeight) {
+            boolean inside = true;
+            for (int i = 0; i < xs.length; i++) {
+                String id = HudMetrics.IDS[i];
+                int pad = HudMetrics.padding(id);
+                inside &= xs[i] - pad >= 4 && ys[i] - pad >= 4
+                    && xs[i] - pad + HudMetrics.width(id) <= width - 4
+                    && ys[i] - pad + HudMetrics.height(id) <= height - 4;
+            }
+            if (inside) return;
+        }
+        int oldWidth = hudReferenceWidth > 0 ? hudReferenceWidth : width;
+        int oldHeight = hudReferenceHeight > 0 ? hudReferenceHeight : height;
+        if (hudReferenceWidth == 0 || hudReferenceHeight == 0) {
+            // Legacy files contain absolute pixels only. Include offscreen positions
+            // when inferring the old canvas, then bring them back inside the window.
+            for (int i = 0; i < xs.length; i++) {
+                if (hudReferenceWidth == 0) oldWidth = Math.max(oldWidth, xs[i] + HudMetrics.width(HudMetrics.IDS[i]) + 4);
+                if (hudReferenceHeight == 0) oldHeight = Math.max(oldHeight, ys[i] + HudMetrics.height(HudMetrics.IDS[i]) + 4);
+            }
+        }
+        if (!anchorsKnown) {
+            hudAnchorX = new int[6];
+            hudAnchorY = new int[6];
+            for (int i = 0; i < xs.length; i++) {
+                String id = HudMetrics.IDS[i];
+                int pad = HudMetrics.padding(id);
+                hudAnchorX[i] = HudLayout.anchor(xs[i] - pad, HudMetrics.width(id), oldWidth);
+                hudAnchorY[i] = HudLayout.anchor(ys[i] - pad, HudMetrics.height(id), oldHeight);
+            }
+        }
+        for (int i = 0; i < xs.length; i++) {
+            String id = HudMetrics.IDS[i];
+            int pad = HudMetrics.padding(id);
+            xs[i] = HudLayout.reflow(xs[i] - pad, HudMetrics.width(id), oldWidth, width, hudAnchorX[i]) + pad;
+            ys[i] = HudLayout.reflow(ys[i] - pad, HudMetrics.height(id), oldHeight, height, hudAnchorY[i]) + pad;
+        }
+        coordsX = xs[0]; cpsX = xs[1]; armorX = xs[2]; speedX = xs[3]; fpsX = xs[4]; pingX = xs[5];
+        coordsY = ys[0]; cpsY = ys[1]; armorY = ys[2]; speedY = ys[3]; fpsY = ys[4]; pingY = ys[5];
+        hudReferenceWidth = width;
+        hudReferenceHeight = height;
+    }
+
     public static void resetHudPositions() {
+        ExtraHud.resetPositions();
+        hudAnchorX = null;
+        hudAnchorY = null;
         coordsX = 8;
         coordsY = 8;
         cpsX = 8;
@@ -398,14 +506,7 @@ public final class LunarClientConfig {
 
     public static void applyNightVision(boolean enable) {
         try {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc != null && mc.player != null) {
-                if (enable) {
-                    mc.player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 999999, 0, false, false, false));
-                } else if (mc.player.hasEffect(MobEffects.NIGHT_VISION)) {
-                    mc.player.removeEffect(MobEffects.NIGHT_VISION);
-                }
-            }
+            ClientNightVision.update(enable);
         }
         catch (Exception e) {
             LOGGER.warn("Impossible d'appliquer la Vision Nocturne: {}", (Object)e.getMessage());
@@ -459,6 +560,15 @@ public final class LunarClientConfig {
                 speed = data.speed;
                 fps = data.fps;
                 ping = data.ping;
+                hudReferenceWidth = data.hudReferenceWidth;
+                hudReferenceHeight = data.hudReferenceHeight;
+                hudAnchorX = data.hudAnchorX;
+                hudAnchorY = data.hudAnchorY;
+                clientMenu = data.clientMenu != null ? data.clientMenu : new ClientMenuWindow();
+                potionTimer = data.potionTimer != null ? data.potionTimer : new ExtraHudSettings();
+                saturation = data.saturation != null ? data.saturation : defaultSaturation();
+                potionTimer.sanitize();
+                saturation.sanitize();
                 coordsX = data.coordsX;
                 coordsY = data.coordsY;
                 cpsX = data.cpsX;
@@ -498,6 +608,13 @@ public final class LunarClientConfig {
         data.speed = speed;
         data.fps = fps;
         data.ping = ping;
+        data.hudReferenceWidth = hudReferenceWidth;
+        data.hudReferenceHeight = hudReferenceHeight;
+        data.hudAnchorX = hudAnchorX;
+        data.hudAnchorY = hudAnchorY;
+        data.clientMenu = clientMenu;
+        data.potionTimer = potionTimer;
+        data.saturation = saturation;
         data.coordsX = coordsX;
         data.coordsY = coordsY;
         data.cpsX = cpsX;
@@ -556,6 +673,13 @@ public final class LunarClientConfig {
         boolean speed = true;
         boolean fps = true;
         boolean ping = true;
+        int hudReferenceWidth;
+        int hudReferenceHeight;
+        int[] hudAnchorX;
+        int[] hudAnchorY;
+        ClientMenuWindow clientMenu = new ClientMenuWindow();
+        ExtraHudSettings potionTimer = new ExtraHudSettings();
+        ExtraHudSettings saturation = defaultSaturation();
         int coordsX = 8;
         int coordsY = 8;
         int cpsX = 8;

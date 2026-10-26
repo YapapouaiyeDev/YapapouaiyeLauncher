@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, session } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, session, safeStorage } = require("electron");
 const path = require("path");
 const os = require("os");
 const net = require("net");
@@ -6,6 +6,7 @@ const http = require("http");
 const { Microsoft } = require("minecraft-java-core");
 const { NetworkSessions } = require("./network-sessions");
 const { ManagedLaunch } = require("./managed-launch");
+const { PersistentGameSessions, RecoveredGame } = require("./persistent-game-sessions");
 const { skinForAccount } = require("./account-avatars");
 const { GameSessions, accountKey, prepareAccountInstance } = require("./game-sessions");
 const { autoUpdater } = require("electron-updater");
@@ -71,9 +72,13 @@ app.on("child-process-gone", (event, details) => {
 
 app.on("second-instance", () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.show();
-    mainWindow.focus();
+    if (mainWindowShown) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    } else if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.moveTop();
+    }
   }
 });
 
@@ -666,12 +671,45 @@ migrateLegacyMods();
 let mainWindow;
 let overlayWindow;
 let splashWindow;
-let splashStartedAt = 0;
 let authAccount = null;
 let gameOptions = { nightVision: false, noFog: false, shaders: false };
-const gameSessions = new GameSessions(sessions => sendToRenderer("game-sessions", sessions));
+const persistentGameSessions = new PersistentGameSessions(path.join(launcherDir, "running-game-sessions.json"));
+let sessionRecoveryError = null;
+const gameSessions = new GameSessions(sessions => {
+  try { persistentGameSessions.save(sessions); }
+  catch (error) { logToFile("ERROR", "Impossible d'enregistrer les sessions Minecraft", error); }
+  sendToRenderer("game-sessions", sessions);
+});
 const gameLaunchers = new Map();
 const relayProfiles = new Map();
+
+async function recoverRunningGames() {
+  try {
+    const sessions = await persistentGameSessions.recover();
+    for (const session of sessions) {
+      const launcher = new RecoveredGame(session);
+      gameLaunchers.set(session.id, launcher);
+      launcher.on("monitor-error", error => logToFile("WARN", "Vérification du client Minecraft", error));
+      launcher.once("close", () => {
+        gameLaunchers.delete(session.id);
+        gameSessions.finish(session.id);
+        sendToRenderer("game-closed", { sessionId: session.id, accountName: session.accountName, code: 0 });
+        // Read settings saved by the primary client after it actually exits.
+        if (accountKey(session.accountUuid) === accountKey(loadConfig().primaryAccountUuid)) {
+          try {
+            const mods = getClientModsConfig(gameDir);
+            saveConfig({ clientMods: mods });
+            sendToRenderer("client-mods-updated", mods);
+          } catch {}
+        }
+      });
+    }
+    gameSessions.restore(sessions);
+  } catch (error) {
+    sessionRecoveryError = error;
+    logToFile("ERROR", "Impossible de retrouver les sessions Minecraft", error);
+  }
+}
 const networkSessions = new NetworkSessions((id, error, wasReady) => {
   if (error) {
     console.warn(`[NetworkSession] ${id}: ${error}`);
@@ -1115,6 +1153,9 @@ function getClientModsConfig(targetGameDir = gameDir) {
     const configDir = path.join(targetGameDir, "config");
     const diskData = readClientOptions(configDir);
     if (diskData && typeof diskData === "object") {
+      for (const key of ["fullBright", "nightVision", "noFog", "zoom", "fpsBoost", "keystrokes", "speed", "fps", "ping"]) {
+        if (typeof diskData[key] === "boolean" && base[key]) base[key].enabled = diskData[key];
+      }
       if (!base.hudPositions) base.hudPositions = {};
       const posKeys = [
         "coordsX", "coordsY", "cpsX", "cpsY", "armorX", "armorY",
@@ -1618,6 +1659,20 @@ function saveAccounts(data) {
 // Window
 // ============================================================
 let mainWindowShown = false;
+let mainWindowPaintReady = false;
+let mainWindowInitialized = false;
+let splashMinimumElapsed = true;
+
+function revealInitializedWindow() {
+  if (mainWindowPaintReady && mainWindowInitialized && splashMinimumElapsed) showMainWindow();
+}
+
+ipcMain.on("launcher-ready", (event) => {
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) return;
+  mainWindowInitialized = true;
+  revealInitializedWindow();
+});
+
 function showMainWindow() {
   if (mainWindowShown) return;
   mainWindowShown = true;
@@ -1634,6 +1689,8 @@ function showMainWindow() {
 
 function createWindow() {
   mainWindowShown = false;
+  mainWindowPaintReady = false;
+  mainWindowInitialized = false;
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 700,
@@ -1670,27 +1727,14 @@ function createWindow() {
     showMainWindow();
   });
 
-  // Wait for the splash animation to finish (~5s hold + 0.7s stretch)
-  // before revealing the main window, then fade it in.
+  // Keep the logo until both the first paint and renderer initialization finish.
   mainWindow.once("ready-to-show", () => {
-    const waitUntil = splashStartedAt + 5700;
-    const delay = Math.max(0, waitUntil - Date.now());
-    setTimeout(() => {
-      showMainWindow();
-    }, delay);
+    mainWindowPaintReady = true;
+    revealInitializedWindow();
   });
-
-  // Fallback timer: guarantee the window is revealed even if ready-to-show takes too long on boot
-  setTimeout(() => {
-    if (!mainWindowShown) {
-      console.log("[Window] Fallback timer triggered to reveal main window");
-      showMainWindow();
-    }
-  }, 7500);
 }
 
 function createSplash() {
-  splashStartedAt = Date.now();
   try {
     splashWindow = new BrowserWindow({
       width: 1100,
@@ -1702,12 +1746,26 @@ function createSplash() {
       center: true,
       skipTaskbar: true,
       hasShadow: false,
+      show: false,
       backgroundColor: "#00000000",
       icon: path.join(__dirname, "..", "assets", process.platform === "win32" ? "logo.ico" : "logo.png"),
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
       },
+    });
+    splashMinimumElapsed = false;
+    splashWindow.once("ready-to-show", () => {
+      splashWindow.show();
+      setTimeout(() => {
+        splashMinimumElapsed = true;
+        revealInitializedWindow();
+      }, 1500);
+    });
+    splashWindow.webContents.once("did-fail-load", () => {
+      splashMinimumElapsed = true;
+      closeSplash();
+      revealInitializedWindow();
     });
     splashWindow.setIgnoreMouseEvents(true);
     splashWindow.loadFile(path.join(__dirname, "splash.html"));
@@ -1716,6 +1774,7 @@ function createSplash() {
     });
   } catch (err) {
     console.error("[Splash] Failed to create splash window:", err);
+    splashMinimumElapsed = true;
     splashWindow = null;
   }
 }
@@ -1769,7 +1828,8 @@ function destroyOverlayWindow() {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await recoverRunningGames();
   // Pré-chargement immédiat pendant le splash (logo) : auth, serveurs,
   // statut serveur, mods locaux. Le renderer récupère tout via get-initial-state.
   try {
@@ -1800,13 +1860,7 @@ app.whenReady().then(() => {
   }
 
   createSplash();
-  if (splashWindow) {
-    setTimeout(() => {
-      createWindow();
-    }, 4500);
-  } else {
-    createWindow();
-  }
+  createWindow();
 
   // Pré-chauffe l'empreinte carte mère en tâche de fond (cache) pour que
   // le contrôle du verrou au clic JOUER soit instantané (powershell ~1s).
@@ -2230,7 +2284,7 @@ function downloadFileStream(url, destPath, progressCb, isRedirect = false) {
         fileStream.close();
         if (total > 0 && downloaded < total) {
           try { fs.unlinkSync(destPath); } catch {}
-          return reject(new Error(`TÃ©lÃ©chargement incomplet: ${downloaded}/${total} octets`));
+          return reject(new Error(`Téléchargement incomplet : ${downloaded}/${total} octets`));
         }
         resolve(true);
       });
@@ -2326,7 +2380,7 @@ async function syncModsFromRemote(targetServer) {
         await downloadFileStreamWithRetry(mod.download_url, partPath, (pct) => {
           sendToRenderer("progress", {
             type: "mod-sync",
-            value: `TÃ©lÃ©chargement mod: ${mod.name} (${pct}%)`
+            value: `Téléchargement du mod : ${mod.name} (${pct} %)`
           });
         });
         let partSize = -1;
@@ -2882,6 +2936,11 @@ ipcMain.handle("export-custom-theme", async (_, theme) => {
   }
 });
 
+ipcMain.handle("generate-theme-ai", (_, payload) => require('./theme-ai.cjs').generateThemeAi(payload));
+const themeAiKeyStore = require('./theme-ai-key-store.cjs').createThemeAiKeyStore(launcherDir, safeStorage);
+ipcMain.handle("get-theme-ai-api-key", () => themeAiKeyStore.get());
+ipcMain.handle("save-theme-ai-api-key", (_, apiKey) => themeAiKeyStore.save(apiKey));
+
 ipcMain.handle("import-custom-theme-file", async () => {
   try {
     const { dialog } = require("electron");
@@ -3255,6 +3314,7 @@ ipcMain.handle("auth-logout", async () => {
 ipcMain.handle("launch-game", async (_, options) => {
   const blocked = invitationGate.required();
   if (blocked) return blocked;
+  if (sessionRecoveryError) return { success: false, error: "Impossible de vérifier les clients Minecraft déjà ouverts. Relancez le launcher avant de lancer un autre client." };
   // Snapshot identity before any await: changing the selected account must never
   // change a launch already in progress or overwrite another account's token.
   const requestedUuid = options?.accountUuid || authAccount?.uuid;
@@ -3395,6 +3455,7 @@ ipcMain.handle("launch-game", async (_, options) => {
     }
 
     const launchConfig = {
+      sessionId: session.id,
       authenticator: launchAccount,
       path: gameDir,
       instance: profile.instance,

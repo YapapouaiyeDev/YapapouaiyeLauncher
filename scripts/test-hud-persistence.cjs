@@ -49,10 +49,25 @@ test('HUD survives restarts, module toggles and saves from either companion clie
     assert.equal(JSON.parse(fs.readFileSync(modern)).fpsX, 333);
     assert.equal(JSON.parse(fs.readFileSync(legacy)).fpsX, 333);
     // Modern client saves next; its positions must also be retained.
-    fs.writeFileSync(modern, JSON.stringify({ fpsX: 444 }));
+    const potionTimer = { enabled: true, x: 312, y: 84, scale: 1.25, icons: false, background: false };
+    const saturation = { enabled: true, x: 192, y: 215, scale: 1.5, barColor: 0xFF00DD88 };
+    fs.writeFileSync(modern, JSON.stringify({ fpsX: 444, nightVision: true, noFog: false, potionTimer, saturation }));
     fs.utimesSync(legacy, 1000, 1000);
     fs.utimesSync(modern, 2000, 2000);
     assert.equal(boot().getClientModsConfig().hudPositions.fpsX, 444);
+    app = boot();
+    assert.equal(app.getClientModsConfig().nightVision.enabled, true);
+    app.saveClientModsConfig({ zoom: { enabled: true } });
+    assert.equal(JSON.parse(fs.readFileSync(modern)).nightVision, true);
+    assert.equal(JSON.parse(fs.readFileSync(legacy)).nightVision, true);
+    for (const file of [modern, legacy]) {
+      assert.deepEqual(JSON.parse(fs.readFileSync(file)).potionTimer, potionTimer);
+      assert.deepEqual(JSON.parse(fs.readFileSync(file)).saturation, saturation);
+    }
+    fs.writeFileSync(modern, JSON.stringify({ nightVision: false }));
+    fs.utimesSync(legacy, 1000, 1000);
+    fs.utimesSync(modern, 2000, 2000);
+    assert.equal(boot().getClientModsConfig().nightVision.enabled, false);
     app.saveClientModsConfig({ hudPositions: { fpsX: 0, fpsY: 12 } });
     // Persisted launcher coordinates survive removal of the game config files.
     fs.unlinkSync(modern);

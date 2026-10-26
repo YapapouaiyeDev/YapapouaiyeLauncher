@@ -155,6 +155,13 @@ sources['StandbyTest.java'] = `
       mc.screen.onClose(); check(!StandbyClient.isActive(),"escape resumes");
       check(cleanup.getInt(null)==0,"resume cancels pending memory collection");
       check(mc.connection==connection,"keep the same connection throughout standby and resume");
+      {
+        mc.setScreen(new StandbyScreen());
+        mc.connection=new net.minecraft.client.multiplayer.ClientPacketListener();
+        var rejoined=mc.connection; tick();
+        check(!StandbyClient.isActive(),"new server connection cannot inherit the previous graphical freeze");
+        check(mc.connection==rejoined,"cleanup preserves the new server connection");
+      }
       mc.setScreen(new StandbyScreen()); mc.connection=null; mc.level=null; mc.player=null; tick();
       check(!StandbyClient.isActive() && mc.screen==null,"disconnect clears standby");
       check(mc.sounds.paused==mc.sounds.resumed,"sound always restored");
