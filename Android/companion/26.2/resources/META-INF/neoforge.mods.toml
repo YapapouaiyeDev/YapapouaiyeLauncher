@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[11,)"
+license="MIT"
+
+[[mixins]]
+config="yapapouaiye-controls.mixins.json"
+
+[[mods]]
+modId="yapapouaiye_controls"
+version="@VERSION@"
+displayName="Yapapouaiye Android Controls"
+authors="Yapapouaiye Studios"
+description='''Commandes et saisie client Android, y compris les commandes serveur depuis l'écran de mort.'''
+
+[[dependencies.yapapouaiye_controls]]
+modId="minecraft"
+type="required"
+versionRange="[26.2]"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.yapapouaiye_controls]]
+modId="neoforge"
+type="required"
+versionRange="[26.2.0.88,26.3)"
+ordering="NONE"
+side="CLIENT"

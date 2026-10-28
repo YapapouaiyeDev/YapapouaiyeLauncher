@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "fr.yapapouaiye.controls.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": ["GammaOptionMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

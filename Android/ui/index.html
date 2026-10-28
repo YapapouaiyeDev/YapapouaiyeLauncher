@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Yapapouaiye Launcher</title>
+  <link rel="stylesheet" href="home.css">
+  <script src="home.js" defer></script>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#accueil" aria-label="Yapapouaiye Launcher, accueil">
+        <img src="logo.png" width="40" height="40" alt="">
+        <span>YAPAPOUAIYE<small>LAUNCHER <b>ANDROID</b></small></span>
+      </a>
+      <nav aria-label="Navigation principale">
+        <button type="button" class="tab selected" data-page="accueil" aria-current="page">Jouer</button>
+        <button type="button" class="tab" data-page="parametres">Paramètres</button>
+      </nav>
+    </header>
+    <main>
+      <aside class="card update-notice" id="update-notice" hidden aria-label="Mise à jour disponible"><p id="update-notice-text" class="hint" role="status"></p><button type="button" class="secondary-button" id="update-settings-button">Voir la mise à jour</button></aside>
+      <section id="accueil" aria-labelledby="welcome-title">
+        <p class="quick-guide">1. Choisis ton serveur · 2. Connecte ton compte · 3. Appuie sur Jouer</p>
+        <div class="heading"><div><p class="eyebrow">TON AVENTURE CONTINUE</p><h1 id="welcome-title">Tes serveurs, <span>sur mobile</span></h1></div><span class="platform">MINECRAFT JAVA</span></div>
+        <section class="catalog card" aria-label="Serveurs Yapapouaiye">
+          <div class="server-choice"><label for="server-select">Ton serveur</label><select id="server-select" disabled><option>Chargement des serveurs…</option></select></div>
+          <button type="button" class="secondary-button" id="refresh-button">Actualiser</button>
+          <p class="hint" id="catalog-hint">Tous les serveurs actifs du catalogue sont proposés ici.</p>
+        </section>
+        <form class="card access-form" id="access-form" hidden>
+          <h2>Débloquer l’accès au serveur</h2><p class="hint">Saisis les codes fournis par le propriétaire, dans l’ordre indiqué. Il ne s’agit pas de ton mot de passe Microsoft. Ils restent en mémoire pour cette session.</p>
+          <div id="access-inputs"></div><button type="submit" class="secondary-button" id="access-button">Vérifier et préparer le jeu</button>
+        </form>
+        <div class="content-grid">
+          <article class="hero card">
+            <div class="hero-image" aria-hidden="true"></div>
+            <div class="hero-content"><span class="server-label"><i aria-hidden="true"></i> TON SERVEUR</span><h2 id="server-name">Tes serveurs</h2><p id="server-description">Retrouve ton serveur, tes mods et ton aventure, sur mobile.</p><p class="address" id="server-address">Connexion à l’API…</p><div class="tags"><span id="game-version">Minecraft Java</span><span id="loader-name">Installation automatique</span><span>Contrôles tactiles</span></div></div>
+          </article>
+          <section class="player card" aria-labelledby="player-title">
+            <div class="section-label"><span class="player-icon" aria-hidden="true">Y</span><div><p class="eyebrow">PRÊT POUR L’AVENTURE ?</p><h2 id="player-title">Ton profil</h2></div></div>
+            <form id="play-form" novalidate>
+              <label for="auth-mode">Mode de connexion</label>
+              <select id="auth-mode"><option value="offline">Pseudo hors ligne (crack)</option><option value="microsoft">Compte Microsoft officiel</option></select>
+              <div id="microsoft-profile" hidden>
+                <p id="microsoft-status" class="hint" role="status"></p>
+                <button type="button" class="secondary-button" id="microsoft-button">Se connecter avec Microsoft</button>
+                <button type="button" class="text-button" id="account-button" hidden>Changer de compte</button>
+                <p class="hint">Utilise le compte qui possède Minecraft Java. La connexion se fait auprès de Microsoft.</p>
+              </div>
+              <div id="offline-profile">
+              <label for="username">Pseudo Minecraft</label>
+              <input id="username" name="username" type="text" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false" maxlength="16" placeholder="TonPseudo" aria-describedby="username-hint username-error">
+              <p id="username-hint" class="hint">3 à 16 lettres, chiffres ou tirets bas. Disponible uniquement sur les serveurs qui acceptent les comptes hors ligne.</p>
+              <p id="username-error" class="field-error" role="alert" hidden></p>
+              </div>
+              <button class="play-button" id="play-button" type="submit"><svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4 12 8-12 8Z" fill="currentColor"/></svg><span id="play-label">JOUER</span></button>
+            </form>
+            <p class="join-hint" id="join-hint">Connexion automatique au serveur choisi</p>
+          </section>
+        </div>
+        <section class="preparation card" aria-labelledby="preparation-title" aria-busy="false">
+          <div class="preparation-heading"><div><p class="eyebrow">ON S’OCCUPE DU RESTE</p><h2 id="preparation-title">Préparation du jeu</h2></div><button type="button" class="text-button" id="cancel-button" hidden>Annuler</button></div>
+          <ol class="steps" aria-label="Préparation automatique"><li class="done"><span>✓</span>Java automatique</li><li id="step-game"><span>2</span>Minecraft &amp; loader</li><li id="step-mods"><span>3</span>Mods du serveur</li></ol>
+          <div class="progress-track" id="progress" role="progressbar" aria-label="Préparation du jeu" hidden><div></div></div>
+          <p class="status" id="status" role="status" aria-live="polite">Initialisation du launcher…</p>
+          <p class="hint" id="download-hint">Au premier démarrage, les fichiers du jeu sont téléchargés automatiquement. Garde l’application ouverte.</p>
+          <div class="error-box" id="error-box" hidden><p id="error-message"></p><button type="button" class="secondary-button" id="retry-button">Réessayer</button></div>
+        </section>
+      </section>
+      <section id="parametres" aria-labelledby="settings-title" hidden>
+        <div class="heading"><div><p class="eyebrow">À TA FAÇON</p><h1 id="settings-title">Paramètres <span>du jeu</span></h1></div></div>
+          <div class="settings-grid">
+          <article class="card settings-card"><h2>Fluidité du jeu</h2><label for="graphics-preset">Profil graphique au prochain lancement</label><select id="graphics-preset"><option value="custom">Mes réglages Minecraft</option><option value="balanced">Équilibré · 10 chunks · 60 FPS max</option><option value="performance">Fluidité · 6 chunks · effets réduits</option></select><p class="hint">Simulation : 5 chunks. Fluidité réduit aussi les particules et les ombres. Le résultat dépend de ton téléphone et des mods. Les anciens réglages sont sauvegardés une fois.</p></article>
+          <article class="card settings-card"><h2>Mémoire du jeu</h2><p class="hint">Le mode automatique adapte la mémoire à ton téléphone. Augmenter la mémoire ne rend pas toujours le jeu plus rapide.</p><label class="switch-row" for="memory-auto">Allocation automatique<input type="checkbox" id="memory-auto" checked></label><div id="memory-manual" hidden><label for="memory">Mémoire maximale <strong id="memory-value">3 Go</strong></label><input type="range" id="memory" min="2" max="6" value="3" step="1"></div><p class="hint">Le réglage sera appliqué au prochain lancement.</p></article>
+          <article class="card settings-card"><h2>Moteur tactile Yapapouaiye</h2><p class="hint">Ton joystick, ta caméra et tes boutons. Les commandes s’arrêtent quand tu relèves le doigt, sans verrouillage par double appui.</p><label class="switch-row" for="hide-cursor">Masquer le curseur virtuel, même dans les menus<input type="checkbox" id="hide-cursor"></label><p class="hint">Règle la sensibilité, la taille, l’opacité et la résolution. Essaie les commandes et déplace chaque touche avant de lancer le jeu.</p><button type="button" class="secondary-button" id="advanced-button">Configurer et essayer mes commandes</button></article>
+          <article class="card settings-card"><h2>Mises à jour du launcher</h2><label class="switch-row" for="auto-updates">Télécharger automatiquement sur réseau non facturé<input type="checkbox" id="auto-updates" checked></label><p class="hint">Recherche à chaque démarrage. L’installation nécessite une confirmation Android. Les mods du serveur sont vérifiés automatiquement avant chaque partie.</p><p class="hint" id="update-status" role="status" aria-live="polite"></p><button type="button" class="secondary-button" id="check-update-button">Rechercher une mise à jour</button><button type="button" class="secondary-button" id="update-button" hidden>Télécharger</button></article>
+          <article class="card settings-card"><h2>Premiers pas en jeu</h2><ol class="help-list"><li>Jouer prépare les fichiers puis rejoint directement le serveur choisi.</li><li>Utilise les touches tactiles pour te déplacer et glisse sur la zone de jeu pour regarder autour de toi.</li><li>Ouvre le menu du moteur en partie pour adapter la disposition et la taille des touches.</li><li>Dans Minecraft, ouvre le menu pause pour reprendre, régler le jeu ou te déconnecter.</li></ol><p class="hint">Si le jeu saccade, essaie Fluidité, réduis la résolution dans les réglages avancés et garde la mémoire automatique.</p></article>
+          <article class="card settings-card about"><h2>Yapapouaiye Launcher</h2><p class="hint">Moteur tactile et interface Yapapouaiye. Compatibilité Minecraft Java : FCL, OpenJDK et LWJGL.</p><p class="hint">Serveurs et mods synchronisés avec l’API Yapapouaiye avant de jouer. Chaque serveur possède ses propres fichiers.</p><button type="button" class="text-button" id="license-button">Sources et licences</button></article>
+        </div>
+      </section>
+    </main>
+    <footer><span><i aria-hidden="true"></i> Yapapouaiye Launcher</span><span id="app-version">Android</span></footer>
+  </div>
+</body>
+</html>
