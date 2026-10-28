@@ -4,6 +4,10 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { patchFclInput } = require('./moteur/patch-compat.cjs');
 const shellTransforms = require('./moteur/patch-shell.cjs');
+const { loadFirebaseConfig } = require('./firebase-config.cjs');
+const { applicationId } = require('./application.json');
+const firebaseFile = path.join(__dirname, 'google-services.json');
+const firebase = loadFirebaseConfig(firebaseFile, applicationId);
 
 const root = path.resolve(process.argv[2] || '');
 const pin = require('./upstream.json');
@@ -42,18 +46,24 @@ function replaceOnce(text, before, after) {
   if (text.split(before).length !== 2) throw new Error(`Point d’intégration absent ou ambigu : ${before}`);
   return text.replace(before, after);
 }
+patch('build.gradle.kts', text => replaceOnce(text, 'plugins {',
+  'plugins {\n    id("com.google.gms.google-services") version "4.5.0" apply false'));
 patch('FCL/build.gradle.kts', text => {
+  text = replaceOnce(text, '    id("com.android.application")', '    id("com.android.application")\n    id("com.google.gms.google-services")');
   text = replaceOnce(text, 'val oauthApiKey = System.getenv("OAUTH_API_KEY") ?: localProperty?.getProperty("oauth.api.key")', `val oauthApiKey = System.getenv("OAUTH_API_KEY") ?: localProperty?.getProperty("oauth.api.key") ?: ${JSON.stringify(microsoft.clientId)}`);
-  text = replaceOnce(text, 'applicationId = "com.tungsten.fcl"', 'applicationId = "fr.yapapouaiye.launcher.android"');
+  text = replaceOnce(text, 'applicationId = "com.tungsten.fcl"', `applicationId = ${JSON.stringify(applicationId)}`);
+  text = replaceOnce(text, '            applicationIdSuffix = ".debug"', '            // The Firebase registration uses the final package, without a build-type suffix.');
   text = replaceOnce(text, 'versionName = "1.3.4.0"', `versionName = ${JSON.stringify(version)}`);
   text = replaceOnce(text, 'versionCode = 1340', `versionCode = ${versionCode}`);
   text = replaceOnce(text, 'signingConfig = signingConfigs.getByName("FCLDebugKey")', 'signingConfig = signingConfigs.getByName("debug")');
-  text = replaceOnce(text, 'resValue("string", "file_browser_provider", "com.tungsten.fcl.debug.provider")', 'resValue("string", "file_browser_provider", "fr.yapapouaiye.launcher.android.debug.provider")');
+  text = replaceOnce(text, 'resValue("string", "file_browser_provider", "com.tungsten.fcl.debug.provider")', `resValue("string", "file_browser_provider", ${JSON.stringify(applicationId + '.provider')})`);
+  text = replaceOnce(text, 'implementation(libs.commons.io)', 'implementation(platform("com.google.firebase:firebase-bom:35.1.0"))\n    implementation("com.google.firebase:firebase-analytics")\n    implementation(libs.commons.io)');
   text = replaceOnce(text, 'implementation(libs.commons.io)', 'implementation("androidx.webkit:webkit:1.12.1")\n    implementation(libs.commons.io)');
   text = replaceOnce(text, 'implementation(libs.commons.io)', 'implementation(project(":YapapouaiyeEngine"))\n    implementation(libs.commons.io)');
   text = replaceOnce(text, '    testBuildType = "fordebug"', '    defaultConfig.testInstrumentationRunner = "fr.yapapouaiye.moteur.test.ControlsInstrumentation"\n    testBuildType = "fordebug"');
   return text;
 });
+fs.copyFileSync(firebaseFile, path.join(root, 'FCL/google-services.json'));
 patch('settings.gradle.kts', text => text + '\ninclude(":YapapouaiyeEngine")\n');
 for (const [relative, transform] of Object.entries(shellTransforms)) patch(relative, text => transform(text, replaceOnce));
 patch('FCL/src/main/java/com/tungsten/fcl/activity/MainActivity.kt', text => {
@@ -166,11 +176,13 @@ patch('FCL/src/main/java/com/tungsten/fcl/game/LauncherHelper.java', text => {
 // This derivative must never offer an official FCL APK as its own update.
 patch('FCL/src/main/java/com/tungsten/fcl/upgrade/UpdateChecker.java', text =>
   replaceOnce(text, 'if (!checking.compareAndSet(false, true)) {',
-    'if (com.tungsten.fcl.BuildConfig.APPLICATION_ID.startsWith("fr.yapapouaiye.")) {\n            if (showAlert) android.widget.Toast.makeText(context, "Mises à jour : installez le nouvel APK Yapapouaiye Android.", android.widget.Toast.LENGTH_LONG).show();\n            return Task.runAsync(() -> {});\n        }\n        if (!checking.compareAndSet(false, true)) {'));
+    `if (com.tungsten.fcl.BuildConfig.APPLICATION_ID.equals(${JSON.stringify(applicationId)})) {\n            if (showAlert) android.widget.Toast.makeText(context, "Mises à jour : installez le nouvel APK Yapapouaiye Android.", android.widget.Toast.LENGTH_LONG).show();\n            return Task.runAsync(() -> {});\n        }\n        if (!checking.compareAndSet(false, true)) {`));
 patch('FCL/src/main/java/com/tungsten/fclauncher/utils/FCLPath.java', text => text.replaceAll('"/FCL/', '"/YapapouaiyeAndroid/'));
 patch('FCL/src/main/AndroidManifest.xml', text =>
   text.replaceAll('android:icon="@mipmap/ic_launcher"', 'android:icon="@drawable/yapapouaiye_logo"')
     .replaceAll('android:roundIcon="@mipmap/ic_launcher"', 'android:roundIcon="@drawable/yapapouaiye_logo"')
+    .replace('    <application', '    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />\n\n    <application')
+    .replace('    </application>', '        <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />\n    </application>')
     .replace(/(<activity\s+android:name="\.activity\.MainActivity"[\s\S]*?)android:screenOrientation="sensorLandscape"/, '$1android:screenOrientation="fullSensor" android:windowSoftInputMode="adjustResize"'));
 for (const folder of fs.readdirSync(path.join(root, 'FCL/src/main/res'))) {
   const relative = `FCL/src/main/res/${folder}/strings.xml`;

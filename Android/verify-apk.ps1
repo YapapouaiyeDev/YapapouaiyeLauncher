@@ -9,13 +9,22 @@ $buildTools = Get-ChildItem -LiteralPath (Join-Path $SdkDirectory 'build-tools')
 & (Join-Path $buildTools.FullName 'apksigner.bat') verify --verbose $Apk
 if ($LASTEXITCODE -ne 0) { throw 'Signature APK invalide.' }
 $badging = (& (Join-Path $buildTools.FullName 'aapt.exe') dump badging $Apk) -join "`n"
-if ($LASTEXITCODE -ne 0 -or $badging -notmatch "package: name='fr.yapapouaiye.launcher.android.debug'") { throw 'Identité Android inattendue.' }
+$application = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'application.json') -Raw | ConvertFrom-Json
+if ($LASTEXITCODE -ne 0 -or $badging -notmatch ("package: name='" + [Regex]::Escape($application.applicationId) + "'")) { throw 'Identité Android inattendue.' }
 $androidVersion = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'version.json') -Raw | ConvertFrom-Json
 $expectedVersion = $androidVersion.version
 if ($badging -notmatch ("versionName='" + [Regex]::Escape($expectedVersion) + "'")) { throw 'Version Android non synchronisée.' }
 if ($badging -notmatch ("versionCode='" + $androidVersion.versionCode + "'")) { throw 'Code de version Android non synchronisé.' }
 $abi = if ($Architecture -eq 'arm64') { 'arm64-v8a' } else { 'x86_64' }
 if ($badging -notmatch ("native-code: '" + $abi + "'")) { throw 'Architecture APK inattendue.' }
+$firebase = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'google-services.json') -Raw | ConvertFrom-Json
+$firebaseClients = @($firebase.client | Where-Object { $_.client_info.android_client_info.package_name -ceq $application.applicationId })
+if ($firebaseClients.Count -ne 1) { throw 'Client Firebase absent ou ambigu pour cet APK.' }
+$resources = (& (Join-Path $buildTools.FullName 'aapt.exe') dump --values resources $Apk) -join "`n"
+if ($LASTEXITCODE -ne 0 -or $resources -notmatch [Regex]::Escape($firebase.project_info.project_id) -or
+    $resources -notmatch [Regex]::Escape($firebaseClients[0].client_info.mobilesdk_app_id)) { throw "Configuration Firebase absente ou incorrecte dans l'APK." }
+$manifest = (& (Join-Path $buildTools.FullName 'aapt.exe') dump xmltree $Apk AndroidManifest.xml) -join "`n"
+if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'com.google.firebase.provider.FirebaseInitProvider') { throw 'Initialisation automatique du SDK Firebase absente.' }
 $apkArchive = [IO.Compression.ZipFile]::OpenRead((Resolve-Path -LiteralPath $Apk).Path)
 try {
     foreach ($name in @('index.html','home.css','home.js','engine.json')) {
@@ -55,4 +64,4 @@ try {
 } finally { $apkArchive.Dispose() }
 $digest = (Get-FileHash -LiteralPath $Apk -Algorithm SHA256).Hash.ToLowerInvariant()
 [IO.File]::WriteAllText($Apk + '.sha256', $digest + '  ' + [IO.Path]::GetFileName($Apk) + "`n", [Text.UTF8Encoding]::new($false))
-Write-Output ('APK vérifié : signature, identité, interface Yapapouaiye, ' + $Architecture + ', moteur natif, Java 8/17/21/25, compagnons NexLux et commandes Android.')
+Write-Output ('APK vérifié : signature, identité, configuration et SDK Firebase, interface Yapapouaiye, ' + $Architecture + ', moteur natif, Java 8/17/21/25, compagnons NexLux et commandes Android.')

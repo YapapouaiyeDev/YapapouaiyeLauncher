@@ -19,6 +19,8 @@ if (!(Test-Path -LiteralPath $source)) {
 }
 & node (Join-Path $PSScriptRoot 'patch-upstream.cjs') $source
 if ($LASTEXITCODE -ne 0) { throw 'Adaptation des sources impossible.' }
+& node --test (Join-Path $PSScriptRoot 'tests/firebase-config.test.cjs')
+if ($LASTEXITCODE -ne 0) { throw 'Validation de la configuration Firebase en échec.' }
 & node --test (Join-Path $PSScriptRoot 'moteur/tests/compat.test.cjs')
 if ($LASTEXITCODE -ne 0) { throw 'Tests de compatibilité des entrées en échec.' }
 [IO.File]::WriteAllText((Join-Path $source 'local.properties'), ('sdk.dir=' + $SdkDirectory.Replace('\', '/') + "`n"), [Text.UTF8Encoding]::new($false))

@@ -65,6 +65,14 @@ Les profils sont séparés par serveur dans le stockage privé externe : `server
 
 Un nouveau serveur avec un dépôt Gitea configuré apparaît sans nouvel APK. Une autre source privée doit d’abord être prise en charge côté API ; une source absente produit une erreur au lieu de lancer sans les mods attendus.
 
+## Firebase et identité Android
+
+La version `1.0.1-A` utilise le package **`com.voyzix.yla`**, défini dans `application.json`, correspondant au client enregistré dans `google-services.json`. Le fichier fourni est conservé sans réécriture et copié dans le module d'application lors de chaque préparation. Le plugin Google Services `4.5.0` génère les ressources ; le SDK Analytics est inclus avec Firebase BoM `35.1.0`, avec initialisation automatique au premier démarrage. La collecte de l'identifiant publicitaire est désactivée.
+
+L'ancien APK `1.0.0-A` utilisait `fr.yapapouaiye.launcher.android.debug`. Android considère donc cette version comme une **nouvelle application**, qui peut coexister avec l'ancienne. Les comptes et réglages privés de l'ancienne application ne sont pas automatiquement transférés. Conserver l'ancienne installation pour garder accès à ces données.
+
+Le build refuse un fichier Firebase d'un autre package ou un identifiant d'application Firebase incohérent. `verify-apk.ps1` vérifie l'identité finale, les ressources Firebase et son fournisseur d'initialisation dans l'APK signé. Le fichier contient la configuration publique du client Android, pas de compte de service ni de clé privée. Les services Firebase supplémentaires nécessitent leur propre intégration ; ce fichier ne fournit pas une certification de l'APK.
+
 ## Compilation et API
 
 Prérequis : Windows, Git, Node.js, JDK 17/21, SDK Android 35, build-tools, NDK `27.0.12077973`, CMake `3.22.1`.

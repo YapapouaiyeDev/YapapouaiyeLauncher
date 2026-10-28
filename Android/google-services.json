@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "312979789800",
+    "project_id": "yapapouaiyelauncher-android",
+    "storage_bucket": "yapapouaiyelauncher-android.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:312979789800:android:e4b405d183fe8b236fb65d",
+        "android_client_info": {
+          "package_name": "com.voyzix.yla"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAtL_EnSu16k0zxiRmn6p8j2_yIV2U_pO0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
