@@ -15,8 +15,8 @@
     "prerelease": true
   },
   "android": {
-    "version": "1.0.2-A",
-    "url": "https://github.com/YapapouaiyeDev/YapapouaiyeLauncher/releases/download/v1.0.2-A/Yapapouaiye-Android-1.0.2-A-arm64.apk",
+    "version": "1.0.3-A",
+    "url": "https://github.com/YapapouaiyeDev/YapapouaiyeLauncher/releases/download/v1.0.3-A/Yapapouaiye-Android-1.0.3-A-arm64.apk",
     "prerelease": false
   },
   "macos": null

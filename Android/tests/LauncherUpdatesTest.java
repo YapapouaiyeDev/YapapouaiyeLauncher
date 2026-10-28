@@ -4,6 +4,28 @@ import com.google.gson.*;
 import org.junit.Test;
 import static org.junit.Assert.*;
 public class LauncherUpdatesTest {
+    @Test public void stableUpdatesDoNotDependOnTheGithubApiQuota() throws Exception {
+        java.util.List<String> calls=new java.util.ArrayList<>();
+        String feed=json(release("1.0.3-A",false,"arm64"));
+        LauncherUpdates.Release found=LauncherUpdates.check("1.0.2-A","arm64",url->{
+            calls.add(url);if(url.contains("api.github.com"))throw new java.io.IOException("quota exhausted");return feed;
+        });
+        assertEquals("1.0.3-A",found.version);assertEquals(1,calls.size());
+        assertEquals("https://yapapouaiye-launcher.pages.dev/android-updates.json",calls.get(0));
+        assertNull(LauncherUpdates.check("1.0.3-A","arm64",url->feed));
+    }
+    @Test public void unavailableOrMalformedSiteFallsBackButCancellationDoesNot() throws Exception {
+        String feed=json(release("1.0.3-A",false,"arm64"));
+        for(boolean malformed:new boolean[]{false,true}) {
+            java.util.List<String> calls=new java.util.ArrayList<>();
+            assertEquals("1.0.3-A",LauncherUpdates.check("1.0.2-A","arm64",url->{
+                calls.add(url);if(url.contains("pages.dev")){if(malformed)return "unavailable HTML";throw new java.io.IOException("offline");}return feed;
+            }).version);assertEquals(2,calls.size());
+        }
+        java.util.List<String> calls=new java.util.ArrayList<>();
+        try {LauncherUpdates.check("1.0.2-A","arm64",url->{calls.add(url);throw new java.io.InterruptedIOException();});fail("Cancelled request must stop");}
+        catch(java.io.InterruptedIOException expected){assertEquals(1,calls.size());}
+    }
     @Test public void compatibleUpdatesRequireTheSameIdentityAndSignerAndAnIncreasingCode() throws Exception {
         LauncherUpdates.Release expected = new LauncherUpdates.Release("1.0.2-A", "", "a".repeat(64), 10);
         java.util.Set<String> key = java.util.Set.of("publisher-signature");

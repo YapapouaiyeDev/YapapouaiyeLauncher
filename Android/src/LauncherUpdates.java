@@ -12,6 +12,8 @@ import java.util.regex.*;
 /** Only this project's published APKs, with a release asset SHA-256, can be offered. */
 public final class LauncherUpdates {
     private static final String REPO = "https://github.com/YapapouaiyeDev/YapapouaiyeLauncher/releases/download/";
+    private static final String MANIFEST = "https://yapapouaiye-launcher.pages.dev/android-updates.json";
+    private static final String RELEASES = "https://api.github.com/repos/YapapouaiyeDev/YapapouaiyeLauncher/releases?per_page=100";
     private static final Pattern VERSION = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)(?:-(\\d+))?(?:-(alpha|beta|rc)\\.(\\d+))?(-A)?$");
     public static final class Release {
         public final String version, url, digest;
@@ -109,7 +111,7 @@ public final class LauncherUpdates {
         for (int redirects = 0; redirects < 6; redirects++) {
             URL parsed = new URL(url);
             if (!parsed.getProtocol().equals("https") || parsed.getUserInfo() != null ||
-                !Arrays.asList("api.github.com", "github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com").contains(parsed.getHost()))
+                !Arrays.asList("yapapouaiye-launcher.pages.dev", "api.github.com", "github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com").contains(parsed.getHost()))
                 throw new IOException("Adresse de mise à jour non autorisée.");
             HttpURLConnection c = (HttpURLConnection) parsed.openConnection();
             c.setConnectTimeout(15000); c.setReadTimeout(30000); c.setInstanceFollowRedirects(false); c.setUseCaches(false);
@@ -126,7 +128,21 @@ public final class LauncherUpdates {
         throw new IOException("Trop de redirections.");
     }
     public static Release check(String current, String arch) throws IOException {
-        HttpURLConnection c = connect("https://api.github.com/repos/YapapouaiyeDev/YapapouaiyeLauncher/releases?per_page=100");
+        return check(current, arch, LauncherUpdates::metadata);
+    }
+    interface MetadataSource { String read(String url) throws IOException; }
+    static Release check(String current, String arch, MetadataSource source) throws IOException {
+        // The public site has no shared GitHub API quota. Beta builds retain the release feed.
+        if (version(current)[4] < 3) return select(source.read(RELEASES), current, arch);
+        try { return select(source.read(MANIFEST), current, arch); }
+        catch (InterruptedIOException interrupted) { throw interrupted; }
+        catch (IOException unavailable) {
+            try { return select(source.read(RELEASES), current, arch); }
+            catch (IOException fallback) { fallback.addSuppressed(unavailable); throw fallback; }
+        }
+    }
+    private static String metadata(String url) throws IOException {
+        HttpURLConnection c = connect(url);
         try (InputStream in = c.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192]; int read;
             while ((read = in.read(buffer)) != -1) {
@@ -134,7 +150,7 @@ public final class LauncherUpdates {
                 if (out.size() + read > 8 * 1024 * 1024) throw new IOException("Réponse de mise à jour trop grande.");
                 out.write(buffer, 0, read);
             }
-            return select(out.toString(StandardCharsets.UTF_8.name()), current, arch);
+            return out.toString(StandardCharsets.UTF_8.name());
         } finally { c.disconnect(); }
     }
     public static void download(Release release, File target, java.util.function.IntConsumer progress) throws Exception {

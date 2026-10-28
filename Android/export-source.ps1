@@ -48,10 +48,10 @@ try {
     foreach ($file in @('version.json', 'assets/logo.png', 'assets/background.png', 'mods/nexlux-1.1.0.jar', 'mods/nexlux-26.2.jar')) {
         [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, (Join-Path $PSScriptRoot ('../' + $file)), $file) | Out-Null
     }
-    foreach ($file in @('functions/api/android-mods.js', 'functions/_lib/android-mods.js', 'test-android-mods.js')) {
+    foreach ($file in @('functions/api/android-mods.js', 'functions/_lib/android-mods.js', 'test-android-mods.js', 'build-site.js', 'downloads.json', 'android-updates.json')) {
         [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, (Join-Path $PSScriptRoot ('../site/' + $file)), ('site/' + $file)) | Out-Null
     }
-    foreach ($file in @('version.json','application.json','google-services.json','firebase-config.cjs','tests/firebase-config.test.cjs','MICROSOFT.md','microsoft.json','src/AuthenticationErrors.java','tests/AuthenticationErrorsTest.java','tests/HttpRequestRetryTest.java','src/DesktopMicrosoftSession.java','tests/DesktopMicrosoftSessionTest.java')) {
+    foreach ($file in @('version.json','application.json','google-services.json','firebase-config.cjs','write-update-manifest.cjs','tests/firebase-config.test.cjs','MICROSOFT.md','microsoft.json','src/AuthenticationErrors.java','tests/AuthenticationErrorsTest.java','tests/HttpRequestRetryTest.java','src/DesktopMicrosoftSession.java','tests/DesktopMicrosoftSessionTest.java')) {
         [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, (Join-Path $PSScriptRoot $file), ('Android/' + $file)) | Out-Null
     }
     $entry = $archive.CreateEntry('BUILD-SOURCES.md')

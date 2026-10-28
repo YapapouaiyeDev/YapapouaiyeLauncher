@@ -1,5 +1,11 @@
 # Validation du moteur Android
 
+## Complément du 28 octobre 2026 — 1.0.3-A
+
+- La vérification réelle du flux public a révélé un refus HTTP 403 de l'API GitHub, avec quota épuisé. La version stable utilise désormais le manifeste du site officiel en priorité ; GitHub reste en secours.
+- Deux scénarios JVM supplémentaires couvrent la découverte sans API GitHub, le repli en cas de manifeste indisponible ou malformé et l'absence de repli après annulation. Les contrôles de taille, SHA-256, version, package et signature restent actifs.
+- Les corrections manette de 1.0.2-A sont conservées. La validation physique en jeu reste à effectuer.
+
 ## Exécution du 28 octobre 2026 — 1.0.2-A
 
 - Compilation ARM64 réussie ; **56 tests JVM du moteur et 47 tests JVM de l'application**, sans échec.
