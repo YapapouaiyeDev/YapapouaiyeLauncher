@@ -1,5 +1,14 @@
 # Validation du moteur Android
 
+## Exécution du 28 octobre 2026 — 1.0.2-A
+
+- Compilation ARM64 réussie ; **56 tests JVM du moteur et 47 tests JVM de l'application**, sans échec.
+- **8 tests de compatibilité** et **3 tests de configuration Firebase** réussis.
+- Le test du code Java généré maintient le déplacement sur 1 000 échantillons sans relâchement intermédiaire, conserve l'avance lors du passage en diagonale et vérifie le relâchement au centre.
+- Le même test vérifie une caméra à 120 Hz sans nouveaux événements manette, sans émission supplémentaire pendant les changements d'axes, et limite le déplacement après une image retardée. Les tests de cycle de vie conservent les protections contre pause, perte de focus, anciens rappels et déconnexion.
+- La vue de compatibilité applique les axes du remappeur ensemble à la fin de chaque événement Android ; les changements de direction n'émettent que les transitions nécessaires.
+- Aucun contrôleur physique détecté sur le téléphone pendant cette vérification. La fluidité en partie réelle et les FPS ne sont pas mesurés. L'installation demandée au téléphone a été annulée par Xiaomi (`INSTALL_FAILED_USER_RESTRICTED`) ; aucune désinstallation ni suppression de données effectuée.
+
 ## Exécution du 27 octobre 2026
 
 - Compilation APK ARM64 réussie, identité et signature v2/v3 vérifiées.

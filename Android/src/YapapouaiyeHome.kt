@@ -103,6 +103,7 @@ class YapapouaiyeHome(private val activity: MainActivity) {
     private var updateRelease: LauncherUpdates.Release? = null
     private var updateMessage = "Recherche automatique au démarrage."
     private var updateReady = false
+    private var awaitingInstallPermission = false
     private var authenticating = false
     private val updateFile get() = File(activity.cacheDir, "yapapouaiye-update.apk")
     private val microsoftAccount get() = (Accounts.getSelectedAccount() as? MicrosoftAccount)
@@ -268,13 +269,22 @@ class YapapouaiyeHome(private val activity: MainActivity) {
             try {
                 val arch = if (android.os.Build.SUPPORTED_ABIS.first().startsWith("x86")) "x86_64" else "arm64"
                 val release = runInterruptible(Dispatchers.IO) { LauncherUpdates.check(BuildConfig.VERSION_NAME, arch) }
-                if (release?.version != updateRelease?.version) updateReady = false
+                if (release?.version != updateRelease?.version) awaitingInstallPermission = false
                 updateRelease = release
+                updateReady = false
+                if (release != null && updateFile.isFile) {
+                    try {
+                        runInterruptible(Dispatchers.IO) { LauncherUpdates.verify(release, updateFile); validateUpdate() }
+                        updateReady = true
+                    } catch (cancelled: CancellationException) { throw cancelled }
+                    catch (interrupted: java.io.InterruptedIOException) { throw interrupted }
+                    catch (_: Exception) { updateFile.delete() }
+                }
                 updateMessage = if (release == null) "Aucun APK compatible plus récent publié." else if (updateReady) "Mise à jour prête à installer." else "Version ${release.version} disponible (${release.size / 1024 / 1024} Mo)."
                 val network = activity.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
                 autoDownload = release != null && !updateReady && preferences.getBoolean("autoUpdates", true) && !network.isActiveNetworkMetered
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) { updateMessage = "Vérification impossible. Réessaie avec une connexion Internet." }
+            catch (failure: Exception) { updateMessage = LauncherUpdates.failureMessage(failure, "Recherche de mise à jour impossible. Réessaie dans un moment.") }
             finally { updateJob = null; publish() }
             if (autoDownload && !destroyed) downloadUpdate()
         }
@@ -284,6 +294,7 @@ class YapapouaiyeHome(private val activity: MainActivity) {
         val release = updateRelease ?: return
         if (updateJob != null || destroyed) return
         updateReady = false
+        awaitingInstallPermission = false
         updateMessage = "Téléchargement de la mise à jour…"
         updateJob = activity.lifecycleScope.launch {
             try {
@@ -296,9 +307,9 @@ class YapapouaiyeHome(private val activity: MainActivity) {
                 updateReady = true
                 updateMessage = "Version ${release.version} prête. Appuie sur Installer ; Android demandera ta confirmation."
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) {
+            catch (failure: Exception) {
                 updateFile.delete()
-                updateMessage = "Téléchargement ou vérification impossible. Réessaie."
+                updateMessage = LauncherUpdates.failureMessage(failure, "Téléchargement de la mise à jour impossible. Vérifie la connexion, puis réessaie.")
             } finally { updateJob = null; publish() }
         }
         publish()
@@ -307,25 +318,31 @@ class YapapouaiyeHome(private val activity: MainActivity) {
     private fun validateUpdate() {
         val pm = activity.packageManager
         val apk = pm.getPackageArchiveInfo(updateFile.path, android.content.pm.PackageManager.GET_SIGNATURES)
-            ?: throw IOException("APK invalide.")
+            ?: throw LauncherUpdates.UpdateFailure("Android ne reconnaît pas cet APK. Télécharge-le à nouveau.")
         val current = pm.getPackageInfo(activity.packageName, android.content.pm.PackageManager.GET_SIGNATURES)
         val expected = updateRelease ?: throw IOException("Mise à jour absente.")
-        check(apk.packageName == activity.packageName && apk.versionName == expected.version && apk.versionCode >= current.versionCode) { "Identité ou version Android incorrecte." }
         val installed = current.signatures?.map { it.toCharsString() }?.toSet() ?: emptySet()
         val incoming = apk.signatures?.map { it.toCharsString() }?.toSet() ?: emptySet()
-        check(installed.isNotEmpty() && installed == incoming) { "Signature Android différente." }
+        val installedCode = if (android.os.Build.VERSION.SDK_INT >= 28) current.longVersionCode else current.versionCode.toLong()
+        val incomingCode = if (android.os.Build.VERSION.SDK_INT >= 28) apk.longVersionCode else apk.versionCode.toLong()
+        LauncherUpdates.validateIdentity(activity.packageName, installedCode, installed,
+            apk.packageName, apk.versionName, incomingCode, incoming, expected)
     }
     private fun installUpdate() {
         if (updateJob != null || destroyed) return
         updateMessage = "Vérification de l’APK avant installation…"
         updateJob = activity.lifecycleScope.launch {
           try {
-            runInterruptible(Dispatchers.IO) { validateUpdate() }
+            runInterruptible(Dispatchers.IO) {
+                LauncherUpdates.verify(updateRelease ?: throw IOException("Mise à jour absente."), updateFile)
+                validateUpdate()
+            }
             if (busy || queued || authenticating) {
                 updateMessage = "Termine la préparation ou quitte le jeu, puis appuie sur Installer."
                 return@launch
             }
             if (!activity.packageManager.canRequestPackageInstalls()) {
+                awaitingInstallPermission = true
                 updateMessage = "Autorise les installations pour ce launcher, puis reviens appuyer sur Installer."
                 activity.startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                     android.net.Uri.parse("package:${activity.packageName}")))
@@ -336,7 +353,10 @@ class YapapouaiyeHome(private val activity: MainActivity) {
                     .addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION))
             }
           } catch (cancelled: CancellationException) { throw cancelled }
-          catch (_: Exception) { updateMessage = "Installation impossible. Vérifie les autorisations ou télécharge à nouveau l’APK." }
+          catch (failure: Exception) {
+              awaitingInstallPermission = false
+              updateMessage = LauncherUpdates.failureMessage(failure, "Installation impossible. Vérifie les autorisations Android, puis réessaie.")
+          }
           finally { updateJob = null; publish() }
         }
         publish()
@@ -544,6 +564,11 @@ class YapapouaiyeHome(private val activity: MainActivity) {
             status("ready", "Prêt à rejoindre ${selected?.name}.")
         }
         publish()
+        if (awaitingInstallPermission && updateReady && updateJob == null && !busy && !queued && !authenticating &&
+            activity.packageManager.canRequestPackageInstalls()) {
+            awaitingInstallPermission = false
+            installUpdate()
+        }
     }
     private fun showAdvanced() {
         fr.yapapouaiye.moteur.android.ControlSettingsDialog.show(activity, null)

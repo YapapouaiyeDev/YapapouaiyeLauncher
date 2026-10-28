@@ -4,6 +4,47 @@ import com.google.gson.*;
 import org.junit.Test;
 import static org.junit.Assert.*;
 public class LauncherUpdatesTest {
+    @Test public void compatibleUpdatesRequireTheSameIdentityAndSignerAndAnIncreasingCode() throws Exception {
+        LauncherUpdates.Release expected = new LauncherUpdates.Release("1.0.2-A", "", "a".repeat(64), 10);
+        java.util.Set<String> key = java.util.Set.of("publisher-signature");
+        LauncherUpdates.validateIdentity("com.voyzix.yla", 1060106, key, "com.voyzix.yla", "1.0.2-A", 1060107, key, expected);
+        try {
+            LauncherUpdates.validateIdentity("fr.yapapouaiye.launcher.android.debug", 1060105, key,
+                "com.voyzix.yla", "1.0.2-A", 1060107, key, expected);
+            fail("A renamed application cannot silently replace the previous package");
+        } catch (LauncherUpdates.UpdateFailure failure) { assertTrue(failure.getMessage().contains("installée une fois séparément")); }
+        try {
+            LauncherUpdates.validateIdentity("com.voyzix.yla", 1060106, key, "com.voyzix.yla", "1.0.2-A", 1060107, java.util.Set.of("other-signature"), expected);
+            fail("A different signer must never replace the installed app");
+        } catch (LauncherUpdates.UpdateFailure failure) { assertTrue(failure.getMessage().contains("signature")); }
+        try {
+            LauncherUpdates.validateIdentity("com.voyzix.yla", 1060106, key, "com.voyzix.yla", "1.0.2-A", 1060106, key, expected);
+            fail("The Android version code must increase");
+        } catch (LauncherUpdates.UpdateFailure failure) { assertTrue(failure.getMessage().contains("version")); }
+    }
+    @Test public void aCachedApkIsReusableOnlyWithTheExactPublishedSizeAndSha256() throws Exception {
+        java.nio.file.Path file = java.nio.file.Files.createTempFile("launcher-update-", ".apk");
+        try {
+            byte[] bytes = "downloaded-APK-content".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes);
+            StringBuilder hash = new StringBuilder();
+            for (byte b : digest) hash.append(String.format("%02x", b & 255));
+            LauncherUpdates.Release release = new LauncherUpdates.Release("1.0.2-A", "", hash.toString(), bytes.length);
+            java.nio.file.Files.write(file, bytes);
+            LauncherUpdates.verify(release, file.toFile());
+            bytes[0] ^= 1; java.nio.file.Files.write(file, bytes);
+            try { LauncherUpdates.verify(release, file.toFile()); fail("Same-size corruption must be rejected"); }
+            catch (LauncherUpdates.UpdateFailure failure) { assertTrue(failure.getMessage().contains("SHA-256")); }
+            java.nio.file.Files.write(file, new byte[1]);
+            try { LauncherUpdates.verify(release, file.toFile()); fail("An interrupted download cannot be offered for installation"); }
+            catch (LauncherUpdates.UpdateFailure failure) { assertTrue(failure.getMessage().contains("incomplet")); }
+        } finally { java.nio.file.Files.deleteIfExists(file); }
+    }
+    @Test public void diagnosticsExplainKnownFailuresWithoutShowingArbitraryExceptionContents() {
+        assertEquals("safe reason", LauncherUpdates.failureMessage(new RuntimeException(new LauncherUpdates.UpdateFailure("safe reason")), "fallback"));
+        assertTrue(LauncherUpdates.failureMessage(new java.net.SocketTimeoutException("private network details"), "fallback").contains("trop de temps"));
+        assertEquals("fallback", LauncherUpdates.failureMessage(new java.io.IOException("private network details"), "fallback"));
+    }
     @Test public void independentAndroidSeriesMigratesFromOldTestsAndKeepsItsUpdatesOrdered() throws Exception {
         assertTrue(LauncherUpdates.compare("1.0.0-A", "1.6.1-4") > 0);
         assertTrue(LauncherUpdates.compare("1.0.1-A", "1.0.0-A") > 0);

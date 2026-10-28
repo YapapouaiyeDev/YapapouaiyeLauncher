@@ -49,6 +49,8 @@ Le téléchargement automatique est activé par défaut sur un réseau qu’Andr
 
 Une bannière sur l’accueil signale la mise à jour et donne accès à son installation. Les tests d’interface s’exécutent avec `node --test tests/home.test.cjs` depuis `Android/`, avec Playwright et Microsoft Edge disponibles (`NODE_PATH` peut pointer vers les dépendances partagées).
 
+Depuis `1.0.2-A`, un APK déjà téléchargé est revérifié et réutilisé au redémarrage : il n'est plus nécessaire de le télécharger à nouveau après une fermeture ou une recréation de l'écran. L'installation revérifie aussi l'empreinte avant d'ouvrir Android. Le retour des paramètres d'autorisation reprend la demande d'installation lorsque celle-ci a été autorisée. Les erreurs distinguent changement de package, signature incompatible, version incorrecte, APK incomplet/corrompu et limitation GitHub. La validation de l'identité et de la signature reste obligatoire.
+
 ## Catalogue et mods
 
 Le catalogue détermine le nom, l’adresse, le **gamePort** (distinct du port de ping), Minecraft, le loader et les codes requis. NeoForge, Fabric, Forge et Vanilla sont reconnus ; une version stable disponible du loader est résolue auprès de son fournisseur. Une configuration invalide bloque le lancement avec un message d’erreur.
@@ -93,3 +95,5 @@ Adaptations GPL-3.0-or-later ; moteur sous `LICENSE-FCL`. Source amont : [Fold C
 Les tests du catalogue couvrent loaders, ports, serveurs désactivés, doublons, chemins et champs invalides et codes. Les tests de synchronisation couvrent réparation, sauvegarde, fichiers personnalisés, corruption, chemins, obsolescence et inventaire Vanilla vide. `dist/interface-yapapouaiye.png` montre l’interface dans un navigateur avec une simulation du pont Android.
 
 Le noyau des entrées et les scénarios Android sont décrits dans [moteur/VALIDATION.md](moteur/VALIDATION.md). Les tests de la vue sur téléphone utilisent un banc simulé : ils ne valident pas une partie Minecraft, une connexion à un serveur ni les performances. Ces vérifications en jeu restent nécessaires.
+
+Depuis `1.0.2-A`, les axes de la manette sont appliqués ensemble après chaque événement Android. Le déplacement conserve les touches communes lors des changements de direction, avec une légère hystérésis contre le bruit du stick. La caméra avance une fois par image Android, avec son horloge d'affichage, plutôt qu'à chaque changement d'axe. Les protections de pause, perte de focus et déconnexion restent actives. Les tests vérifient le maintien sur 1 000 échantillons et la rotation continue sans nouveaux événements ; la fluidité réelle dépend aussi du rendu Minecraft et reste à vérifier en jeu.

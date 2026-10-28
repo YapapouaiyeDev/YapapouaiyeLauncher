@@ -20,6 +20,47 @@ public final class LauncherUpdates {
             this.version = version; this.url = url; this.digest = digest; this.size = size;
         }
     }
+    /** Messages owned by the updater, safe to display without HTTP bodies or arbitrary exception details. */
+    public static final class UpdateFailure extends IOException {
+        public UpdateFailure(String message) { super(message); }
+    }
+    public static String failureMessage(Throwable failure, String fallback) {
+        for (int depth = 0; failure != null && depth < 8; depth++, failure = failure.getCause()) {
+            if (failure instanceof UpdateFailure) return failure.getMessage();
+            if (failure instanceof SocketTimeoutException) return "Le serveur de mise à jour met trop de temps à répondre. Réessaie dans un moment.";
+            if (failure instanceof UnknownHostException) return "Impossible de joindre GitHub. Vérifie la connexion Internet.";
+        }
+        return fallback;
+    }
+    public static void validateIdentity(String currentPackage, long currentCode, Set<String> installed,
+            String incomingPackage, String incomingVersion, long incomingCode, Set<String> incoming, Release expected) throws IOException {
+        if (expected == null) throw new UpdateFailure("Recherche une mise à jour avant de l’installer.");
+        if (!Objects.equals(currentPackage, incomingPackage))
+            throw new UpdateFailure("Cet APK utilise un autre identifiant Android et ne peut pas remplacer cette application. La version Firebase doit être installée une fois séparément depuis le site officiel. Conserve cette ancienne application pour garder ses données.");
+        if (!Objects.equals(expected.version, incomingVersion) || incomingCode <= currentCode)
+            throw new UpdateFailure("La version de cet APK ne correspond pas à la mise à jour annoncée. Relance la recherche de mise à jour.");
+        if (installed == null || installed.isEmpty() || !installed.equals(incoming))
+            throw new UpdateFailure("Cet APK porte une autre signature Android. Il ne peut pas mettre à jour cette installation.");
+    }
+    public static void verify(Release release, File file) throws IOException {
+        if (!file.isFile() || file.length() != release.size) throw new UpdateFailure("Téléchargement incomplet : la taille de l’APK est incorrecte. Télécharge-le à nouveau.");
+        try {
+            MessageDigest sha = MessageDigest.getInstance("SHA-256");
+            try (InputStream input = new FileInputStream(file)) {
+                byte[] buffer = new byte[65536]; int read;
+                while ((read = input.read(buffer)) != -1) {
+                    if (Thread.currentThread().isInterrupted()) throw new InterruptedIOException();
+                    sha.update(buffer, 0, read);
+                }
+            }
+            if (!hex(sha.digest()).equals(release.digest)) throw new UpdateFailure("APK corrompu : vérification SHA-256 en échec. Télécharge-le à nouveau.");
+        } catch (java.security.NoSuchAlgorithmException impossible) { throw new IOException("SHA-256 indisponible.", impossible); }
+    }
+    private static String hex(byte[] digest) {
+        StringBuilder text = new StringBuilder();
+        for (byte b : digest) text.append(String.format(Locale.ROOT, "%02x", b & 255));
+        return text.toString();
+    }
     private static long[] version(String value) {
         Matcher m = VERSION.matcher(value);
         if (!m.matches()) throw new IllegalArgumentException("Version Android invalide.");
@@ -71,12 +112,15 @@ public final class LauncherUpdates {
                 !Arrays.asList("api.github.com", "github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com").contains(parsed.getHost()))
                 throw new IOException("Adresse de mise à jour non autorisée.");
             HttpURLConnection c = (HttpURLConnection) parsed.openConnection();
-            c.setConnectTimeout(15000); c.setReadTimeout(30000); c.setInstanceFollowRedirects(false);
+            c.setConnectTimeout(15000); c.setReadTimeout(30000); c.setInstanceFollowRedirects(false); c.setUseCaches(false);
             c.setRequestProperty("User-Agent", "Yapapouaiye-Android");
             int status = c.getResponseCode();
             if (status == 200) return c;
-            String location = c.getHeaderField("Location"); c.disconnect();
-            if (status < 300 || status >= 400 || location == null) throw new IOException("Mises à jour indisponibles (HTTP " + status + ").");
+            String location = c.getHeaderField("Location");
+            boolean limited = status == 429 || (status == 403 && "0".equals(c.getHeaderField("X-RateLimit-Remaining")));
+            c.disconnect();
+            if (limited) throw new UpdateFailure("GitHub limite temporairement les recherches de mise à jour (HTTP " + status + "). Attends avant de réessayer.");
+            if (status < 300 || status >= 400 || location == null) throw new UpdateFailure("Mises à jour indisponibles (HTTP " + status + "). Réessaie dans un moment.");
             url = new URL(parsed, location).toString();
         }
         throw new IOException("Trop de redirections.");
@@ -103,15 +147,13 @@ public final class LauncherUpdates {
                 while ((read = in.read(buffer)) != -1) {
                     if (Thread.currentThread().isInterrupted()) throw new InterruptedIOException();
                     total += read;
-                    if (total > release.size) throw new IOException("Taille de l’APK invalide.");
+                    if (total > release.size) throw new UpdateFailure("La taille de l’APK téléchargé dépasse celle annoncée. Relance la recherche de mise à jour.");
                     out.write(buffer, 0, read); sha.update(buffer, 0, read);
                     int percent = (int) (total * 100 / release.size);
                     if (percent != last) { last = percent; progress.accept(percent); }
                 }
             }
-            StringBuilder hex = new StringBuilder();
-            for (byte b : sha.digest()) hex.append(String.format(Locale.ROOT, "%02x", b & 255));
-            if (total != release.size || !hex.toString().equals(release.digest)) throw new IOException("APK corrompu : vérification SHA-256 en échec.");
+            if (total != release.size || !hex(sha.digest()).equals(release.digest)) throw new UpdateFailure("APK corrompu ou incomplet : vérification SHA-256 en échec. Télécharge-le à nouveau.");
             java.nio.file.Files.move(partial.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } finally { c.disconnect(); partial.delete(); }
     }

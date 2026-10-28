@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const { patchFclInput } = require('./moteur/patch-compat.cjs');
+const { patchFclInput, patchGamepad } = require('./moteur/patch-compat.cjs');
 const shellTransforms = require('./moteur/patch-shell.cjs');
 const { loadFirebaseConfig } = require('./firebase-config.cjs');
 const { applicationId } = require('./application.json');
@@ -129,7 +129,7 @@ patch('FCL/src/main/java/com/tungsten/fclauncher/keycodes/LwjglKeycodeMap.java',
         add(LwjglGlfwKeycode.KEY_PRINT_SCREEN, FCLKeycodes.KEY_SYSRQ);
         add(LwjglGlfwKeycode.KEY_LEFT_SUPER, FCLKeycodes.KEY_LEFTMATA);
         add(LwjglGlfwKeycode.KEY_RIGHT_SUPER, FCLKeycodes.KEY_RIGHTMETA);`));
-patch('FCL/src/main/java/com/tungsten/fcl/control/gamepad/Gamepad.kt', text => replaceOnce(text,'    }\n\n    fun saveMapper()', '        com.tungsten.fcl.yapapouaiye.YapapouaiyeGamepad.configure(this)\n    }\n\n    fun saveMapper()'));
+patch('FCL/src/main/java/com/tungsten/fcl/control/gamepad/Gamepad.kt', text => patchGamepad(replaceOnce(text,'    }\n\n    fun saveMapper()', '        com.tungsten.fcl.yapapouaiye.YapapouaiyeGamepad.configure(this)\n    }\n\n    fun saveMapper()'),replaceOnce));
 for (const file of ['GamepadEmulatedButton.kt','GamepadButton.kt']) patch('FCL/src/main/java/com/tungsten/fcl/control/gamepad/'+file,text => text.replace(/Gamepad\.getFCLInput\(\)\?\.sendKeyEvent\(it, ([^)]+)\)/g,'com.tungsten.fcl.yapapouaiye.YapapouaiyeGamepad.sendOwned(Gamepad.getFCLInput(), this, it, $1)'));
 patch('FCL/src/main/java/com/tungsten/fcl/activity/JVMActivity.java', text => {
   text = replaceOnce(text, 'menuType == MenuType.GAME ? new GameMenu() : new JarExecutorMenu()', 'menuType == MenuType.GAME ? new YapapouaiyeGameMenu() : new JarExecutorMenu()');

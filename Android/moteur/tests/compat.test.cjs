@@ -20,6 +20,45 @@ function replaceOnce(text, before, after) {
 }
 const patched = patchFclInput(original, replaceOnce);
 
+test('a held stick never releases forward between samples; camera moves once per display frame', () => {
+  const begin=patched.indexOf('    private final fr.yapapouaiye.moteur.input.GamepadMovement');
+  const end=patched.indexOf('    /** Stop Java-side input producers',begin);
+  assert.ok(begin>=0&&end>begin);
+  const methods=patched.slice(begin,end);
+  const folder=fs.mkdtempSync(path.join(os.tmpdir(),'yapapouaiye-stick-'));
+  fs.writeFileSync(path.join(folder,'StickHarness.java'),`import java.util.*;import fr.yapapouaiye.moteur.input.GamepadLook;
+public class StickHarness {
+float lastAxisZ,lastAxisRZ;long lastFrameTime;float cameraX,cameraY;int cameraEvents;
+Menu menu=new Menu();Pad gamepad=new Pad();
+static class Menu {Menu getMenuSetting(){return this;}float getGamepadDeadzone(){return .15f;}}
+static class Button {boolean down;int presses,releases;void update(boolean value){if(down==value)return;down=value;if(value)presses++;else releases++;}}
+static class Pad {Button DIRECTION_RIGHT=new Button(),DIRECTION_FORWARD=new Button(),DIRECTION_LEFT=new Button(),DIRECTION_BACKWARD=new Button();Pad getCurrentMap(){return this;}}
+void handleMouse(Object event,float scale){cameraEvents++;cameraX+=GamepadLook.delta(lastAxisZ,scale,300);cameraY+=GamepadLook.delta(lastAxisRZ,scale,300);}
+${methods}
+static void check(boolean value,String message){if(!value)throw new AssertionError(message);}
+public static void main(String[] args){StickHarness h=new StickHarness();
+for(int i=0;i<1000;i++)h.handleLeftJoyStick((i%5-2)*.02f,-1);
+check(h.gamepad.DIRECTION_FORWARD.presses==1&&h.gamepad.DIRECTION_FORWARD.releases==0,"No release during held movement");
+h.handleLeftJoyStick(1,-1);h.handleLeftJoyStick(0,-1);
+check(h.gamepad.DIRECTION_FORWARD.presses==1&&h.gamepad.DIRECTION_FORWARD.releases==0,"Diagonal retains forward");
+h.handleLeftJoyStick(0,0);check(h.gamepad.DIRECTION_FORWARD.releases==1,"Center releases once");
+for(int i=0;i<1000;i++)h.handleRightJoyStick(i%2==0?1:.8f,1);
+check(h.cameraEvents==0,"Motion events cannot emit camera deltas");
+h.handleRightJoyStick(1,1);
+for(int i=1;i<=120;i++)h.doTick(i*1000000000L/120);
+check(h.cameraEvents==120&&Math.abs(h.cameraX-1800)<.02&&Math.abs(h.cameraY-1800)<.02,"Held camera advances steadily without new input events");
+h.handleRightJoyStick(0,0);h.doTick(1016666666L);
+check(h.cameraEvents==120,"Center stops camera immediately");
+h.handleRightJoyStick(1,0);h.doTick(2016666666L);
+check(Math.abs(h.cameraX-1980)<.02,"Delayed frame is bounded to avoid a camera jump");
+}}
+`);
+  try {
+    execFileSync('javac',['-encoding','UTF-8','-d',folder,...['GamepadMovement.java','GamepadLook.java'].map(name=>path.resolve(__dirname,'../src/main/java/fr/yapapouaiye/moteur/input',name)),path.join(folder,'StickHarness.java')],{encoding:'utf8',stdio:'pipe'});
+    execFileSync('java',['-cp',folder,'StickHarness'],{encoding:'utf8',stdio:'pipe'});
+  } finally {fs.rmSync(folder,{recursive:true,force:true});}
+});
+
 test('fixed overlay and gamepad share holds; resetting a mapper preserves a held overlay key', () => {
   const bridge=fs.readFileSync(path.resolve(__dirname,'../../src/YapapouaiyeGamepad.java'),'utf8');
   const methods=bridge.slice(bridge.indexOf('    public static void sendOwned('),bridge.indexOf('    private static void sendActual('));
@@ -165,7 +204,8 @@ public class LifecycleHarness {
     private Gamepad gamepad;
     private int ticks;
     private void checkGamepad() { if (gamepad == null) gamepad = new Gamepad(); }
-    private void doTick() { ticks++; }
+    private final fr.yapapouaiye.moteur.input.GamepadMovement gamepadMovement = new fr.yapapouaiye.moteur.input.GamepadMovement();
+    private void doTick(long time) { ticks++; }
 ${helpers}
     private static void check(boolean condition, String message) {
         if (!condition) throw new AssertionError(message);
@@ -269,7 +309,7 @@ ${helpers}
 `);
   try {
     execFileSync('javac', ['-encoding', 'UTF-8', '-d', folder,
-      path.join(buttonFolder, 'GamepadEmulatedButton.java'), path.join(ownFolder,'YapapouaiyeGamepad.java'), path.join(folder, 'LifecycleHarness.java')],
+      path.resolve(__dirname,'../src/main/java/fr/yapapouaiye/moteur/input/GamepadMovement.java'), path.join(buttonFolder, 'GamepadEmulatedButton.java'), path.join(ownFolder,'YapapouaiyeGamepad.java'), path.join(folder, 'LifecycleHarness.java')],
     { encoding: 'utf8', stdio: 'pipe' });
     execFileSync('java', ['-cp', folder, 'LifecycleHarness'], { encoding: 'utf8', stdio: 'pipe' });
   } finally {

@@ -3,6 +3,25 @@
 
 /** Applied to the pinned upstream source, never to an already patched file. */
 function patchFclInput(text, replaceOnce) {
+  const leftStart=text.indexOf('    public void handleLeftJoyStick(');
+  const leftEnd=text.indexOf('    public void handleRightJoyStick(',leftStart);
+  if(leftStart<0||leftEnd<leftStart)throw new Error('Joystick movement anchors missing');
+  text=text.slice(0,leftStart)+`    private final fr.yapapouaiye.moteur.input.GamepadMovement gamepadMovement = new fr.yapapouaiye.moteur.input.GamepadMovement();
+
+    public void handleLeftJoyStick(float xAxis, float yAxis) {
+        int keys = gamepadMovement.update(xAxis, yAxis, (float) menu.getMenuSetting().getGamepadDeadzone());
+        // update() sends only transitions. Never release a key retained by the next direction.
+        gamepad.getCurrentMap().DIRECTION_RIGHT.update((keys & 1) != 0);
+        gamepad.getCurrentMap().DIRECTION_FORWARD.update((keys & 2) != 0);
+        gamepad.getCurrentMap().DIRECTION_LEFT.update((keys & 4) != 0);
+        gamepad.getCurrentMap().DIRECTION_BACKWARD.update((keys & 8) != 0);
+    }
+
+`+text.slice(leftEnd);
+  text=replaceOnce(text, `            doTick();\n        }\n    }\n\n    private void doTick() {`,
+    `        }\n    }\n\n    private void doTick(long frameTimeNanos) {`);
+  text=replaceOnce(text, `        long newFrameTime = System.nanoTime();\n        if (lastAxisZ != 0 || lastAxisRZ != 0) {\n            newFrameTime = System.nanoTime();`,
+    `        long newFrameTime = frameTimeNanos;\n        if (lastAxisZ != 0 || lastAxisRZ != 0) {`);
   for (const [axis, delta] of [['lastAxisZ', 'deltaX'], ['lastAxisRZ', 'deltaY']]) {
     text = replaceOnce(text, `${delta} = ${axis} * deltaTimeScale * 10 * menu.getMenuSetting().getMouseSensitivity();`,
       `${delta} = com.tungsten.fcl.yapapouaiye.YapapouaiyeGamepad.cameraDelta(this, ${axis}, deltaTimeScale);`);
@@ -56,6 +75,7 @@ function patchFclInput(text, replaceOnce) {
         lastAxisZ = 0;
         lastAxisRZ = 0;
         currentDirection = -1;
+        gamepadMovement.reset();
         lastFrameTime = 0;
         if (gamepad != null) {
             // getButtons includes the four movement directions; upstream's
@@ -107,7 +127,7 @@ function patchFclInput(text, replaceOnce) {
                     resetGamepadState();
                     return;
                 }
-                doTick();
+                doTick(frameTimeNanos);
                 if (gamepadTickRunning && gamepadFrameCallback == this) {
                     choreographer.postFrameCallback(this);
                 }
@@ -121,4 +141,23 @@ function patchFclInput(text, replaceOnce) {
   return text;
 }
 
-module.exports = { patchFclInput };
+function patchGamepad(text, replaceOnce) {
+  text=replaceOnce(text,'    private var axisRZ = 0.0f','    private var axisRZ = 0.0f\n    private var readingMotion = false');
+  text=replaceOnce(text,'        return manager.handleMotionEventInput(context, event, this)',`        // The remapper dispatches axes separately. Commit one complete sample so
+        // changing X cannot temporarily combine with the previous packet's Y.
+        readingMotion = true
+        try {
+            return manager.handleMotionEventInput(context, event, this)
+        } finally {
+            readingMotion = false
+            fclInput.handleLeftJoyStick(xAxis, yAxis)
+            fclInput.handleRightJoyStick(axisZ, axisRZ)
+        }`);
+  for(const call of ['fclInput.handleLeftJoyStick(xAxis, yAxis)','fclInput.handleRightJoyStick(axisZ, axisRZ)']) {
+    // The two callback sites, not the packet commit above.
+    if(text.split(`                ${call}`).length!==3)throw new Error('Joystick callback anchors missing');
+    text=text.replaceAll(`                ${call}`,`                if (!readingMotion) ${call}`);
+  }
+  return text;
+}
+module.exports = { patchFclInput, patchGamepad };
